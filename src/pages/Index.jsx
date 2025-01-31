@@ -30,22 +30,22 @@ const Index = () => {
                 Master your interview skills with real-time feedback, AI-powered practice sessions, and expert guidance.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <button className="inline-flex items-center justify-center px-6 py-3 bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 font-semibold">
+                <button className="group inline-flex items-center justify-center px-6 py-3 bg-primary text-primary-foreground transition-all duration-300 hover:bg-primary/90 hover:translate-y-[-2px] hover:shadow-lg">
                   Start Practicing Now
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <ArrowRight className="ml-2 h-5 w-5 transform transition-transform group-hover:translate-x-1" />
                 </button>
-                <button className="inline-flex items-center justify-center px-6 py-3 bg-secondary text-secondary-foreground hover:bg-secondary/90 transition-all duration-200 font-semibold">
+                <button className="inline-flex items-center justify-center px-6 py-3 bg-secondary text-secondary-foreground transition-all duration-300 hover:bg-secondary/90 hover:translate-y-[-2px] hover:shadow-lg">
                   Watch Demo
                 </button>
               </div>
             </div>
             
             <div className="relative animate-fade-up delay-200">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 transform rotate-3"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 transform rotate-3 transition-transform hover:rotate-0 duration-500"></div>
               <img
                 src="/lovable-uploads/2a22cf78-3848-4d17-bf50-eba2cdadd105.png"
                 alt="Interview preparation illustration"
-                className="relative z-10 shadow-xl"
+                className="relative z-10 shadow-xl transition-transform hover:scale-105 duration-500"
               />
             </div>
           </div>
@@ -61,10 +61,14 @@ const Index = () => {
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {features.map((feature, index) => (
-              <div key={index} className="p-6 bg-background-secondary hover:shadow-lg transition-all duration-300 animate-fade-up" style={{ animationDelay: `${index * 200}ms` }}>
-                <div className="mb-4">{feature.icon}</div>
-                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                <p className="text-muted">{feature.description}</p>
+              <div 
+                key={index} 
+                className="p-6 bg-background-secondary hover:bg-white transition-all duration-500 hover:shadow-2xl transform hover:-translate-y-2 animate-fade-up group" 
+                style={{ animationDelay: `${index * 200}ms` }}
+              >
+                <div className="mb-4 transform transition-transform group-hover:scale-110 duration-300">{feature.icon}</div>
+                <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors duration-300">{feature.title}</h3>
+                <p className="text-muted group-hover:text-black transition-colors duration-300">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -72,26 +76,35 @@ const Index = () => {
       </section>
 
       {/* Success Stories Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-background-secondary">
-        <div className="max-w-7xl mx-auto">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-background-secondary relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-secondary/5"></div>
+        <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-16 animate-fade-up">
             <h2 className="text-4xl font-bold text-teal mb-4">Success Stories</h2>
             <p className="text-muted max-w-2xl mx-auto">See how PrepPartner has helped others achieve their career goals</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {successStories.map((story, index) => (
-              <div key={index} className="p-6 bg-white hover:shadow-lg transition-all duration-300 animate-fade-up" style={{ animationDelay: `${index * 200}ms` }}>
-                <div className="flex items-center mb-4">
-                  <Award className="w-8 h-8 text-primary mr-2" />
+              <div 
+                key={index} 
+                className="group bg-white p-8 hover:bg-gradient-to-br hover:from-primary/10 hover:to-secondary/10 transition-all duration-500 hover:shadow-2xl transform hover:-translate-y-2 animate-fade-up"
+                style={{ animationDelay: `${index * 200}ms` }}
+              >
+                <div className="flex items-center mb-6">
+                  <Award className="w-12 h-12 text-primary mr-4 transform transition-transform group-hover:rotate-12 duration-300" />
                   <div>
-                    <h3 className="font-semibold">{story.name}</h3>
-                    <p className="text-sm text-muted">{story.role}</p>
+                    <h3 className="font-semibold text-lg group-hover:text-primary transition-colors duration-300">{story.name}</h3>
+                    <p className="text-sm text-muted group-hover:text-black transition-colors duration-300">{story.role}</p>
                   </div>
                 </div>
-                <p className="text-muted mb-4">{story.story}</p>
-                <div className="flex">
+                <p className="text-muted mb-6 group-hover:text-black transition-colors duration-300 text-lg italic">"{story.story}"</p>
+                <div className="flex space-x-1">
                   {[...Array(story.rating)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 text-primary" fill="#F3C178" />
+                    <Star 
+                      key={i} 
+                      className="w-6 h-6 text-primary transform transition-all duration-300 group-hover:scale-110 hover:rotate-12" 
+                      fill="#F3C178"
+                    />
                   ))}
                 </div>
               </div>
@@ -104,30 +117,45 @@ const Index = () => {
       <footer className="bg-teal text-teal-foreground py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-2">
-            <h3 className="text-2xl font-bold mb-4">PrepPartner</h3>
-            <p className="max-w-md">Your trusted partner in interview preparation. Join thousands of successful candidates who have achieved their career goals with PrepPartner.</p>
+            <h3 className="text-2xl font-bold mb-4 hover:text-primary transition-colors duration-300">PrepPartner</h3>
+            <p className="max-w-md hover:text-white transition-colors duration-300">Your trusted partner in interview preparation. Join thousands of successful candidates who have achieved their career goals with PrepPartner.</p>
           </div>
           <div>
             <h4 className="font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-2">
-              <li><a href="#" className="hover:text-primary transition-colors">About Us</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Pricing</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Resources</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Contact</a></li>
+              {['About Us', 'Pricing', 'Resources', 'Contact'].map((link) => (
+                <li key={link}>
+                  <a 
+                    href="#" 
+                    className="hover:text-primary transition-all duration-300 hover:translate-x-2 inline-block transform"
+                  >
+                    {link}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
           <div>
             <h4 className="font-semibold mb-4">Contact Us</h4>
             <ul className="space-y-2">
-              <li>support@preppartner.com</li>
-              <li>1-800-PREP-NOW</li>
-              <li>123 Interview Street</li>
-              <li>Success City, SC 12345</li>
+              {[
+                'support@preppartner.com',
+                '1-800-PREP-NOW',
+                '123 Interview Street',
+                'Success City, SC 12345'
+              ].map((item) => (
+                <li 
+                  key={item}
+                  className="hover:text-white transition-colors duration-300"
+                >
+                  {item}
+                </li>
+              ))}
             </ul>
           </div>
         </div>
         <div className="max-w-7xl mx-auto mt-8 pt-8 border-t border-teal-foreground/20">
-          <p className="text-center">&copy; 2024 PrepPartner. All rights reserved.</p>
+          <p className="text-center hover:text-white transition-colors duration-300">&copy; 2024 PrepPartner. All rights reserved.</p>
         </div>
       </footer>
     </div>

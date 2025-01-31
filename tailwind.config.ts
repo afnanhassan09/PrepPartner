@@ -21,6 +21,9 @@ export default {
         border: {
           DEFAULT: "#E2E8F0",
         },
+        foreground: {
+          DEFAULT: "#000000",
+        },
         teal: {
           DEFAULT: "#003841",
           foreground: "#FFFFFF",

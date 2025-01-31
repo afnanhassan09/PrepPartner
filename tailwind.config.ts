@@ -18,6 +18,9 @@ export default {
     },
     extend: {
       colors: {
+        border: {
+          DEFAULT: "#E2E8F0",
+        },
         teal: {
           DEFAULT: "#003841",
           foreground: "#FFFFFF",
@@ -57,4 +60,4 @@ export default {
     },
   },
   plugins: [require("tailwindcss-animate")],
-};
+}

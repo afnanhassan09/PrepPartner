@@ -92,7 +92,7 @@ Additional Notes:
     "Core Surgical Training",
   ];
 
-  // Modify PopupMenu component to show initial selection
+  // Modify PopupMenu component to handle section changes correctly
   const PopupMenu = () => (
     <div className="absolute -left-2 top-1/2 -translate-y-1/2 h-32 flex items-center z-50">
       {/* Toggle Button */}
@@ -139,21 +139,40 @@ Additional Notes:
           {sections.map((section, index) => (
             <div
               key={section}
-              onClick={() => {
+              onClick={async () => {
                 setSelectedSection(section);
                 setCurrentStation(section);
                 setCurrentIndex(0);
-                loadMotivationVideo(section, 0);
-                // Show start button when new station is selected
-                setShowStartButton(true);
-                // Reset timers
-                setIsCountdownActive(false);
-                setIsInterviewTimerActive(false);
-                setTimeLeft(5);
-                setInterviewTimeLeft(5 * 60);
-                // Pause any playing video
-                if (mainVideoRef.current) {
-                  mainVideoRef.current.pause();
+
+                // Load video but ensure it's paused
+                try {
+                  const video = await APIService.getMotivationVideo(section, 0);
+                  setCurrentVideo(video);
+                  if (mainVideoRef.current) {
+                    mainVideoRef.current.pause();
+                    setIsMainVideoPlaying(false);
+                  }
+
+                  // Reset all necessary states
+                  setShowStartButton(true);
+                  setIsCountdownActive(false);
+                  setIsInterviewTimerActive(false);
+                  setTimeLeft(5);
+                  setInterviewTimeLeft(5 * 60);
+
+                  if (video.question) {
+                    setMessages((prev) => [
+                      ...prev,
+                      {
+                        id: Date.now(),
+                        sender: "AI",
+                        message: video.question,
+                        timestamp: new Date().toLocaleTimeString(),
+                      },
+                    ]);
+                  }
+                } catch (error) {
+                  console.error("Error loading video:", error);
                 }
               }}
               className={`p-3 cursor-pointer transition-all duration-200 text-sm font-medium
@@ -181,48 +200,7 @@ Additional Notes:
     </div>
   );
 
-  // Add new useEffect for countdown timer
-  useEffect(() => {
-    if (isCountdownActive && timeLeft > 0) {
-      countdownTimerRef.current = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
-    } else if (timeLeft === 0) {
-      // Start video when countdown reaches 0
-      if (mainVideoRef.current) {
-        mainVideoRef.current.play();
-      }
-      setIsCountdownActive(false);
-      clearInterval(countdownTimerRef.current);
-    }
-
-    return () => {
-      if (countdownTimerRef.current) {
-        clearInterval(countdownTimerRef.current);
-      }
-    };
-  }, [isCountdownActive, timeLeft]);
-
-  // Add new useEffect for the 5-minute interview timer
-  useEffect(() => {
-    if (isInterviewTimerActive && interviewTimeLeft > 0) {
-      interviewTimerRef.current = setInterval(() => {
-        setInterviewTimeLeft((prev) => prev - 1);
-      }, 1000);
-    } else if (interviewTimeLeft === 0) {
-      // Handle timer completion
-      clearInterval(interviewTimerRef.current);
-      // Optionally add logic for when time runs out
-    }
-
-    return () => {
-      if (interviewTimerRef.current) {
-        clearInterval(interviewTimerRef.current);
-      }
-    };
-  }, [isInterviewTimerActive, interviewTimeLeft]);
-
-  // Modify initial useEffect to not auto-advance videos
+  // Modify initial useEffect to ensure video doesn't play automatically
   useEffect(() => {
     const initializeVideos = async () => {
       try {
@@ -250,6 +228,7 @@ Additional Notes:
         // Ensure video is paused initially
         if (mainVideoRef.current) {
           mainVideoRef.current.pause();
+          setIsMainVideoPlaying(false);
         }
       } catch (error) {
         console.error("Error loading initial videos:", error);
@@ -257,9 +236,54 @@ Additional Notes:
     };
 
     initializeVideos();
-    // Set initial selection to Motivation
     setSelectedSection("Motivation");
-  }, []); // Only run once on mount
+  }, []);
+
+  // Modify countdown timer useEffect
+  useEffect(() => {
+    if (isCountdownActive && timeLeft > 0) {
+      countdownTimerRef.current = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (timeLeft === 0) {
+      // Start video when countdown reaches 0
+      clearInterval(countdownTimerRef.current);
+      setIsCountdownActive(false);
+
+      // Add slight delay before playing video
+      setTimeout(() => {
+        if (mainVideoRef.current) {
+          mainVideoRef.current.play();
+          setIsMainVideoPlaying(true);
+        }
+      }, 100);
+    }
+
+    return () => {
+      if (countdownTimerRef.current) {
+        clearInterval(countdownTimerRef.current);
+      }
+    };
+  }, [isCountdownActive, timeLeft]);
+
+  // Add new useEffect for the 5-minute interview timer
+  useEffect(() => {
+    if (isInterviewTimerActive && interviewTimeLeft > 0) {
+      interviewTimerRef.current = setInterval(() => {
+        setInterviewTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (interviewTimeLeft === 0) {
+      // Handle timer completion
+      clearInterval(interviewTimerRef.current);
+      // Optionally add logic for when time runs out
+    }
+
+    return () => {
+      if (interviewTimerRef.current) {
+        clearInterval(interviewTimerRef.current);
+      }
+    };
+  }, [isInterviewTimerActive, interviewTimeLeft]);
 
   // Add keyboard event listener for 'L' key to advance video
   useEffect(() => {
@@ -322,10 +346,13 @@ Additional Notes:
         ]);
       }
 
-      // Remove auto-play behavior
-      if (mainVideoRef.current) {
-        mainVideoRef.current.pause();
-      }
+      // Play the video after setting it
+      setTimeout(() => {
+        if (mainVideoRef.current) {
+          mainVideoRef.current.play();
+          setIsMainVideoPlaying(true);
+        }
+      }, 100);
     } catch (error) {
       console.error("Error loading video:", error);
     }
@@ -636,10 +663,16 @@ Additional Notes:
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
-  // Add video end handler
+  // Modify handleVideoEnd to play the pause video
   const handleVideoEnd = () => {
     if (pauseVideo) {
       setCurrentVideo(pauseVideo);
+      // Ensure the video plays after setting
+      setTimeout(() => {
+        if (mainVideoRef.current) {
+          mainVideoRef.current.play();
+        }
+      }, 100);
     }
   };
 

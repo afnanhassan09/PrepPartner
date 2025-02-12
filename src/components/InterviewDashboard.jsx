@@ -144,6 +144,17 @@ Additional Notes:
                 setCurrentStation(section);
                 setCurrentIndex(0);
                 loadMotivationVideo(section, 0);
+                // Show start button when new station is selected
+                setShowStartButton(true);
+                // Reset timers
+                setIsCountdownActive(false);
+                setIsInterviewTimerActive(false);
+                setTimeLeft(5);
+                setInterviewTimeLeft(5 * 60);
+                // Pause any playing video
+                if (mainVideoRef.current) {
+                  mainVideoRef.current.pause();
+                }
               }}
               className={`p-3 cursor-pointer transition-all duration-200 text-sm font-medium
                 ${
@@ -279,25 +290,21 @@ Additional Notes:
 
       // Handle -1 case (last video)
       if (video.nextIndex === -1) {
-        // Find current station index
         const currentStationIndex = sections.indexOf(station);
-
         if (currentStationIndex < sections.length - 1) {
-          // If not last station, move to next station
           const nextStation = sections[currentStationIndex + 1];
           setCurrentStation(nextStation);
-          setSelectedSection(nextStation); // Update selected section in popup
+          setSelectedSection(nextStation);
           setCurrentIndex(0);
-          // Load first video of next station
           const nextVideo = await APIService.getMotivationVideo(nextStation, 0);
           setCurrentVideo(nextVideo);
+          // Show start button for new station
+          setShowStartButton(true);
         } else {
-          // If last station, show pause video
           const pauseVideo = await APIService.getPauseVideo();
           setCurrentVideo(pauseVideo);
         }
       } else {
-        // Normal case - not last video
         setCurrentVideo(video);
       }
 
@@ -315,11 +322,9 @@ Additional Notes:
         ]);
       }
 
+      // Remove auto-play behavior
       if (mainVideoRef.current) {
-        mainVideoRef.current.onloadeddata = () => {
-          mainVideoRef.current.play();
-          setIsMainVideoPlaying(true);
-        };
+        mainVideoRef.current.pause();
       }
     } catch (error) {
       console.error("Error loading video:", error);

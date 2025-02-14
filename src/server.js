@@ -10,7 +10,7 @@ class APIService {
    * Fetches a video based on station and index
    * @param {string} station - The station name (e.g. "Motivation")
    * @param {number} index - The video index
-   * @returns {Promise<Object>} Video object containing url and other metadata
+   * @returns {Promise<Object>} Video object containing url, nextIndex and other metadata
    */
   static async getMotivationVideo(station, index) {
     console.log("Sending request with:", { station, index });
@@ -26,7 +26,19 @@ class APIService {
       if (!response.ok) {
         throw new Error("Failed to fetch video");
       }
-      return await response.json();
+      const data = await response.json();
+      
+      // If nextIndex is -1, automatically fetch pause video
+      if (data.nextIndex === -1) {
+        const pauseVideo = await this.getPauseVideo();
+        return {
+          ...data,
+          isLastVideo: true,
+          pauseVideo
+        };
+      }
+      
+      return data;
     } catch (error) {
       console.error("Error fetching motivation video:", error);
       throw error;

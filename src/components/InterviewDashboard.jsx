@@ -92,6 +92,11 @@ Additional Notes:
     "Core Surgical Training",
   ];
 
+  // Add new state for silence detection
+  const silenceTimeoutRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+
   // Modify PopupMenu component to handle section changes correctly
   const PopupMenu = () => (
     <div className="absolute -left-2 top-1/2 -translate-y-1/2 h-32 flex items-center z-50">
@@ -285,24 +290,6 @@ Additional Notes:
     };
   }, [isInterviewTimerActive, interviewTimeLeft]);
 
-  // Add keyboard event listener for 'L' key to advance video
-  useEffect(() => {
-    const handleKeyPress = async (event) => {
-      if (event.key.toLowerCase() === "l") {
-        // Calculate next index
-        const nextIndex = currentIndex + 1;
-        setCurrentIndex(nextIndex);
-        await loadMotivationVideo(currentStation, nextIndex);
-      }
-    };
-
-    window.addEventListener("keypress", handleKeyPress);
-
-    return () => {
-      window.removeEventListener("keypress", handleKeyPress);
-    };
-  }, [currentStation, currentIndex]); // Dependencies needed for proper updates
-
   // Modify loadMotivationVideo to update selectedSection when changing stations
   const loadMotivationVideo = async (
     station = currentStation,
@@ -362,51 +349,93 @@ Additional Notes:
   const handleMicClick = async () => {
     if (!isRecording) {
       try {
+        // First, request microphone permissions
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+        // If permission granted, proceed with loading pause video and starting recording
         const pauseVideo = await APIService.getPauseVideo();
         setCurrentVideo(pauseVideo);
+        startRecording();
       } catch (error) {
-        console.error("Error loading pause video:", error);
+        console.error("Error accessing microphone:", error);
+        alert("Please allow microphone access to record your response");
       }
-      startRecording();
     } else {
       stopRecording();
     }
   };
 
-  // Modify stopRecording to not automatically load next video
-  const stopRecording = () => {
-    if (
-      mediaRecorderRef.current &&
-      mediaRecorderRef.current.state !== "inactive"
-    ) {
-      mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream
-        .getTracks()
-        .forEach((track) => track.stop());
-      setIsRecording(false);
-
-      // Ensure main video is playing
-      if (mainVideoRef.current) {
-        mainVideoRef.current.play();
-        setIsMainVideoPlaying(true);
-      }
-    }
-  };
-
-  // Modify mediaRecorder.onstop to not automatically load next video
+  // Modify startRecording to include silence detection
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
+      // Get microphone stream
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        echoCancellation: true,
+        noiseSuppression: true,
+      });
 
-      mediaRecorderRef.current.ondataavailable = (e) => {
-        chunksRef.current.push(e.data);
+      // Initialize MediaRecorder
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      chunksRef.current = []; // Reset chunks
+
+      // Set up audio analysis for silence detection
+      audioContextRef.current = new AudioContext();
+      const source = audioContextRef.current.createMediaStreamSource(stream);
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      analyserRef.current.fftSize = 2048;
+      source.connect(analyserRef.current);
+
+      const bufferLength = analyserRef.current.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      // Function to check for silence
+      const checkSilence = () => {
+        if (!analyserRef.current) return;
+
+        analyserRef.current.getByteFrequencyData(dataArray);
+        const average = dataArray.reduce((a, b) => a + b) / bufferLength;
+
+        // Debug log to see audio levels (remove in production)
+        console.log("Audio level:", average);
+
+        // If sound is detected, reset the silence timeout
+        if (average > 5) {
+          if (silenceTimeoutRef.current) {
+            clearTimeout(silenceTimeoutRef.current);
+          }
+          silenceTimeoutRef.current = setTimeout(async () => {
+            console.log("Silence detected - stopping recording");
+            stopRecording();
+            const nextIndex = currentIndex + 1;
+            setCurrentIndex(nextIndex);
+            await loadMotivationVideo(currentStation, nextIndex);
+          }, 2000);
+        }
       };
 
+      // Start checking for silence regularly
+      const silenceInterval = setInterval(checkSilence, 100);
+
+      // Handle data available event
+      mediaRecorderRef.current.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunksRef.current.push(e.data);
+        }
+      };
+
+      // Handle recording stop event
       mediaRecorderRef.current.onstop = async () => {
+        clearInterval(silenceInterval);
+        if (silenceTimeoutRef.current) {
+          clearTimeout(silenceTimeoutRef.current);
+        }
+
         const audioBlob = new Blob(chunksRef.current, { type: "audio/wav" });
         chunksRef.current = [];
 
+        // Add visual feedback for recording status
         const tempMessageId = Date.now();
         setMessages((prev) => [
           ...prev,
@@ -420,10 +449,7 @@ Additional Notes:
         ]);
 
         try {
-          // Get transcription
           const result = await APIService.transcribeAudio(audioBlob);
-
-          // Update message with transcription
           setMessages((prev) =>
             prev.map((msg) =>
               msg.id === tempMessageId
@@ -437,13 +463,62 @@ Additional Notes:
           );
         } catch (error) {
           console.error("Processing error:", error);
+          // Show error message to user
+          alert("Error processing audio. Please try again.");
         }
       };
 
-      mediaRecorderRef.current.start();
+      // Start recording with 1-second timeslices
+      mediaRecorderRef.current.start(1000);
       setIsRecording(true);
+
+      // Visual feedback that recording has started
+      if (mainVideoRef.current) {
+        mainVideoRef.current.pause();
+        setIsMainVideoPlaying(false);
+      }
     } catch (error) {
       console.error("Error starting recording:", error);
+      alert(
+        "Error starting recording. Please check your microphone permissions."
+      );
+    }
+  };
+
+  // Modify stopRecording to clean up audio analysis
+  const stopRecording = () => {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== "inactive"
+    ) {
+      try {
+        mediaRecorderRef.current.stop();
+        // Stop all tracks in the stream
+        mediaRecorderRef.current.stream.getTracks().forEach((track) => {
+          track.stop();
+        });
+
+        // Clean up audio analysis
+        if (audioContextRef.current) {
+          audioContextRef.current.close();
+          audioContextRef.current = null;
+          analyserRef.current = null;
+        }
+
+        if (silenceTimeoutRef.current) {
+          clearTimeout(silenceTimeoutRef.current);
+        }
+
+        setIsRecording(false);
+
+        // Resume main video playback
+        if (mainVideoRef.current) {
+          mainVideoRef.current.play();
+          setIsMainVideoPlaying(true);
+        }
+      } catch (error) {
+        console.error("Error stopping recording:", error);
+      }
     }
   };
 

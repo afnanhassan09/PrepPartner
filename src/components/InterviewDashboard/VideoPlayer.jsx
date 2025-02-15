@@ -41,9 +41,6 @@ const VideoPlayer = ({
       videoElement?.removeEventListener("timeupdate", handleTimeUpdate);
   }, [currentVideo, handleVideoEnd]);
 
-  // Add ref for pause video
-  const pauseVideoRef = React.useRef(null);
-
   return (
     <div
       ref={videoContainerRef}
@@ -94,33 +91,18 @@ const VideoPlayer = ({
           </div>
         )}
 
-        {/* Main video stack */}
-        <div className="relative w-full h-full">
-          {/* Hidden preloaded pause video */}
-          <video
-            ref={pauseVideoRef}
-            className="absolute inset-0 w-full h-full object-cover opacity-0"
-            src={currentVideo?.previousState ? currentVideo.url : ""}
-            playsInline
-            disablePictureInPicture
-            controlsList="nodownload noplaybackrate"
-            preload="auto"
-          />
-
-          {/* Main video with fade transition */}
-          <video
-            ref={mainVideoRef}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500
-              ${isVideoTransitioning ? "opacity-0" : "opacity-100"}`}
-            src={currentVideo?.url || ""}
-            playsInline
-            disablePictureInPicture
-            controlsList="nodownload noplaybackrate"
-            onContextMenu={(e) => e.preventDefault()}
-            onEnded={handleVideoEnd}
-            preload="auto"
-          />
-        </div>
+        <video
+          ref={mainVideoRef}
+          className={`w-full h-full object-cover transition-opacity duration-300 ${
+            isVideoTransitioning ? "opacity-0" : "opacity-100"
+          }`}
+          src={currentVideo?.url || ""}
+          playsInline
+          disablePictureInPicture
+          controlsList="nodownload noplaybackrate"
+          onContextMenu={(e) => e.preventDefault()}
+          onEnded={handleVideoEnd}
+        />
       </div>
 
       {/* Webcam - Right Half */}

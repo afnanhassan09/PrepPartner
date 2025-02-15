@@ -185,13 +185,8 @@ const InterviewDashboard = () => {
     try {
       setIsVideoTransitioning(true);
 
-      // Get next timestamp/video data
       const nextTimestamp = currentVideo.timestamps[currentVideo.nextIndex];
 
-      // Allow transition effect to start
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      // Update video state
       setCurrentVideo({
         ...currentVideo,
         currentTimestamp: nextTimestamp,
@@ -201,18 +196,32 @@ const InterviewDashboard = () => {
         nextIndex: currentVideo.nextIndex + 1,
       });
 
-      // Smooth transition back
+      if (nextTimestamp.question) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            sender: "AI",
+            message: nextTimestamp.question,
+            timestamp: new Date().toLocaleTimeString(),
+          },
+        ]);
+      }
+
+      const [minutes, seconds] = nextTimestamp.start.split(":").map(Number);
+      const startTimeInSeconds = minutes * 60 + seconds;
+
       setTimeout(() => {
-        setIsVideoTransitioning(false);
         if (mainVideoRef.current) {
-          const [minutes, seconds] = nextTimestamp.start.split(":").map(Number);
-          mainVideoRef.current.currentTime = minutes * 60 + seconds;
+          mainVideoRef.current.currentTime = startTimeInSeconds;
           mainVideoRef.current.play();
           setIsMainVideoPlaying(true);
         }
-      }, 300);
+      }, 100);
     } catch (error) {
       console.error("Error loading next timestamp:", error);
+    } finally {
+      setIsVideoTransitioning(false);
     }
   };
 
@@ -503,36 +512,29 @@ const InterviewDashboard = () => {
   }, []);
 
   // Update handleVideoEnd to better preserve state
-  const handleVideoEnd = async () => {
+  const handleVideoEnd = () => {
     if (pauseVideo && currentVideo?.url !== pauseVideo.url) {
-      // Start transition
-      setIsVideoTransitioning(true);
-
-      // Preload pause video
-      const pauseVideoElement = document.createElement("video");
-      pauseVideoElement.src = pauseVideo.url;
-      await pauseVideoElement.load();
-
-      // Save current state
+      // Save current state before switching to pause video
       const previousState = {
         ...currentVideo,
         previousUrl: currentVideo.url,
       };
 
-      // After preload, update state
       setCurrentVideo({
         ...pauseVideo,
-        previousState: previousState,
+        previousState: previousState, // Store the entire previous state
       });
 
-      // Smooth transition
+      // Reset voice detection state
+      hasSpoken.current = false;
+      silenceCount.current = 0;
+
       setTimeout(() => {
-        setIsVideoTransitioning(false);
         if (mainVideoRef.current) {
           mainVideoRef.current.play();
           setIsMainVideoPlaying(true);
         }
-      }, 300); // Slightly shorter than CSS transition
+      }, 100);
     }
   };
 

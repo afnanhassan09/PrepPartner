@@ -5,10 +5,7 @@
   text-align: center;
 }
 
-video {
-  background-color: black; /* Prevents white flash */
-  will-change: opacity; /* Optimizes transitions */
-}
+
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -21,7 +18,14 @@ video {
   animation: fadeIn 0.5s ease-in-out;
 }
 
-
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 
 .logo {
   height: 6em;

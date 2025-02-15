@@ -29,10 +29,18 @@ const VideoPlayer = ({
       const [minutes, seconds] = currentVideo.end.split(":").map(Number);
       const endTimeInSeconds = minutes * 60 + seconds;
 
-      // If current time reaches or exceeds end timestamp
+      // Preload the pause video when approaching the end
+      if (videoElement.currentTime >= endTimeInSeconds - 0.5) {
+        // Pre-buffer the next video
+        const nextVideo = document.createElement("video");
+        nextVideo.preload = "auto";
+        nextVideo.src = currentVideo?.url;
+      }
+
       if (videoElement.currentTime >= endTimeInSeconds) {
-        videoElement.pause();
-        handleVideoEnd(); // This will play the pause video
+        // Ensure smooth transition
+        videoElement.style.opacity = 1;
+        handleVideoEnd();
       }
     };
 
@@ -44,11 +52,11 @@ const VideoPlayer = ({
   return (
     <div
       ref={videoContainerRef}
-      className="relative w-full rounded-xl overflow-hidden shadow-xl bg-background flex"
+      className="relative w-full rounded-xl overflow-hidden shadow-xl bg-black flex"
       style={{ height: "calc(100vh * 0.7)" }}
     >
       {/* AI Video - Left Half */}
-      <div className="w-1/2 h-full relative">
+      <div className="w-1/2 h-full relative bg-black">
         {/* Start Button Overlay */}
         {showStartButton && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
@@ -93,26 +101,32 @@ const VideoPlayer = ({
 
         <video
           ref={mainVideoRef}
-          className={`w-full h-full object-cover transition-opacity duration-300 ${
+          className={`w-full h-full object-cover ${
             isVideoTransitioning ? "opacity-0" : "opacity-100"
           }`}
+          style={{
+            transition: "opacity 300ms ease-in-out",
+            backgroundColor: "black",
+          }}
           src={currentVideo?.url || ""}
           playsInline
           disablePictureInPicture
           controlsList="nodownload noplaybackrate"
           onContextMenu={(e) => e.preventDefault()}
           onEnded={handleVideoEnd}
+          preload="auto"
         />
       </div>
 
       {/* Webcam - Right Half */}
-      <div className="w-1/2 h-full">
+      <div className="w-1/2 h-full bg-black">
         <video
           ref={webcamRef}
           autoPlay
           playsInline
           muted
-          className="w-full h-full object-cover bg-gray-900"
+          className="w-full h-full object-cover"
+          style={{ backgroundColor: "black" }}
         />
       </div>
 

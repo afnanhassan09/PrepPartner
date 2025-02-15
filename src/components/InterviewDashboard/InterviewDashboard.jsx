@@ -6,6 +6,7 @@ import ControlsBar from "./ControlsBar";
 import NotesSection from "./NotesSection";
 import ExaminerNotesSection from "./ExaminerNotesSection";
 import NavigationButtons from "./NavigationButtons";
+import pauseVideoUrl from "../../assets/pause.mp4";
 
 const InterviewDashboard = () => {
   const [messages, setMessages] = useState([]);
@@ -231,7 +232,7 @@ const InterviewDashboard = () => {
       try {
         const [videoResponse, pauseVideoResponse] = await Promise.all([
           APIService.getMotivationVideo(currentStation),
-          APIService.getPauseVideo(),
+          { url: pauseVideoUrl },
         ]);
 
         setCurrentVideo(videoResponse);

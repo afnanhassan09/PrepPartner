@@ -136,3 +136,8 @@ html {
 .stat-card {
   will-change: transform, opacity;
 }
+
+video {
+  background-color: black; /* Prevents white flash */
+  will-change: opacity; /* Optimizes transitions */
+}

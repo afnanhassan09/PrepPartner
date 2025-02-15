@@ -114,18 +114,120 @@ const InterviewDashboard = () => {
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, [currentStation, nextVideoIndex, pauseVideo]);
 
-  // Update the initial video loading to store nextIndex
+  // Modify loadNextVideo to handle timestamps array
+  const loadNextVideo = async () => {
+    // First check if we're on pause video and need to restore previous state
+    if (currentVideo?.url === pauseVideo?.url && currentVideo?.previousState) {
+      const prevState = currentVideo.previousState;
+
+      // Check if we have more timestamps
+      if (prevState.nextIndex >= prevState.timestamps.length) {
+        console.log("End of station reached");
+        return;
+      }
+
+      try {
+        setIsVideoTransitioning(true);
+
+        // Get the next timestamp
+        const nextTimestamp = prevState.timestamps[prevState.nextIndex];
+
+        // Restore previous state with new timestamp
+        setCurrentVideo({
+          ...prevState,
+          currentTimestamp: nextTimestamp,
+          start: nextTimestamp.start,
+          end: nextTimestamp.end,
+          question: nextTimestamp.question,
+          nextIndex: prevState.nextIndex + 1,
+        });
+
+        if (nextTimestamp.question) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: Date.now(),
+              sender: "AI",
+              message: nextTimestamp.question,
+              timestamp: new Date().toLocaleTimeString(),
+            },
+          ]);
+        }
+
+        // Set video to new timestamp
+        const [minutes, seconds] = nextTimestamp.start.split(":").map(Number);
+        const startTimeInSeconds = minutes * 60 + seconds;
+
+        setTimeout(() => {
+          if (mainVideoRef.current) {
+            mainVideoRef.current.currentTime = startTimeInSeconds;
+            mainVideoRef.current.play();
+            setIsMainVideoPlaying(true);
+          }
+        }, 100);
+      } catch (error) {
+        console.error("Error loading next timestamp:", error);
+      } finally {
+        setIsVideoTransitioning(false);
+      }
+      return;
+    }
+
+    // Regular timestamp progression (not coming from pause video)
+    if (
+      !currentVideo?.timestamps ||
+      currentVideo.nextIndex >= currentVideo.timestamps.length
+    ) {
+      console.log("End of station reached");
+      return;
+    }
+
+    try {
+      setIsVideoTransitioning(true);
+
+      // Get next timestamp/video data
+      const nextTimestamp = currentVideo.timestamps[currentVideo.nextIndex];
+
+      // Allow transition effect to start
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Update video state
+      setCurrentVideo({
+        ...currentVideo,
+        currentTimestamp: nextTimestamp,
+        start: nextTimestamp.start,
+        end: nextTimestamp.end,
+        question: nextTimestamp.question,
+        nextIndex: currentVideo.nextIndex + 1,
+      });
+
+      // Smooth transition back
+      setTimeout(() => {
+        setIsVideoTransitioning(false);
+        if (mainVideoRef.current) {
+          const [minutes, seconds] = nextTimestamp.start.split(":").map(Number);
+          mainVideoRef.current.currentTime = minutes * 60 + seconds;
+          mainVideoRef.current.play();
+          setIsMainVideoPlaying(true);
+        }
+      }, 300);
+    } catch (error) {
+      console.error("Error loading next timestamp:", error);
+    }
+  };
+
+  // Update initial video loading
   useEffect(() => {
     const initializeVideos = async () => {
       try {
         const [videoResponse, pauseVideoResponse] = await Promise.all([
-          APIService.getMotivationVideo(currentStation, currentIndex),
+          APIService.getMotivationVideo(currentStation),
           APIService.getPauseVideo(),
         ]);
 
         setCurrentVideo(videoResponse);
         setPauseVideo(pauseVideoResponse);
-        setNextVideoIndex(videoResponse.nextIndex);
+        setNextVideoIndex(1); // Start with index 1 (second timestamp)
         setIsVideoTransitioning(false);
 
         if (videoResponse.question) {
@@ -400,16 +502,37 @@ const InterviewDashboard = () => {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
-  // Modify handleVideoEnd to play the pause video
-  const handleVideoEnd = () => {
-    if (pauseVideo) {
-      setCurrentVideo(pauseVideo);
-      // Ensure the video plays after setting
+  // Update handleVideoEnd to better preserve state
+  const handleVideoEnd = async () => {
+    if (pauseVideo && currentVideo?.url !== pauseVideo.url) {
+      // Start transition
+      setIsVideoTransitioning(true);
+
+      // Preload pause video
+      const pauseVideoElement = document.createElement("video");
+      pauseVideoElement.src = pauseVideo.url;
+      await pauseVideoElement.load();
+
+      // Save current state
+      const previousState = {
+        ...currentVideo,
+        previousUrl: currentVideo.url,
+      };
+
+      // After preload, update state
+      setCurrentVideo({
+        ...pauseVideo,
+        previousState: previousState,
+      });
+
+      // Smooth transition
       setTimeout(() => {
+        setIsVideoTransitioning(false);
         if (mainVideoRef.current) {
           mainVideoRef.current.play();
+          setIsMainVideoPlaying(true);
         }
-      }, 100);
+      }, 300); // Slightly shorter than CSS transition
     }
   };
 
@@ -422,65 +545,6 @@ const InterviewDashboard = () => {
     setTimeout(() => {
       setIsInterviewTimerActive(true);
     }, 5000);
-  };
-
-  // Function to load next video
-  const loadNextVideo = async () => {
-    console.log("loadNextVideo called, nextVideoIndex:", nextVideoIndex);
-
-    if (nextVideoIndex === -1) {
-      console.log("At end of station, playing pause video");
-      if (pauseVideo) {
-        setCurrentVideo(pauseVideo);
-        if (mainVideoRef.current) {
-          mainVideoRef.current.play();
-          setIsMainVideoPlaying(true);
-        }
-      }
-      return;
-    }
-
-    try {
-      setIsVideoTransitioning(true);
-      console.log(
-        "Fetching next video for station:",
-        currentStation,
-        "index:",
-        nextVideoIndex
-      );
-
-      const videoResponse = await APIService.getMotivationVideo(
-        currentStation,
-        nextVideoIndex
-      );
-      console.log("Received video response:", videoResponse);
-
-      setCurrentVideo(videoResponse);
-      setNextVideoIndex(videoResponse.nextIndex);
-
-      if (videoResponse.question) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now(),
-            sender: "AI",
-            message: videoResponse.question,
-            timestamp: new Date().toLocaleTimeString(),
-          },
-        ]);
-      }
-
-      setTimeout(() => {
-        if (mainVideoRef.current) {
-          mainVideoRef.current.play();
-          setIsMainVideoPlaying(true);
-        }
-      }, 100);
-    } catch (error) {
-      console.error("Error in loadNextVideo:", error);
-    } finally {
-      setIsVideoTransitioning(false);
-    }
   };
 
   // Function to handle silence detection

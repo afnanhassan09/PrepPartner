@@ -5,7 +5,10 @@
   text-align: center;
 }
 
-
+video {
+  background-color: black; /* Prevents white flash */
+  will-change: opacity; /* Optimizes transitions */
+}
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }

@@ -12,33 +12,34 @@ class APIService {
    * @param {number} index - The video index
    * @returns {Promise<Object>} Video object containing url, nextIndex and other metadata
    */
-  static async getMotivationVideo(station, index) {
-    console.log("Sending request with:", { station, index });
+  static async getMotivationVideo(station) {
     try {
       const response = await fetch(`${BASE_URL}/api/video`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ station, index }),
+        body: JSON.stringify({ station }),
       });
 
       if (!response.ok) {
         throw new Error("Failed to fetch video");
       }
+      
       const data = await response.json();
+      const stationData = data[0]; // Get the first station object
       
-      // If nextIndex is -1, automatically fetch pause video
-      if (data.nextIndex === -1) {
-        const pauseVideo = await this.getPauseVideo();
-        return {
-          ...data,
-          isLastVideo: true,
-          pauseVideo
-        };
-      }
-      
-      return data;
+      // Return a formatted object that matches our video player expectations
+      return {
+        url: stationData.URL, // Use the main video URL
+        timestamps: stationData.timestamps, // Store all timestamps
+        currentTimestamp: stationData.timestamps[0], // Start with first timestamp
+        nextIndex: 1, // Start with index 1 (second timestamp)
+        question: stationData.timestamps[0].question,
+        start: stationData.timestamps[0].start,
+        end: stationData.timestamps[0].end,
+        totalTimestamps: stationData.timestamps.length
+      };
     } catch (error) {
       console.error("Error fetching motivation video:", error);
       throw error;

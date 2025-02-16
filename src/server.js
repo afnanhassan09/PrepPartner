@@ -31,14 +31,15 @@ class APIService {
       
       // Return a formatted object that matches our video player expectations
       return {
-        url: stationData.URL, // Use the main video URL
-        timestamps: stationData.timestamps, // Store all timestamps
-        currentTimestamp: stationData.timestamps[0], // Start with first timestamp
-        nextIndex: 1, // Start with index 1 (second timestamp)
+        url: stationData.URL,
+        timestamps: stationData.timestamps,
+        currentTimestamp: stationData.timestamps[0],
+        nextIndex: 1,
         question: stationData.timestamps[0].question,
         start: stationData.timestamps[0].start,
         end: stationData.timestamps[0].end,
-        totalTimestamps: stationData.timestamps.length
+        totalTimestamps: stationData.timestamps.length,
+        pauseSegment: stationData.pause
       };
     } catch (error) {
       console.error("Error fetching motivation video:", error);

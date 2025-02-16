@@ -29,14 +29,8 @@ const VideoPlayer = ({
       const [minutes, seconds] = currentVideo.end.split(":").map(Number);
       const endTimeInSeconds = minutes * 60 + seconds;
 
-      // Preload the pause video when approaching the end
-      if (videoElement.currentTime >= endTimeInSeconds - 0.5) {
-        // Pre-buffer the next video
-        const nextVideo = document.createElement("video");
-        nextVideo.preload = "auto";
-        nextVideo.src = currentVideo?.url;
-      }
-
+      // Remove the preloading since we're using the same video
+      // Just check if we've reached the end time
       if (videoElement.currentTime >= endTimeInSeconds) {
         // Ensure smooth transition
         videoElement.style.opacity = 1;

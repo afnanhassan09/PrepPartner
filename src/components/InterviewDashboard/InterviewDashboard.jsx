@@ -49,6 +49,9 @@ const InterviewDashboard = () => {
   const videoRef = useRef(null);
   const hasSpoken = useRef(false);
   const silenceCount = useRef(0);
+  const currentVideoRef = useRef(null);
+  const [audioStream, setAudioStream] = useState(null);
+  const [isAudioInitialized, setIsAudioInitialized] = useState(false);
 
   // Add sections data
   const sections = [
@@ -117,13 +120,23 @@ const InterviewDashboard = () => {
 
   // Modify loadNextVideo to handle timestamps array
   const loadNextVideo = async () => {
-    // First check if we're on pause video and need to restore previous state
-    if (currentVideo?.url === pauseVideo?.url && currentVideo?.previousState) {
-      const prevState = currentVideo.previousState;
+  
+
+    if (
+      currentVideoRef.current?.pauseSegmentActive &&
+      currentVideoRef.current?.previousState
+    ) {
+      const prevState = currentVideoRef.current.previousState;
+     
 
       // Check if we have more timestamps
       if (prevState.nextIndex >= prevState.timestamps.length) {
         console.log("End of station reached");
+        if (mainVideoRef.current) {
+          mainVideoRef.current.pause();
+          setIsMainVideoPlaying(false);
+        }
+        setShowStartButton(true);
         return;
       }
 
@@ -132,16 +145,27 @@ const InterviewDashboard = () => {
 
         // Get the next timestamp
         const nextTimestamp = prevState.timestamps[prevState.nextIndex];
+    
 
-        // Restore previous state with new timestamp
-        setCurrentVideo({
+        // Create new video state
+        const newVideoState = {
           ...prevState,
           currentTimestamp: nextTimestamp,
           start: nextTimestamp.start,
           end: nextTimestamp.end,
           question: nextTimestamp.question,
           nextIndex: prevState.nextIndex + 1,
-        });
+          isPauseSegment: false,
+          pauseSegmentActive: false, // Reset pause segment flag
+          pauseSegment: {
+            start: "1:53",
+            end: "2:00",
+          },
+        };
+
+      
+        setCurrentVideo(newVideoState);
+        currentVideoRef.current = newVideoState;
 
         if (nextTimestamp.question) {
           setMessages((prev) => [
@@ -159,70 +183,22 @@ const InterviewDashboard = () => {
         const [minutes, seconds] = nextTimestamp.start.split(":").map(Number);
         const startTimeInSeconds = minutes * 60 + seconds;
 
-        setTimeout(() => {
-          if (mainVideoRef.current) {
-            mainVideoRef.current.currentTime = startTimeInSeconds;
-            mainVideoRef.current.play();
-            setIsMainVideoPlaying(true);
-          }
-        }, 100);
+        if (mainVideoRef.current) {
+      
+          mainVideoRef.current.currentTime = startTimeInSeconds;
+          mainVideoRef.current.play();
+          setIsMainVideoPlaying(true);
+        }
       } catch (error) {
         console.error("Error loading next timestamp:", error);
       } finally {
         setIsVideoTransitioning(false);
       }
-      return;
-    }
-
-    // Regular timestamp progression (not coming from pause video)
-    if (
-      !currentVideo?.timestamps ||
-      currentVideo.nextIndex >= currentVideo.timestamps.length
-    ) {
-      console.log("End of station reached");
-      return;
-    }
-
-    try {
-      setIsVideoTransitioning(true);
-
-      const nextTimestamp = currentVideo.timestamps[currentVideo.nextIndex];
-
-      setCurrentVideo({
-        ...currentVideo,
-        currentTimestamp: nextTimestamp,
-        start: nextTimestamp.start,
-        end: nextTimestamp.end,
-        question: nextTimestamp.question,
-        nextIndex: currentVideo.nextIndex + 1,
+    } else {
+      console.log("Not in pause segment or no previous state available", {
+        pauseSegmentActive: currentVideoRef.current?.pauseSegmentActive,
+        previousState: currentVideoRef.current?.previousState,
       });
-
-      if (nextTimestamp.question) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now(),
-            sender: "AI",
-            message: nextTimestamp.question,
-            timestamp: new Date().toLocaleTimeString(),
-          },
-        ]);
-      }
-
-      const [minutes, seconds] = nextTimestamp.start.split(":").map(Number);
-      const startTimeInSeconds = minutes * 60 + seconds;
-
-      setTimeout(() => {
-        if (mainVideoRef.current) {
-          mainVideoRef.current.currentTime = startTimeInSeconds;
-          mainVideoRef.current.play();
-          setIsMainVideoPlaying(true);
-        }
-      }, 100);
-    } catch (error) {
-      console.error("Error loading next timestamp:", error);
-    } finally {
-      setIsVideoTransitioning(false);
     }
   };
 
@@ -512,30 +488,79 @@ const InterviewDashboard = () => {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
-  // Update handleVideoEnd to better preserve state
-  const handleVideoEnd = () => {
-    if (pauseVideo && currentVideo?.url !== pauseVideo.url) {
-      // Save current state before switching to pause video
-      const previousState = {
-        ...currentVideo,
-        previousUrl: currentVideo.url,
-      };
+  // Update useEffect for currentVideo changes
+  useEffect(() => {
+    // Update the ref when currentVideo changes
+    currentVideoRef.current = currentVideo;
 
-      setCurrentVideo({
-        ...pauseVideo,
-        previousState: previousState, // Store the entire previous state
-      });
-
-      // Reset voice detection state
+    // Only start audio detection if we're on a pause segment
+    if (currentVideo?.isPauseSegment) {
       hasSpoken.current = false;
       silenceCount.current = 0;
 
-      setTimeout(() => {
+      // Restart the audio check if we have an analyzer
+      if (analyserRef.current) {
+        console.log("Restarting audio check...");
+        // Cancel any existing animation frame
+        if (window.requestAnimationFrame) {
+          window.cancelAnimationFrame(checkAudio);
+        }
+        // Start a new check
+        checkAudio();
+      } else {
+        startVoiceDetection();
+      }
+    }
+  }, [currentVideo]);
+
+  // Update handleVideoEnd to properly handle state transitions
+  const handleVideoEnd = () => {
+    const currentVideoState = currentVideoRef.current;
+
+    if (currentVideoState?.pauseSegment && !currentVideoState.isPauseSegment) {
+      console.log("Switching to pause segment");
+
+      try {
+        // Create a clean copy of the current state
+        const stateCopy = {
+          ...currentVideoState,
+          timestamps: [...currentVideoState.timestamps],
+          nextIndex: currentVideoState.nextIndex,
+          currentTimestamp: { ...currentVideoState.currentTimestamp },
+          pauseSegment: { ...currentVideoState.pauseSegment },
+        };
+
+        // Create pause segment state
+        const pauseSegmentState = {
+          ...stateCopy,
+          previousState: stateCopy, // Store the complete state
+          url: currentVideoState.url,
+          start: currentVideoState.pauseSegment.start,
+          end: currentVideoState.pauseSegment.end,
+          isPauseSegment: true,
+          currentTimestamp: currentVideoState.pauseSegment,
+          // Add a flag to track if this is a pause segment
+          pauseSegmentActive: true,
+        };
+
+    
+
+        setCurrentVideo(pauseSegmentState);
+        currentVideoRef.current = pauseSegmentState;
+
         if (mainVideoRef.current) {
+          const [minutes, seconds] = currentVideoState.pauseSegment.start
+            .split(":")
+            .map(Number);
+          const startTimeInSeconds = minutes * 60 + seconds;
+          console.log("Setting video time to:", startTimeInSeconds);
+          mainVideoRef.current.currentTime = startTimeInSeconds;
           mainVideoRef.current.play();
           setIsMainVideoPlaying(true);
         }
-      }, 100);
+      } catch (error) {
+        console.error("Error in handleVideoEnd:", error);
+      }
     }
   };
 
@@ -550,30 +575,69 @@ const InterviewDashboard = () => {
     }, 5000);
   };
 
-  // Function to handle silence detection
-  const handleSilence = () => {
-    console.log("handleSilence called");
-    // Only proceed if video is paused
-    if (!videoRef.current?.paused) {
-      console.log("Video is still playing, ignoring silence");
+  const checkAudio = () => {
+    const videoState = currentVideoRef.current;
+
+    if (!videoState || !analyserRef.current) {
+      requestAnimationFrame(checkAudio);
       return;
     }
 
-    if (silenceTimer) {
-      clearTimeout(silenceTimer);
-    }
+    try {
+      const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+      analyserRef.current.getByteFrequencyData(dataArray);
+      const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
 
-    setSilenceTimer(
-      setTimeout(() => {
-        console.log("Silence timer completed, loading next video...");
-        loadNextVideo();
-      }, 2000) // Increased to 2 seconds
-    );
+      if (!videoState.isPauseSegment) {
+        hasSpoken.current = false;
+        silenceCount.current = 0;
+        requestAnimationFrame(checkAudio);
+        return;
+      }
+
+      // Adjust threshold for voice detection
+      if (average > 10) {
+        hasSpoken.current = true;
+        silenceCount.current = 0;
+      } else if (hasSpoken.current) {
+        silenceCount.current++;
+        const silenceSeconds = Math.floor(silenceCount.current / 60);
+
+        if (silenceSeconds > 0 && silenceCount.current % 60 === 0) {
+          console.log(`${silenceSeconds} seconds of silence...`);
+        }
+
+        if (silenceCount.current >= 300) {
+          console.log("5 seconds of silence completed, loading next video");
+          hasSpoken.current = false;
+          silenceCount.current = 0;
+
+          if (!videoState.pauseSegmentActive) {
+            videoState.pauseSegmentActive = true;
+            videoState.previousState = { ...videoState };
+          }
+
+          loadNextVideo();
+          return;
+        }
+      }
+
+      requestAnimationFrame(checkAudio);
+    } catch (error) {
+      console.error("Error in checkAudio:", error);
+      requestAnimationFrame(checkAudio);
+    }
   };
 
+  // Update startVoiceDetection to maintain state better
   const startVoiceDetection = async () => {
     try {
-      console.log("Starting voice detection...");
+      // Don't start if already initialized
+      if (isAudioInitialized) {
+        console.log("Audio already initialized, skipping");
+        return;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -581,8 +645,10 @@ const InterviewDashboard = () => {
           autoGainControl: true,
         },
       });
+
       console.log("Got audio stream:", stream);
       mediaStreamRef.current = stream;
+      setAudioStream(stream);
 
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const analyser = audioCtx.createAnalyser();
@@ -594,68 +660,15 @@ const InterviewDashboard = () => {
 
       analyserRef.current = analyser;
       setAudioContext(audioCtx);
-
-      // Set mic listening first
       setIsMicListening(true);
+      setIsAudioInitialized(true);
 
-      // Wait a bit for state to update
-      setTimeout(() => {
-        console.log("Starting audio check loop...");
-        requestAnimationFrame(checkAudio);
-      }, 100);
-
-      console.log("Voice detection started successfully");
+      checkAudio();
     } catch (error) {
       console.error("Error in startVoiceDetection:", error);
       setIsMicListening(false);
+      setIsAudioInitialized(false);
     }
-  };
-
-  const checkAudio = () => {
-    if (!analyserRef.current) return;
-
-    const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
-    analyserRef.current.getByteFrequencyData(dataArray);
-    const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
-
-    const isPauseVideo = currentVideo?.url === pauseVideo?.url;
-    const isFirstVideo = !currentVideo || currentVideo.url === undefined;
-
-    // Don't process audio if we're on the first load or not on a pause video
-    if (isFirstVideo || !isPauseVideo) {
-      requestAnimationFrame(checkAudio);
-      return;
-    }
-
-    if (isPauseVideo) {
-      if (!hasSpoken.current) {
-        console.log("Waiting for first voice detection...");
-      }
-
-      if (average > 5) {
-        if (!hasSpoken.current) {
-          console.log("First voice detected!");
-        }
-        hasSpoken.current = true;
-        silenceCount.current = 0;
-      } else {
-        if (hasSpoken.current) {
-          silenceCount.current++;
-          const silenceSeconds = Math.floor(silenceCount.current / 60);
-          if (silenceSeconds > 0 && silenceCount.current % 60 === 0) {
-            console.log(`${silenceSeconds} seconds of silence...`);
-          }
-
-          if (silenceCount.current >= 300) {
-            console.log("5 seconds of silence completed, playing next video");
-            loadNextVideo();
-            return;
-          }
-        }
-      }
-    }
-
-    requestAnimationFrame(checkAudio);
   };
 
   // Add effect to monitor state changes
@@ -663,25 +676,20 @@ const InterviewDashboard = () => {
     console.log("Mic listening state changed:", isMicListening);
   }, [isMicListening]);
 
-  // Add effect to monitor video changes
-  useEffect(() => {
-    // Only start audio detection if we're on a pause video and not the initial load
-    if (
-      currentVideo?.url === pauseVideo?.url &&
-      currentVideo?.url !== undefined
-    ) {
-      console.log("Video paused, waiting for voice...");
-      hasSpoken.current = false;
-      silenceCount.current = 0;
-      requestAnimationFrame(checkAudio);
-    }
-  }, [currentVideo, pauseVideo]);
-
   // Start voice detection on component mount
   useEffect(() => {
-    console.log("Starting voice detection on mount");
-    startVoiceDetection();
+    let isActive = true;
+
+    const initVoiceDetection = async () => {
+      if (!isActive) return;
+      console.log("Initializing voice detection...");
+      await startVoiceDetection();
+    };
+
+    initVoiceDetection();
+
     return () => {
+      isActive = false;
       console.log("Cleaning up voice detection");
       stopVoiceDetection();
     };
@@ -690,35 +698,35 @@ const InterviewDashboard = () => {
   const stopVoiceDetection = () => {
     console.log("Stopping voice detection...");
 
-    // Stop the audio context first
     if (audioContext) {
-      console.log("Closing audio context");
       audioContext.close();
     }
 
-    // Clear the analyser
     analyserRef.current = null;
 
-    // Stop media tracks
     if (mediaStreamRef.current) {
       const tracks = mediaStreamRef.current.getTracks();
-      console.log("Stopping tracks:", tracks.length);
-      tracks.forEach((track) => {
-        console.log("Stopping track:", track.kind, track.label);
-        track.stop();
-      });
+      tracks.forEach((track) => track.stop());
       mediaStreamRef.current = null;
     }
 
-    // Clear timer
     if (silenceTimer) {
-      console.log("Clearing silence timer");
       clearTimeout(silenceTimer);
     }
 
     setIsMicListening(false);
+    setIsAudioInitialized(false);
     console.log("Voice detection stopped");
   };
+
+  useEffect(() => {
+    return () => {
+      // Cancel any existing animation frame
+      if (window.requestAnimationFrame) {
+        window.cancelAnimationFrame(checkAudio);
+      }
+    };
+  }, []);
 
   return (
     <div className="h-full bg-background p-6 interview-container relative">

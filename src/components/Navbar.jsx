@@ -11,6 +11,7 @@ const Navbar = () => {
     { name: "Blog", href: "blog" },
     { name: "Plans & Pricing", href: "/pricing" },
     { name: "Contact Us", href: "/contact" },
+    { name: "Interview Prep", href: "/interview-prep" },
   ];
 
   return (

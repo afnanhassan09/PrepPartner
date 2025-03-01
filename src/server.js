@@ -1,6 +1,6 @@
 // Base configuration for API requests
 const BASE_URL =
-  import.meta.env.VITE_API_URL || "https://preppartner-backend.onrender.com";
+  import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 /**
  * Service class to handle all API communications with the backend

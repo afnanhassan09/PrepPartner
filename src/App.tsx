@@ -13,6 +13,15 @@ import Blog from "./pages/Blog";
 import Auth from "./pages/Auth";
 import InterviewPage from "./pages/interview";
 import DashboardLayout from "./components/DashboardLayout";
+import InterviewPrep from "./pages/InterviewPrep";
+import Plan from "./pages/Plan";
+import Prep from "./pages/Prep";
+import SectionDetail from "./pages/SectionDetail";
+import NotesPage from "./pages/Notes";
+import Performance from "./pages/performance";
+import PracticeOptions from "./pages/PracticeOptions";
+import MockOptions from "./pages/MockOptions";
+
 const queryClient = new QueryClient();
 
 // Update the DashboardLayout wrapper
@@ -37,11 +46,20 @@ const App = () => (
             <Route path="/contact" element={<Contact />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/interview-prep" element={<InterviewPrep />} />
+            <Route path="/plan" element={<Plan />} />
+            <Route path="/prep" element={<Prep />} />
+            <Route path="/section-detail/:option" element={<SectionDetail />} />
+            <Route path="/notes" element={<NotesPage />} />
+            <Route path="/performance" element={<Performance />} />
+            <Route path="/interview" element={<InterviewPage />} />
+            <Route path="/practice-options" element={<PracticeOptions />} />
+            <Route path="/mock-options" element={<MockOptions />} />
           </Route>
-
+  
           {/* Dashboard routes with dashboard layout */}
           <Route element={<DashboardLayoutWrapper />}>
-            <Route path="/interview" element={<InterviewPage />} />
+           
             <Route path="/dashboard" element={<NotFound />} />
             <Route path="/history" element={<NotFound />} />
             <Route path="/settings" element={<NotFound />} />

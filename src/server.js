@@ -1,6 +1,6 @@
 // Base configuration for API requests
 const BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:3000";
+  import.meta.env.VITE_API_URL || "https://preppartner-backend.onrender.com";
 
 /**
  * Service class to handle all API communications with the backend
@@ -25,10 +25,10 @@ class APIService {
       if (!response.ok) {
         throw new Error("Failed to fetch video");
       }
-      
+
       const data = await response.json();
       const stationData = data[0]; // Get the first station object
-      
+
       // Return a formatted object that matches our video player expectations
       return {
         url: stationData.URL,
@@ -39,7 +39,7 @@ class APIService {
         start: stationData.timestamps[0].start,
         end: stationData.timestamps[0].end,
         totalTimestamps: stationData.timestamps.length,
-        pauseSegment: stationData.pause
+        pauseSegment: stationData.pause,
       };
     } catch (error) {
       console.error("Error fetching motivation video:", error);

@@ -1,19 +1,74 @@
 import { useState } from 'react';
-import { Mail, Lock, User, ArrowRight, Loader2, Github, Chrome } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '@/components/ui/use-toast';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: ''
+  });
+  
   const navigate = useNavigate();
+  const { login, register } = useAuth();
+  const { toast } = useToast();
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsLoading(false);
-    navigate('/');
+    
+    try {
+      if (isLogin) {
+        // Login
+        await login({
+          email: formData.email,
+          password: formData.password
+        });
+        toast({
+          title: "Success!",
+          description: "You have been logged in successfully.",
+          variant: "success",
+        });
+      } else {
+        // Register
+        await register({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password
+        });
+        toast({
+          title: "Account created!",
+          description: "Your account has been created successfully. Please log in.",
+          variant: "success",
+        });
+        // Switch to login after successful registration
+        setIsLogin(true);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Redirect to home page after successful login
+      navigate('/');
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Authentication failed",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   return (
@@ -53,8 +108,12 @@ const Auth = () => {
                   <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <input
                     type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
                     placeholder="Full Name"
                     className="w-full pl-12 pr-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-[#F3C178]/20 focus:border-[#F3C178] transition-all duration-300"
+                    required={!isLogin}
                   />
                 </div>
               )}
@@ -63,8 +122,12 @@ const Auth = () => {
                 <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                   type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
                   placeholder="Email Address"
                   className="w-full pl-12 pr-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-[#F3C178]/20 focus:border-[#F3C178] transition-all duration-300"
+                  required
                 />
               </div>
 
@@ -72,8 +135,12 @@ const Auth = () => {
                 <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                   type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
                   placeholder="Password"
                   className="w-full pl-12 pr-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-[#F3C178]/20 focus:border-[#F3C178] transition-all duration-300"
+                  required
                 />
               </div>
 
@@ -92,32 +159,6 @@ const Auth = () => {
                   </>
                 )}
               </button>
-
-              <div className="relative my-8 animate-fade-up" style={{ animationDelay: '1000ms' }}>
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Or continue with</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 animate-fade-up" style={{ animationDelay: '1200ms' }}>
-                <button
-                  type="button"
-                  className="flex items-center justify-center gap-2 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-300"
-                >
-                  <Chrome className="w-5 h-5" />
-                  <span>Google</span>
-                </button>
-                <button
-                  type="button"
-                  className="flex items-center justify-center gap-2 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-300"
-                >
-                  <Github className="w-5 h-5" />
-                  <span>GitHub</span>
-                </button>
-              </div>
             </form>
           </div>
         </div>

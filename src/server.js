@@ -1,5 +1,5 @@
 // Base configuration for API requests
-const BASE_URL = "https://preppartner-backend.onrender.com";
+const BASE_URL = "http://localhost:3000";
 import { io } from "socket.io-client";
 
 /**
@@ -31,28 +31,28 @@ class APIService {
       console.error("Cannot initialize socket: No user ID provided");
       return null;
     }
-    
+
     // If we already have a socket for this user, just return it
     if (this.socket && this.userId === userId && this.socket.connected) {
       console.log(`Reusing existing socket connection for user ${userId}`);
       return this.socket;
     }
-    
+
     // Disconnect existing socket if any
     if (this.socket) {
       console.log(`Disconnecting existing socket for user ${this.userId}`);
-      
+
       // Remove all listeners to prevent duplicates
       this.socket.off();
-      
+
       // Disconnect the socket
       this.socket.disconnect();
       this.socket = null;
     }
-    
+
     console.log(`Initializing socket for user ${userId}`);
     this.userId = userId;
-    
+
     // Create new socket connection with better error handling
     try {
       this.socket = io(BASE_URL, {
@@ -61,7 +61,7 @@ class APIService {
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,
         timeout: 10000,
-        forceNew: true // Force a new connection to prevent reusing existing connections
+        forceNew: true, // Force a new connection to prevent reusing existing connections
       });
 
       // Log connection events
@@ -75,7 +75,7 @@ class APIService {
 
       this.socket.on("disconnect", (reason) => {
         console.log("Socket disconnected:", reason);
-        
+
         // Attempt to reconnect if disconnected unexpectedly
         if (reason === "io server disconnect" || reason === "transport close") {
           console.log("Attempting to reconnect socket...");
@@ -110,22 +110,26 @@ class APIService {
    */
   static sendSocketMessage(receiver, message) {
     // Get receiver ID consistently
-    const receiverId = typeof receiver === 'object' ? this.getUserId(receiver) : receiver;
-    
+    const receiverId =
+      typeof receiver === "object" ? this.getUserId(receiver) : receiver;
+
     if (!receiverId) {
-      console.error("Cannot send socket message: No receiver ID provided", receiver);
+      console.error(
+        "Cannot send socket message: No receiver ID provided",
+        receiver
+      );
       return false;
     }
-    
+
     if (!message || !message.trim()) {
       console.error("Cannot send socket message: Empty message");
       return false;
     }
-    
+
     // Prevent duplicate messages
     const messageKey = `${this.userId}_${receiverId}_${message}`;
     const now = Date.now();
-    
+
     // Check if this exact message was sent in the last 2 seconds
     if (this.recentMessages.has(messageKey)) {
       const lastSent = this.recentMessages.get(messageKey);
@@ -134,17 +138,17 @@ class APIService {
         return true; // Return true to prevent API fallback
       }
     }
-    
+
     // Store this message timestamp
     this.recentMessages.set(messageKey, now);
-    
+
     // Clean up old messages (older than 10 seconds)
     for (const [key, timestamp] of this.recentMessages.entries()) {
       if (now - timestamp > 10000) {
         this.recentMessages.delete(key);
       }
     }
-    
+
     if (!this.socket) {
       console.error("Socket not initialized");
       if (this.userId) {
@@ -153,11 +157,11 @@ class APIService {
       }
       return false;
     }
-    
+
     if (!this.socket.connected) {
       console.error("Socket not connected. Attempting to reconnect...");
       this.socket.connect();
-      
+
       // If still not connected after reconnect attempt, return false
       if (!this.socket.connected) {
         return false;
@@ -165,12 +169,12 @@ class APIService {
     }
 
     console.log(`Sending message to ${receiverId}: ${message}`);
-    
+
     try {
       this.socket.emit("send_message", {
         senderId: this.userId,
         receiverId,
-        message
+        message,
       });
       return true;
     } catch (error) {
@@ -289,7 +293,7 @@ class APIService {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.message || "Registration failed");
       }
@@ -317,7 +321,7 @@ class APIService {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.message || "Login failed");
       }
@@ -325,7 +329,7 @@ class APIService {
       // Store token in localStorage
       if (data.token) {
         localStorage.setItem("token", data.token);
-        
+
         // Initialize socket connection if user ID is available
         if (data.user) {
           const userId = this.getUserId(data.user);
@@ -375,7 +379,7 @@ class APIService {
    */
   static async authenticatedRequest(endpoint, options = {}) {
     const token = this.getToken();
-    
+
     if (!token) {
       throw new Error("No authentication token found");
     }
@@ -383,8 +387,8 @@ class APIService {
     const defaultOptions = {
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     };
 
     const mergedOptions = {
@@ -392,28 +396,53 @@ class APIService {
       ...options,
       headers: {
         ...defaultOptions.headers,
-        ...(options.headers || {})
-      }
+        ...(options.headers || {}),
+      },
     };
 
     try {
-      console.log(`\n            \n            \n           ${options.method || 'GET'} ${BASE_URL}${endpoint}`);
+      console.log(
+        `Making ${options.method || "GET"} request to ${BASE_URL}${endpoint}`
+      );
+
       const response = await fetch(`${BASE_URL}${endpoint}`, mergedOptions);
-      
+
+      // Handle non-JSON responses
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await response.text();
+        console.error("Non-JSON response:", text);
+        throw new Error(
+          `Server returned non-JSON response: ${response.status} ${response.statusText}`
+        );
+      }
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         // Special case for 404 on online users - return empty array instead of throwing
-        if (endpoint === '/api/user/online' && response.status === 404) {
+        if (endpoint === "/api/user/online" && response.status === 404) {
           console.log("No online users found, returning empty array");
           return { online_users: [] };
         }
-        
+
+        // Handle authentication errors
+        if (response.status === 401) {
+          console.error("Authentication failed. Token may be expired.");
+          // Optionally clear the token
+          // localStorage.removeItem("token");
+          throw new Error("Authentication failed");
+        }
+
         throw new Error(data.message || "Request failed");
       }
 
       return data;
     } catch (error) {
+      console.error(
+        `Error making authenticated request to ${endpoint}:`,
+        error
+      );
       console.error("Error making authenticated request:", error);
       throw error;
     }
@@ -426,16 +455,19 @@ class APIService {
    */
   static async requestPasswordReset(email) {
     try {
-      const response = await fetch(`${BASE_URL}/api/auth/requestResetPassword`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
+      const response = await fetch(
+        `${BASE_URL}/api/auth/requestResetPassword`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email }),
+        }
+      );
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.message || "Password reset request failed");
       }
@@ -463,7 +495,7 @@ class APIService {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.message || "Password reset failed");
       }
@@ -480,7 +512,7 @@ class APIService {
    * @returns {Promise<Object>} List of friends
    */
   static async getAllFriends() {
-    return this.authenticatedRequest('/api/user/friends');
+    return this.authenticatedRequest("/api/user/friends");
   }
 
   /**
@@ -488,7 +520,7 @@ class APIService {
    * @returns {Promise<Object>} List of friend requests
    */
   static async getAllFriendRequests() {
-    return this.authenticatedRequest('/api/user/friend/requests');
+    return this.authenticatedRequest("/api/user/friend/requests");
   }
 
   /**
@@ -498,16 +530,17 @@ class APIService {
    */
   static async sendFriendRequest(friend) {
     // Get friend ID consistently
-    const friendId = typeof friend === 'object' ? this.getUserId(friend) : friend;
-    
+    const friendId =
+      typeof friend === "object" ? this.getUserId(friend) : friend;
+
     if (!friendId) {
       console.error("Cannot send friend request: Invalid friend ID", friend);
       throw new Error("Invalid friend ID");
     }
-    
-    return this.authenticatedRequest('/api/user/friend/request', {
-      method: 'POST',
-      body: JSON.stringify({ friendId })
+
+    return this.authenticatedRequest("/api/user/friend/request", {
+      method: "POST",
+      body: JSON.stringify({ friendId }),
     });
   }
 
@@ -519,16 +552,20 @@ class APIService {
    */
   static async respondToFriendRequest(friend, response) {
     // Get friend ID consistently
-    const friendId = typeof friend === 'object' ? this.getUserId(friend) : friend;
-    
+    const friendId =
+      typeof friend === "object" ? this.getUserId(friend) : friend;
+
     if (!friendId) {
-      console.error("Cannot respond to friend request: Invalid friend ID", friend);
+      console.error(
+        "Cannot respond to friend request: Invalid friend ID",
+        friend
+      );
       throw new Error("Invalid friend ID");
     }
-    
-    return this.authenticatedRequest('/api/user/friend/accept', {
-      method: 'POST',
-      body: JSON.stringify({ friendId, response })
+
+    return this.authenticatedRequest("/api/user/friend/accept", {
+      method: "POST",
+      body: JSON.stringify({ friendId, response }),
     });
   }
 
@@ -538,7 +575,7 @@ class APIService {
    */
   static async getOnlineUsers() {
     try {
-      return await this.authenticatedRequest('/api/user/online');
+      return await this.authenticatedRequest("/api/user/online");
     } catch (error) {
       // If the error is "No online users found", return empty array
       if (error.message === "No online users found") {
@@ -556,13 +593,14 @@ class APIService {
    */
   static async getChatWithUser(otherUser) {
     // Get user ID consistently
-    const otherUserId = typeof otherUser === 'object' ? this.getUserId(otherUser) : otherUser;
-    
+    const otherUserId =
+      typeof otherUser === "object" ? this.getUserId(otherUser) : otherUser;
+
     if (!otherUserId) {
       console.error("Cannot get chat: Invalid user ID", otherUser);
       return [];
     }
-    
+
     return this.authenticatedRequest(`/api/user/chats/${otherUserId}`);
   }
 
@@ -571,7 +609,7 @@ class APIService {
    * @returns {Promise<Object>} List of contacts
    */
   static async getAllContacts() {
-    return this.authenticatedRequest('/api/user/contacts');
+    return this.authenticatedRequest("/api/user/contacts");
   }
 
   /**
@@ -579,7 +617,7 @@ class APIService {
    * @returns {Promise<Object>} User profile data
    */
   static async getUserProfile() {
-    return this.authenticatedRequest('/api/user/profile');
+    return this.authenticatedRequest("/api/user/profile");
   }
 
   /**
@@ -590,44 +628,97 @@ class APIService {
    */
   static async sendMessage(receiver, message) {
     // Get receiver ID consistently
-    const receiverId = typeof receiver === 'object' ? this.getUserId(receiver) : receiver;
-    
+    const receiverId =
+      typeof receiver === "object" ? this.getUserId(receiver) : receiver;
+
     if (!receiverId) {
-      console.error("Cannot send message: receiverId is undefined or invalid", receiver);
+      console.error(
+        "Cannot send message: receiverId is undefined or invalid",
+        receiver
+      );
       return { success: false, error: "Receiver ID is required" };
     }
-    
+
     if (!message || !message.trim()) {
       console.error("Cannot send message: message is empty");
       return { success: false, error: "Message content is required" };
     }
-    
+
     try {
       // Save to database via REST API but don't emit from server
-      const response = await this.authenticatedRequest('/api/user/message', {
-        method: 'POST',
-        body: JSON.stringify({ 
-          receiverId, 
+      const response = await this.authenticatedRequest("/api/user/message", {
+        method: "POST",
+        body: JSON.stringify({
+          receiverId,
           message,
-          skipEmit: true // Add this flag to tell the server not to emit
-        })
+          skipEmit: true, // Add this flag to tell the server not to emit
+        }),
       });
-      
+
       // After successful API call, emit via socket for real-time delivery
       this.sendSocketMessage(receiverId, message);
-      
+
       return response;
     } catch (error) {
       console.error("Error sending message via API:", error);
-      
+
       // Try socket as fallback if API fails
       const socketSent = this.sendSocketMessage(receiverId, message);
       if (socketSent) {
-        return { success: true, warning: "Message sent in real-time but may not be saved" };
+        return {
+          success: true,
+          warning: "Message sent in real-time but may not be saved",
+        };
       }
-      
+
       throw error;
     }
+  }
+
+  /**
+   * Create a video call with another user
+   * @param {string|Object} receiver - ID of the recipient or user object
+   * @returns {Promise<Object>} Meeting response with room information
+   */
+  static async createMeeting(receiver) {
+    // Get receiver ID consistently
+    const receiverId =
+      typeof receiver === "object" ? this.getUserId(receiver) : receiver;
+
+    if (!receiverId) {
+      console.error(
+        "Cannot create meeting: receiverId is undefined or invalid",
+        receiver
+      );
+      throw new Error("Receiver ID is required");
+    }
+
+    console.log("Creating meeting with receiverId:", receiverId);
+
+    try {
+      const response = await this.authenticatedRequest("/api/meeting", {
+        method: "POST",
+        body: JSON.stringify({ receiverId }),
+      });
+
+      console.log("Meeting creation API response:", response);
+      return response;
+    } catch (error) {
+      console.error("Error in createMeeting API call:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get a Twilio token for a video room
+   * @param {string} roomName - The name of the room to join
+   * @returns {Promise<Object>} Token response
+   */
+  static async getVideoToken(roomName) {
+    return this.authenticatedRequest("/api/video/token", {
+      method: "POST",
+      body: JSON.stringify({ roomName }),
+    });
   }
 }
 

@@ -2,6 +2,7 @@
 const BASE_URL = "https://preppartner-backend.onrender.com";
 import { io } from "socket.io-client";
 
+
 /**
  * Service class to handle all API communications with the backend
  */

@@ -49,7 +49,7 @@ if (typeof window !== "undefined") {
       console.log("Prevented error from onpage-dialog.preload.js");
     }
   });
-  
+
   // Define browser as window to prevent the error
   if (typeof window.browser === "undefined") {
     window.browser = window;
@@ -118,10 +118,10 @@ const Friends = () => {
       fetchFriends();
       fetchFriendRequests();
       fetchOnlineUsers();
-      
+
       // Set up interval to refresh online users
       const onlineInterval = setInterval(fetchOnlineUsers, 30000);
-      
+
       return () => clearInterval(onlineInterval);
     }
   }, [isAuthenticated]);
@@ -130,7 +130,7 @@ const Friends = () => {
   useEffect(() => {
     // Track if the component is mounted to prevent state updates after unmount
     let isMounted = true;
-    
+
     const initializeUserAndSocket = async () => {
       if (isAuthenticated()) {
         try {
@@ -142,7 +142,7 @@ const Friends = () => {
               const userId = getUserId(profileData.user);
               if (userId) {
                 console.log(`Initializing socket with user ID: ${userId}`);
-                
+
                 // Disconnect any existing socket first
                 if (socketRef.current) {
                   console.log(
@@ -150,7 +150,7 @@ const Friends = () => {
                   );
                   socketRef.current.off("receive_message");
                 }
-                
+
                 socketRef.current = APIService.initializeSocket(userId);
 
                 if (socketRef.current) {
@@ -174,7 +174,7 @@ const Friends = () => {
           } else {
             const userId = getUserId(user);
             console.log(`Using existing user ID for socket: ${userId}`);
-            
+
             // Disconnect any existing socket first
             if (socketRef.current) {
               console.log(
@@ -182,7 +182,7 @@ const Friends = () => {
               );
               socketRef.current.off("receive_message");
             }
-            
+
             socketRef.current = APIService.initializeSocket(userId);
 
             if (socketRef.current) {
@@ -198,63 +198,63 @@ const Friends = () => {
               });
             }
           }
-          
+
           // Set up socket message listener - IMPORTANT: Only set up once
           if (socketRef.current && isMounted) {
             // First, remove any existing listeners to prevent duplicates
             socketRef.current.off("receive_message");
-            
+
             console.log("Setting up socket message listener");
-            
+
             // Track received messages to prevent duplicates
             const receivedMessages = new Set();
-            
+
             // Add the new listener with the provided format
             socketRef.current.on(
               "receive_message",
               ({ senderId, message, isVideoCall, roomName, roomId }) => {
-              if (!isMounted) return;
-              
+                if (!isMounted) return;
+
                 console.log(`New message from ${senderId}:`, {
                   message,
                   isVideoCall,
                   roomName,
                   roomId,
                 });
-              
-              // Create a unique message identifier
+
+                // Create a unique message identifier
                 const messageKey = `${senderId}_${message.substring(
                   0,
                   20
                 )}_${Date.now()}`;
-              
-              // Check if we've already processed this message recently
-              if (receivedMessages.has(messageKey)) {
-                console.log("Ignoring duplicate incoming message");
-                return;
-              }
-              
-              // Add to received messages set
-              receivedMessages.add(messageKey);
-              
-              // Find the sender in friends list
+
+                // Check if we've already processed this message recently
+                if (receivedMessages.has(messageKey)) {
+                  console.log("Ignoring duplicate incoming message");
+                  return;
+                }
+
+                // Add to received messages set
+                receivedMessages.add(messageKey);
+
+                // Find the sender in friends list
                 let sender = myFriends.find(
                   (friend) => getUserId(friend) === senderId
                 );
-              
-              if (!sender) {
+
+                if (!sender) {
                   console.log(
                     `Sender not found in current friends list, fetching updated list`
                   );
                   APIService.getAllFriends()
                     .then((response) => {
-                  if (response && response.friends) {
-                    setMyFriends(response.friends);
+                      if (response && response.friends) {
+                        setMyFriends(response.friends);
                         sender = response.friends.find(
                           (friend) => getUserId(friend) === senderId
                         );
-                    
-                    if (sender) {
+
+                        if (sender) {
                           console.log(
                             `Found sender in updated list: ${sender.name}`
                           );
@@ -266,7 +266,7 @@ const Friends = () => {
                             roomName,
                             roomId
                           );
-                    } else {
+                        } else {
                           console.log(
                             `Sender still not found after refresh: ${senderId}`
                           );
@@ -278,9 +278,9 @@ const Friends = () => {
                         "Error fetching updated friends list:",
                         err
                       );
-                });
-              } else {
-                console.log(`Found sender: ${sender.name}`);
+                    });
+                } else {
+                  console.log(`Found sender: ${sender.name}`);
                   addMessageToState(
                     senderId,
                     message,
@@ -327,7 +327,7 @@ const Friends = () => {
       };
 
       console.log("Adding message to state:", newMessage);
-      
+
       // Update UI instantly
       setMessages((prev) => {
         const existingMessages = prev[senderId] || [];
@@ -336,7 +336,7 @@ const Friends = () => {
           [senderId]: [...existingMessages, newMessage],
         };
       });
-      
+
       // Show notification if chat is not open with this user
       if (!activeChatUser || getUserId(activeChatUser) !== senderId) {
         toast({
@@ -355,7 +355,7 @@ const Friends = () => {
 
     // Only initialize once when the component mounts
     initializeUserAndSocket();
-    
+
     // Clean up socket connection on unmount
     return () => {
       isMounted = false;
@@ -411,10 +411,10 @@ const Friends = () => {
         }
       }
     };
-    
+
     // Check connection every 30 seconds
     const connectionInterval = setInterval(checkSocketConnection, 30000);
-    
+
     return () => clearInterval(connectionInterval);
   }, [isAuthenticated, user]);
 
@@ -441,15 +441,15 @@ const Friends = () => {
       setLoading((prev) => ({ ...prev, requests: true }));
       const response = await APIService.getAllFriendRequests();
       console.log("Friend Requests Response:", response);
-      
+
       // Make sure we handle different possible response structures
       const requests = response.friend_requests || [];
       console.log("Processed Friend Requests:", requests);
-      
+
       // Ensure each request has the expected structure
       const validRequests = requests.filter((req) => req && req.userId);
       console.log("Valid Requests:", validRequests);
-      
+
       setFriendRequests(validRequests);
     } catch (err) {
       console.error("Error fetching friend requests:", err);
@@ -482,11 +482,11 @@ const Friends = () => {
       console.error("Cannot fetch chat messages: No user ID provided");
       return;
     }
-    
+
     try {
       setLoading((prev) => ({ ...prev, chat: true }));
       const chatMessages = await APIService.getChatWithUser(userId);
-      
+
       // Format messages for our UI
       const formattedMessages = chatMessages.map((msg, index) => ({
         id: index,
@@ -495,7 +495,7 @@ const Friends = () => {
         timestamp: msg.createdAt,
         seen: msg.seen,
       }));
-      
+
       setMessages((prev) => ({
         ...prev,
         [userId]: formattedMessages,
@@ -537,7 +537,7 @@ const Friends = () => {
       });
       return;
     }
-    
+
     const userId = getUserId(user);
     if (!userId) {
       console.error("Cannot open chat: Invalid user object", user);
@@ -548,15 +548,15 @@ const Friends = () => {
       });
       return;
     }
-    
+
     // Create a normalized user object with consistent _id field
     const normalizedUser = {
       ...user,
       _id: userId, // Ensure _id is always set
     };
-    
+
     const isFriend = myFriends.some((friend) => getUserId(friend) === userId);
-    
+
     if (!isFriend) {
       setSelectedUser(normalizedUser);
       setRequestDialogOpen(true);
@@ -575,7 +575,7 @@ const Friends = () => {
   // Modify the sendMessage function
   const sendMessage = async () => {
     if (!message.trim()) return;
-    
+
     if (!activeChatUser) {
       console.error("Cannot send message: No active chat user", activeChatUser);
       toast({
@@ -585,7 +585,7 @@ const Friends = () => {
       });
       return;
     }
-    
+
     const receiverId = getUserId(activeChatUser);
     if (!receiverId) {
       console.error("Cannot send message: Missing user ID", activeChatUser);
@@ -596,22 +596,22 @@ const Friends = () => {
       });
       return;
     }
-    
+
     const now = Date.now();
     const messageText = message.trim();
     const messageKey = `${receiverId}_${messageText}`;
-    
+
     if (
       lastSentMessage.current &&
-        lastSentMessage.current.key === messageKey && 
+      lastSentMessage.current.key === messageKey &&
       now - lastSentMessage.current.time < 2000
     ) {
       console.log("Preventing duplicate message send");
       return;
     }
-    
+
     console.log(`Sending message to ${activeChatUser.name} (${receiverId})`);
-    
+
     if (!socketRef.current || !socketRef.current.connected) {
       console.log("Reconnecting socket before sending message...");
       if (user && getUserId(user)) {
@@ -620,9 +620,9 @@ const Friends = () => {
           socketRef.current.off("receive_message");
         }
         socketRef.current = APIService.initializeSocket(userId);
-        
+
         await new Promise((resolve) => setTimeout(resolve, 500));
-        
+
         if (!socketRef.current || !socketRef.current.connected) {
           console.error("Failed to reconnect socket");
           toast({
@@ -637,14 +637,14 @@ const Friends = () => {
         return;
       }
     }
-    
+
     const newMessage = {
       id: now,
       sender: "me",
       text: messageText,
       timestamp: new Date().toISOString(),
     };
-    
+
     setMessages((prev) => {
       const existingMessages = prev[receiverId] || [];
       return {
@@ -652,16 +652,16 @@ const Friends = () => {
         [receiverId]: [...existingMessages, newMessage],
       };
     });
-    
+
     lastSentMessage.current = {
       key: messageKey,
       time: now,
     };
-    
+
     setMessage("");
     // Set auto-scroll after sending a message
     setAutoScroll(true);
-    
+
     try {
       console.log(
         `Calling APIService.sendMessage with receiverId: ${receiverId}`
@@ -683,7 +683,7 @@ const Friends = () => {
       console.error("Cannot send friend request: User is null or undefined");
       return;
     }
-    
+
     const userId = getUserId(user);
     if (!userId) {
       console.error("Cannot send friend request: User has no ID", user);
@@ -694,18 +694,18 @@ const Friends = () => {
       });
       return;
     }
-    
+
     try {
       await APIService.sendFriendRequest(userId);
       toast({
         title: "Success",
         description: `Friend request sent to ${user.name}`,
       });
-      
+
       // Update UI to reflect the pending request
       // Refresh friend requests list
       fetchFriendRequests();
-      
+
       // Remove user from global list
       setGlobalUsers((prev) => prev.filter((u) => getUserId(u) !== userId));
     } catch (err) {
@@ -723,7 +723,7 @@ const Friends = () => {
       console.error("Cannot respond to friend request: No user ID provided");
       return;
     }
-    
+
     try {
       console.log(
         "Responding to request from user:",
@@ -731,28 +731,28 @@ const Friends = () => {
         "with response:",
         response
       );
-      
+
       await APIService.respondToFriendRequest(userId, response);
-      
+
       toast({
         title: "Success",
         description:
           response === "yes"
-          ? "Friend request accepted" 
-          : "Friend request rejected",
+            ? "Friend request accepted"
+            : "Friend request rejected",
       });
-      
+
       // First update the UI to remove the request
       setFriendRequests((prev) =>
         prev.filter((request) => {
           const requestUserId =
             typeof request.userId === "object"
-            ? getUserId(request.userId) 
-            : request.userId;
+              ? getUserId(request.userId)
+              : request.userId;
           return requestUserId !== userId;
         })
       );
-      
+
       // Then refresh the lists after a short delay to allow backend to process
       setTimeout(() => {
         fetchFriendRequests();
@@ -791,7 +791,7 @@ const Friends = () => {
 
   // Update FriendCard component to use getUserId
   const FriendCard = ({ friend, type }) => (
-    <div 
+    <div
       className={`p-4 rounded-lg transition-all duration-300 cursor-pointer
         ${
           activeChatUser && getUserId(activeChatUser) === getUserId(friend)
@@ -823,8 +823,8 @@ const Friends = () => {
           </p>
         </div>
         {type === "new" && (
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
@@ -846,11 +846,11 @@ const Friends = () => {
     // Get user ID consistently
     const userId =
       typeof request.userId === "object"
-      ? getUserId(request.userId) 
-      : request.userId;
-      
+        ? getUserId(request.userId)
+        : request.userId;
+
     const userName = request.name;
-    
+
     return (
       <div className="p-4 rounded-lg border mb-2">
         <div className="flex items-center space-x-3">
@@ -869,15 +869,15 @@ const Friends = () => {
           </div>
           {request.type === "received" && (
             <div className="flex space-x-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={() => respondToFriendRequest(userId, "no")}
                 className="text-xs"
               >
                 Decline
               </Button>
-              <Button 
+              <Button
                 size="sm"
                 onClick={() => respondToFriendRequest(userId, "yes")}
                 className="text-xs"
@@ -897,7 +897,7 @@ const Friends = () => {
     if (loading.friends) {
       return <div className="text-center py-8">Loading friends...</div>;
     }
-    
+
     if (filteredMyFriends.length === 0) {
       return (
         <div className="text-center py-8 text-muted">
@@ -907,18 +907,18 @@ const Friends = () => {
         </div>
       );
     }
-    
+
     return filteredMyFriends.map((friend) => (
       <FriendCard key={getUserId(friend)} friend={friend} type="friend" />
     ));
   };
-  
+
   // Update renderGlobalUsersList to use getUserId for keys
   const renderGlobalUsersList = () => {
     if (loading.online) {
       return <div className="text-center py-8">Loading online users...</div>;
     }
-    
+
     if (filteredGlobalUsers.length === 0) {
       return (
         <div className="text-center py-8 text-muted">
@@ -927,7 +927,7 @@ const Friends = () => {
         </div>
       );
     }
-    
+
     return filteredGlobalUsers.map((user) => (
       <FriendCard key={getUserId(user)} friend={user} type="new" />
     ));
@@ -938,7 +938,7 @@ const Friends = () => {
     if (loading.requests) {
       return <div className="text-center py-8">Loading requests...</div>;
     }
-    
+
     if (friendRequests.length === 0) {
       return (
         <div className="text-center py-8 text-muted">
@@ -947,7 +947,7 @@ const Friends = () => {
         </div>
       );
     }
-    
+
     return (
       <div>
         {friendRequests.filter((r) => r.type === "received").length > 0 && (
@@ -960,13 +960,13 @@ const Friends = () => {
               .map((request) => {
                 const requestId =
                   typeof request.userId === "object"
-                  ? getUserId(request.userId) 
-                  : request.userId;
+                    ? getUserId(request.userId)
+                    : request.userId;
                 return <RequestCard key={requestId} request={request} />;
               })}
           </div>
         )}
-        
+
         {friendRequests.filter((r) => r.type === "sent").length > 0 && (
           <div>
             <h3 className="font-medium text-sm text-muted mb-2 px-2">
@@ -977,8 +977,8 @@ const Friends = () => {
               .map((request) => {
                 const requestId =
                   typeof request.userId === "object"
-                  ? getUserId(request.userId) 
-                  : request.userId;
+                    ? getUserId(request.userId)
+                    : request.userId;
                 return <RequestCard key={requestId} request={request} />;
               })}
           </div>
@@ -1302,7 +1302,7 @@ const Friends = () => {
                 />
               </div>
             </div>
-            
+
             <Tabs
               defaultValue="friends"
               value={activeTab}
@@ -1343,16 +1343,16 @@ const Friends = () => {
                   </TabsTrigger>
                 </TabsList>
               </div>
-              
+
               <div className="flex-1 overflow-y-auto p-2">
                 <TabsContent value="friends" className="space-y-2 mt-0">
                   {renderFriendsList()}
                 </TabsContent>
-                
+
                 <TabsContent value="requests" className="mt-0">
                   {renderFriendRequests()}
                 </TabsContent>
-                
+
                 <TabsContent value="global" className="space-y-2 mt-0">
                   {renderGlobalUsersList()}
                 </TabsContent>
@@ -1399,11 +1399,11 @@ const Friends = () => {
                         <span className="hidden sm:inline">Video Call</span>
                       </Button>
                     )}
-                  {isMobile && (
-                    <Button variant="ghost" size="sm" onClick={closeChat}>
-                      ✕
-                    </Button>
-                  )}
+                    {isMobile && (
+                      <Button variant="ghost" size="sm" onClick={closeChat}>
+                        ✕
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -1498,15 +1498,15 @@ const Friends = () => {
                         height: "calc(100% - 130px)",
                       }} /* Fixed height accounting for header and input area */
                     >
-                  {loading.chat ? (
+                      {loading.chat ? (
                         <div className="text-center py-8">
                           Loading messages...
                         </div>
-                  ) : messages[activeChatUser._id]?.length > 0 ? (
-                    <>
+                      ) : messages[activeChatUser._id]?.length > 0 ? (
+                        <>
                           {messages[activeChatUser._id].map((msg, index) => (
-                        <div 
-                          key={msg.id} 
+                            <div
+                              key={msg.id}
                               ref={
                                 index ===
                                 messages[activeChatUser._id].length - 1
@@ -1518,9 +1518,9 @@ const Friends = () => {
                                   ? "justify-end"
                                   : "justify-start"
                               }`}
-                        >
-                          <div 
-                            className={`max-w-[80%] p-3 rounded-lg ${
+                            >
+                              <div
+                                className={`max-w-[80%] p-3 rounded-lg ${
                                   msg.sender === "me"
                                     ? "bg-primary text-primary-foreground rounded-tr-none"
                                     : "bg-secondary text-secondary-foreground rounded-tl-none"
@@ -1550,9 +1550,9 @@ const Friends = () => {
                                     </Button>
                                   </div>
                                 ) : (
-                            <p>{msg.text}</p>
+                                  <p>{msg.text}</p>
                                 )}
-                            <p className="text-xs opacity-70 mt-1">
+                                <p className="text-xs opacity-70 mt-1">
                                   {new Date(msg.timestamp).toLocaleTimeString(
                                     [],
                                     {
@@ -1560,44 +1560,44 @@ const Friends = () => {
                                       minute: "2-digit",
                                     }
                                   )}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </>
-                  ) : (
-                    <div className="text-center py-8 text-muted">
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      ) : (
+                        <div className="text-center py-8 text-muted">
                           <MessageSquare
                             size={48}
                             className="mx-auto mb-2 opacity-50"
                           />
-                      <p>No messages yet</p>
+                          <p>No messages yet</p>
                           <p className="text-sm">
                             Send a message to start the conversation
                           </p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
 
                     {/* Message input - fixed height */}
                     <div className="p-4 border-t bg-white">
-                  <div className="flex space-x-2">
-                    <Input
-                      type="text"
-                      placeholder="Type a message..."
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
+                      <div className="flex space-x-2">
+                        <Input
+                          type="text"
+                          placeholder="Type a message..."
+                          value={message}
+                          onChange={(e) => setMessage(e.target.value)}
                           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                      className="flex-1"
-                    />
+                          className="flex-1"
+                        />
                         <Button
                           onClick={sendMessage}
                           className="bg-primary hover:bg-primary/90"
                         >
-                      <Send size={18} />
-                    </Button>
-                  </div>
-                </div>
+                          <Send size={18} />
+                        </Button>
+                      </div>
+                    </div>
                   </>
                 )}
               </>
@@ -1692,4 +1692,4 @@ chatStyles.innerHTML = `
 `;
 document.head.appendChild(chatStyles);
 
-export default Friends; 
+export default Friends;

@@ -1,6 +1,5 @@
 // Base configuration for API requests
-const BASE_URL = "https://preppartner-backend.onrender.com";
-
+const BASE_URL = "http://localhost:3000";
 import { io } from "socket.io-client";
 
 /**

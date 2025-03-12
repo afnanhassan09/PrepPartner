@@ -304,7 +304,17 @@ const Friends = () => {
       }
     };
 
-    // Helper function to add message to state
+    // Add a dedicated scroll to bottom function for reuse
+    const scrollToBottom = () => {
+      if (chatContainerRef.current) {
+        setTimeout(() => {
+          chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+          console.log("Scrolled to bottom");
+        }, 100);
+      }
+    };
+
+    // Helper function to add message to state - update to include scrolling
     const addMessageToState = (
       senderId,
       messageText,
@@ -339,6 +349,11 @@ const Friends = () => {
           [senderId]: [...existingMessages, newMessage],
         };
       });
+
+      // If this chat is currently open, scroll to bottom
+      if (activeChatUser && getUserId(activeChatUser) === senderId) {
+        scrollToBottom();
+      }
 
       // Show notification if chat is not open with this user
       if (!activeChatUser || getUserId(activeChatUser) !== senderId) {
@@ -387,10 +402,8 @@ const Friends = () => {
   useEffect(() => {
     // This will scroll to the bottom when messages state changes
     // (like when receiving a new message)
-    if (activeChatUser && chatContainerRef.current && messages[getUserId(activeChatUser)]?.length > 0) {
-      setTimeout(() => {
-        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-      }, 100);
+    if (activeChatUser && messages[getUserId(activeChatUser)]?.length > 0) {
+      scrollToBottom();
     }
   }, [messages, activeChatUser]);
 
@@ -665,12 +678,8 @@ const Friends = () => {
 
     setMessage("");
     
-    // Use a timeout to ensure DOM is updated before scrolling
-    setTimeout(() => {
-      if (chatContainerRef.current) {
-        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-      }
-    }, 100);
+    // Use the dedicated scroll function instead
+    scrollToBottom();
 
     try {
       console.log(
@@ -1543,111 +1552,107 @@ const Friends = () => {
                       style={{
                         height: "calc(100% - 130px)",
                         maxHeight: "calc(100vh - 230px)",
-                        overflowY: "auto",
-                        display: "flex",
-                        flexDirection: "column"
+                        overflowY: "auto"
                       }}
                     >
-                      <div className="flex-grow flex flex-col space-y-4">
-                        {loading.chat ? (
-                          <div className="text-center py-8">
-                            Loading messages...
-                          </div>
-                        ) : messages[activeChatUser._id]?.length > 0 ? (
-                          <>
-                            {messages[activeChatUser._id].map((msg, index) => (
+                      {loading.chat ? (
+                        <div className="text-center py-8">
+                          Loading messages...
+                        </div>
+                      ) : messages[activeChatUser._id]?.length > 0 ? (
+                        <>
+                          {messages[activeChatUser._id].map((msg, index) => (
+                            <div
+                              key={msg.id}
+                              ref={
+                                index ===
+                                messages[activeChatUser._id].length - 1
+                                  ? lastMessageRef
+                                  : null
+                              }
+                              className={`flex ${
+                                msg.sender === "me"
+                                  ? "justify-end"
+                                  : "justify-start"
+                              }`}
+                            >
                               <div
-                                key={msg.id}
-                                ref={
-                                  index ===
-                                  messages[activeChatUser._id].length - 1
-                                    ? lastMessageRef
-                                    : null
-                                }
-                                className={`flex ${
+                                className={`max-w-[80%] p-3 rounded-lg ${
                                   msg.sender === "me"
-                                    ? "justify-end"
-                                    : "justify-start"
+                                    ? "bg-primary text-primary-foreground rounded-tr-none"
+                                    : "bg-secondary text-secondary-foreground rounded-tl-none"
                                 }`}
                               >
-                                <div
-                                  className={`max-w-[80%] p-3 rounded-lg ${
-                                    msg.sender === "me"
-                                      ? "bg-primary text-primary-foreground rounded-tr-none"
-                                      : "bg-secondary text-secondary-foreground rounded-tl-none"
-                                  }`}
-                                >
-                                  {msg.isVideoCall ||
-                                  msg.text.includes("Video call invitation:") ? (
-                                    <div className="space-y-2">
-                                      <p className="font-medium">
-                                        Video Call Invitation
-                                      </p>
-                                      <Button
-                                        variant="secondary"
-                                        size="sm"
-                                        onClick={() => {
-                                          const roomName =
-                                            msg.roomName ||
-                                            msg.text.split(
-                                              "Video call invitation: "
-                                            )[1];
-                                          joinVideoCall(roomName);
-                                        }}
-                                        className="w-full flex items-center justify-center gap-2"
-                                      >
-                                        <PhoneCall size={16} />
-                                        Join Call
-                                      </Button>
-                                    </div>
-                                  ) : (
-                                    <p>{msg.text}</p>
+                                {msg.isVideoCall ||
+                                msg.text.includes("Video call invitation:") ? (
+                                  <div className="space-y-2">
+                                    <p className="font-medium">
+                                      Video Call Invitation
+                                    </p>
+                                    <Button
+                                      variant="secondary"
+                                      size="sm"
+                                      onClick={() => {
+                                        const roomName =
+                                          msg.roomName ||
+                                          msg.text.split(
+                                            "Video call invitation: "
+                                          )[1];
+                                        joinVideoCall(roomName);
+                                      }}
+                                      className="w-full flex items-center justify-center gap-2"
+                                    >
+                                      <PhoneCall size={16} />
+                                      Join Call
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <p>{msg.text}</p>
+                                )}
+                                <p className="text-xs opacity-70 mt-1">
+                                  {new Date(msg.timestamp).toLocaleTimeString(
+                                    [],
+                                    {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    }
                                   )}
-                                  <p className="text-xs opacity-70 mt-1">
-                                    {new Date(msg.timestamp).toLocaleTimeString(
-                                      [],
-                                      {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                      }
-                                    )}
-                                  </p>
-                                </div>
+                                </p>
                               </div>
-                            ))}
-                          </>
-                        ) : (
-                          <div className="text-center py-8 text-muted">
-                            <MessageSquare
-                              size={48}
-                              className="mx-auto mb-2 opacity-50"
-                            />
-                            <p>No messages yet</p>
-                            <p className="text-sm">
-                              Send a message to start the conversation
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Message input - fixed height */}
-                      <div className="p-4 border-t bg-white">
-                        <div className="flex space-x-2">
-                          <Input
-                            type="text"
-                            placeholder="Type a message..."
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                            className="flex-1"
+                            </div>
+                          ))}
+                        </>
+                      ) : (
+                        <div className="text-center py-8 text-muted">
+                          <MessageSquare
+                            size={48}
+                            className="mx-auto mb-2 opacity-50"
                           />
-                          <Button
-                            onClick={sendMessage}
-                            className="bg-primary hover:bg-primary/90"
-                          >
-                            <Send size={18} />
-                          </Button>
+                          <p>No messages yet</p>
+                          <p className="text-sm">
+                            Send a message to start the conversation
+                          </p>
                         </div>
+                      )}
+                    </div>
+
+                    {/* Message input - fixed height */}
+                    <div className="p-4 border-t bg-white">
+                      <div className="flex space-x-2">
+                        <Input
+                          type="text"
+                          placeholder="Type a message..."
+                          value={message}
+                          onChange={(e) => setMessage(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                          className="flex-1"
+                        />
+                        <Button
+                          onClick={sendMessage}
+                          className="bg-primary hover:bg-primary/90"
+                        >
+                          <Send size={18} />
+                        </Button>
                       </div>
                     </div>
                   </>
@@ -1737,20 +1742,22 @@ chatStyles.innerHTML = `
     overflow: hidden;
   }
   
-  /* Ensure that the chat container scrolls properly */
-  .flex-1.overflow-y-auto {
+  /* Better chat container scrolling */
+  .chat-messages-container {
     flex: 1 1 auto !important;
-    min-height: 0 !important; /* This is important for flex containers with overflow */
     overflow-y: auto !important;
+    scroll-behavior: smooth !important;
     display: flex !important;
     flex-direction: column !important;
+    gap: 1rem !important;
   }
   
-  /* Fix message container spacing */
-  [ref="chatContainerRef"] {
-    max-height: calc(100vh - 230px) !important;
-    height: calc(100% - 130px) !important;
+  /* Make sure the chat container is scrollable */
+  .flex-1.overflow-y-auto {
     overflow-y: auto !important;
+    height: calc(100vh - 260px) !important;
+    min-height: 200px !important;
+    max-height: calc(100vh - 230px) !important;
   }
   
   /* Ensure main container has proper layout */

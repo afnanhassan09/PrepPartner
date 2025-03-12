@@ -1178,16 +1178,32 @@ const Friends = () => {
       handleParticipantConnected(participant);
     });
 
-    // Handle participants leaving the room
-    room.on("participantDisconnected", (participant) => {
-      console.log("Participant disconnected:", participant.identity);
-      handleParticipantDisconnected(participant);
-    });
+    // Handle participants leaving the room with the new handler
+    room.on("participantDisconnected", handleParticipantDisconnected);
 
-    // Handle disconnection
-    room.on("disconnected", () => {
-      console.log("Disconnected from room");
-      endCall();
+    // Handle room disconnection events
+    room.on("disconnected", (room, error) => {
+      console.log("Disconnected from room due to:", error || "user action");
+      cleanupVideoCall();
+    });
+    
+    // Add more error handlers
+    room.on("reconnecting", error => {
+      console.log("Reconnecting to room due to:", error);
+      toast({
+        title: "Connection Issue",
+        description: "Trying to reconnect to the call...",
+        duration: 3000,
+      });
+    });
+    
+    room.on("reconnected", () => {
+      console.log("Reconnected to room");
+      toast({
+        title: "Reconnected",
+        description: "You've been reconnected to the call",
+        duration: 3000,
+      });
     });
   };
 
@@ -1218,9 +1234,112 @@ const Friends = () => {
 
   // Handle a participant disconnecting from the room
   const handleParticipantDisconnected = (participant) => {
+    console.log("Participant disconnected:", participant.identity);
+    
+    // Update participants list
     setCallParticipants((prevParticipants) =>
       prevParticipants.filter((p) => p !== participant)
     );
+
+    // Force check if we should end the call - either when all participants leave
+    // or when we detect the remote participant left
+    const shouldEndCall = twilioRoom && (
+      twilioRoom.participants.size === 0 || 
+      // Check if the participant that left is the remote user (not us)
+      (participant.identity !== twilioRoom.localParticipant.identity)
+    );
+
+    if (shouldEndCall) {
+      console.log("Other participant left or room empty, ending call");
+      
+      // Show a toast notification
+      toast({
+        title: "Call Ended",
+        description: `${activeChatUser?.name || 'The other user'} has left the call`,
+        duration: 3000,
+      });
+      
+      // End the call and clean up completely
+      cleanupVideoCall();
+    }
+  };
+
+  // Create a separate cleanup function for video calls
+  const cleanupVideoCall = () => {
+    console.log("Cleaning up video call");
+    
+    // Stop and detach all tracks
+    if (localVideoRef.current && localVideoRef.current.srcObject) {
+      const tracks = localVideoRef.current.srcObject.getTracks();
+      tracks.forEach(track => {
+        console.log("Stopping local track:", track.kind);
+        track.stop();
+        track.enabled = false;
+      });
+      localVideoRef.current.srcObject = null;
+    }
+    
+    if (remoteVideoRef.current && remoteVideoRef.current.srcObject) {
+      const tracks = remoteVideoRef.current.srcObject.getTracks();
+      tracks.forEach(track => {
+        console.log("Stopping remote track:", track.kind);
+        track.stop();
+        track.enabled = false;
+      });
+      remoteVideoRef.current.srcObject = null;
+    }
+
+    // Disconnect from the room if still connected
+    if (twilioRoom) {
+      try {
+        // Clean up local participant tracks
+        if (twilioRoom.localParticipant) {
+          twilioRoom.localParticipant.tracks.forEach(publication => {
+            if (publication.track) {
+              console.log("Stopping publication track:", publication.track.kind);
+              publication.track.stop();
+              publication.track.disable();
+              try {
+                publication.unpublish();
+              } catch (e) {
+                console.log("Error unpublishing track:", e);
+              }
+            }
+          });
+        }
+        
+        // Disconnect from Twilio room
+        twilioRoom.disconnect();
+      } catch (e) {
+        console.error("Error disconnecting from Twilio room:", e);
+      }
+    }
+
+    // Force release camera and microphone permissions
+    navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+      .then(stream => {
+        stream.getTracks().forEach(track => {
+          console.log("Stopping remaining track:", track.kind);
+          track.stop();
+          track.enabled = false;
+        });
+      })
+      .catch(err => console.log('No additional media tracks to clean up'));
+
+    // Reset all video call related state
+    setTwilioRoom(null);
+    setActiveCall(null);
+    setCallToken(null);
+    setCallRoom(null);
+    setCallParticipants([]);
+    setIsMuted(false);
+    setIsVideoOff(false);
+    setShowExitConfirmation(false);
+
+    // Add a small delay before scrolling to the latest messages
+    setTimeout(() => {
+      scrollToBottom();
+    }, 100);
   };
 
   // Handle a new track from a participant
@@ -1275,64 +1394,7 @@ const Friends = () => {
   const endCall = () => {
     // If confirmation is already showing, actually end the call
     if (showExitConfirmation) {
-      if (twilioRoom) {
-        // Disconnect from Twilio room
-        twilioRoom.disconnect();
-
-        // Clean up video elements and stop their tracks
-        if (localVideoRef.current && localVideoRef.current.srcObject) {
-          const tracks = localVideoRef.current.srcObject.getTracks();
-          tracks.forEach(track => {
-            track.stop(); // Stop each track
-            track.enabled = false;
-          });
-          localVideoRef.current.srcObject = null;
-        }
-        if (remoteVideoRef.current && remoteVideoRef.current.srcObject) {
-          const tracks = remoteVideoRef.current.srcObject.getTracks();
-          tracks.forEach(track => {
-            track.stop(); // Stop each track
-            track.enabled = false;
-          });
-          remoteVideoRef.current.srcObject = null;
-        }
-
-        // Clean up local participant tracks
-        if (twilioRoom.localParticipant) {
-          twilioRoom.localParticipant.tracks.forEach(publication => {
-            if (publication.track) {
-              publication.track.stop();
-              publication.track.disable();
-              publication.unpublish();
-            }
-          });
-        }
-
-        // Clean up any remaining MediaStreamTracks
-        navigator.mediaDevices.getUserMedia({ audio: true, video: true })
-          .then(stream => {
-            stream.getTracks().forEach(track => {
-              track.stop();
-              track.enabled = false;
-            });
-          })
-          .catch(err => console.log('No additional media tracks to clean up'));
-      }
-
-      // Reset all video call related state
-      setTwilioRoom(null);
-      setActiveCall(null);
-      setCallToken(null);
-      setCallRoom(null);
-      setCallParticipants([]);
-      setIsMuted(false);
-      setIsVideoOff(false);
-      setShowExitConfirmation(false);
-
-      // Add a small delay before scrolling to the latest messages
-      setTimeout(() => {
-        scrollToBottom();
-      }, 100);
+      cleanupVideoCall();
     } else {
       // Show the confirmation dialog
       setShowExitConfirmation(true);
@@ -1458,24 +1520,26 @@ const Friends = () => {
                     <div className="absolute inset-0 bg-background/80 backdrop-blur-md"></div>
                     
                     <div className="relative h-full flex flex-col p-4 z-20">
-                      {/* Call info bar */}
-                      <div className="bg-black/40 text-white px-4 py-2 rounded-lg mb-4 flex justify-between items-center">
+                      {/* Move call info bar to the top of the page */}
+                      <div className="fixed top-[6rem] left-0 right-0 bg-black/40 text-white px-6 py-3 z-50 flex justify-between items-center shadow-lg">
                         <div className="flex items-center gap-2">
                           <Avatar className="h-8 w-8 border-2 border-white">
                             <AvatarFallback className="bg-primary text-primary-foreground">
                               {getInitials(activeChatUser.name)}
                             </AvatarFallback>
                           </Avatar>
-                          <span>Call with {activeChatUser.name}</span>
+                          <span className="font-medium">Call with {activeChatUser.name}</span>
                         </div>
-                        <div className="text-sm">
-                          {callParticipants.length > 0 ? "Connected" : "Connecting..."}
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm bg-green-500/20 px-3 py-1 rounded-full">
+                            {callParticipants.length > 0 ? "Connected" : "Connecting..."}
+                          </span>
                         </div>
                       </div>
                       
-                      <div className="flex-1 flex flex-col md:flex-row gap-4 justify-center items-center">
+                      <div className="flex-1 flex flex-col md:flex-row gap-4 justify-center items-center pt-20">
                         {/* Local video */}
-                        <div className="w-full md:w-1/2 h-48 md:h-[60vh] bg-gray-900 rounded-lg overflow-hidden relative shadow-xl">
+                        <div className="w-full md:w-1/2 h-48 md:h-[55vh] bg-gray-900 rounded-lg overflow-hidden relative shadow-xl">
                           <video
                             ref={localVideoRef}
                             autoPlay
@@ -1494,7 +1558,7 @@ const Friends = () => {
                         </div>
 
                         {/* Remote video */}
-                        <div className="w-full md:w-1/2 h-48 md:h-[60vh] bg-gray-900 rounded-lg overflow-hidden relative shadow-xl">
+                        <div className="w-full md:w-1/2 h-48 md:h-[55vh] bg-gray-900 rounded-lg overflow-hidden relative shadow-xl">
                           {callParticipants.length > 0 ? (
                             <>
                               <video

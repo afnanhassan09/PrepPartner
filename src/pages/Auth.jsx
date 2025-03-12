@@ -7,6 +7,8 @@ import { useToast } from '@/components/ui/use-toast';
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState(null);
+  const [messageType, setMessageType] = useState(null); // 'success' or 'error'
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -27,6 +29,8 @@ const Auth = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    // Clear any existing messages
+    setMessage(null);
     
     try {
       if (isLogin) {
@@ -35,11 +39,13 @@ const Auth = () => {
           email: formData.email,
           password: formData.password
         });
-        toast({
-          title: "Success!",
-          description: "You have been logged in successfully.",
-          variant: "success",
-        });
+        setMessage("You have been logged in successfully.");
+        setMessageType("success");
+        
+        // Redirect to home page after short delay
+        setTimeout(() => {
+          navigate('/');
+        }, 1500);
       } else {
         // Register
         await register({
@@ -47,25 +53,17 @@ const Auth = () => {
           email: formData.email,
           password: formData.password
         });
-        toast({
-          title: "Account created!",
-          description: "Your account has been created successfully. Please log in.",
-          variant: "success",
-        });
+        setMessage("Your account has been created successfully. Please log in.");
+        setMessageType("success");
+        
         // Switch to login after successful registration
         setIsLogin(true);
         setIsLoading(false);
         return;
       }
-      
-      // Redirect to home page after successful login
-      navigate('/');
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error.message || "Authentication failed",
-        variant: "destructive",
-      });
+      setMessage(error.message || "Authentication failed");
+      setMessageType("error");
     } finally {
       setIsLoading(false);
     }
@@ -159,6 +157,35 @@ const Auth = () => {
                   </>
                 )}
               </button>
+
+              {/* Message display area */}
+              {message && (
+                <div 
+                  className={`mt-4 p-3 rounded-lg text-sm animate-fade-up ${
+                    messageType === 'success' 
+                      ? 'bg-green-50 text-green-800 border border-green-200' 
+                      : 'bg-red-50 text-red-800 border border-red-200'
+                  }`}
+                >
+                  {messageType === 'success' && (
+                    <div className="flex items-center">
+                      <svg className="w-4 h-4 mr-2 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      {message}
+                    </div>
+                  )}
+                  
+                  {messageType === 'error' && (
+                    <div className="flex items-center">
+                      <svg className="w-4 h-4 mr-2 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                      {message}
+                    </div>
+                  )}
+                </div>
+              )}
             </form>
           </div>
         </div>

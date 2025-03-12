@@ -66,26 +66,10 @@
   }
 }
 
-@layer base {
-  * {
-    @apply border-[#E2E8F0];
-  }
-
-  body {
-    @apply bg-background text-black;
-  }
-}
 
 
-/* Hide scrollbar but keep functionality */
-.scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
 
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;  /* Chrome, Safari and Opera */
-}
+
 
 @keyframes float-in-left {
   from {
@@ -121,9 +105,7 @@
 }
 
 /* Add smooth scrolling to the whole page */
-html {
-  scroll-behavior: smooth;
-}
+
 
 /* Add perspective for 3D transforms */
 .perspective-container {

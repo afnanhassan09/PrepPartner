@@ -49,36 +49,38 @@ const VideoPlayer = ({
       className="relative w-full rounded-xl overflow-hidden shadow-xl bg-black flex"
       style={{ height: "calc(100vh * 0.7)" }}
     >
-      {/* AI Video - Left Half */}
-      <div className="w-1/2 h-full relative bg-black">
-        {/* Start Button Overlay */}
-        {showStartButton && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
-            <button
-              onClick={handleStartClick}
-              className="px-8 py-4 bg-teal text-white rounded-xl font-semibold 
+      {/* Left Half - Split into upper and lower sections with no gap */}
+      <div className="w-1/2 h-full flex flex-col bg-black">
+        {/* Upper Half - AI Video */}
+        <div className="w-full h-1/2 relative bg-black">
+          {/* Start Button Overlay */}
+          {showStartButton && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
+              <button
+                onClick={handleStartClick}
+                className="px-8 py-4 bg-teal text-white rounded-xl font-semibold 
                              hover:bg-teal-600 transition-all duration-200 
                              transform hover:scale-105 shadow-lg"
+              >
+                Start Interview
+              </button>
+            </div>
+          )}
+
+          {/* Countdown Timer */}
+          {isCountdownActive && timeLeft > 0 && (
+            <div
+              className="absolute top-4 left-4 z-10 bg-black/70 text-white 
+                                px-6 py-3 rounded-xl font-bold text-2xl animate-pulse"
             >
-              Start Interview
-            </button>
-          </div>
-        )}
+              {timeLeft}
+            </div>
+          )}
 
-        {/* Countdown Timer */}
-        {isCountdownActive && timeLeft > 0 && (
-          <div
-            className="absolute top-4 left-4 z-10 bg-black/70 text-white 
-                              px-6 py-3 rounded-xl font-bold text-2xl animate-pulse"
-          >
-            {timeLeft}
-          </div>
-        )}
-
-        {/* Interview Timer - Moved from right to left */}
-        {isInterviewTimerActive && (
-          <div
-            className={`absolute top-4 left-4 z-10 px-6 py-3 rounded-xl font-bold text-2xl
+          {/* Interview Timer */}
+          {isInterviewTimerActive && (
+            <div
+              className={`absolute top-4 left-4 z-10 px-6 py-3 rounded-xl font-bold text-2xl
                                 ${
                                   interviewTimeLeft <= 60
                                     ? "bg-red-500/70"
@@ -88,33 +90,31 @@ const VideoPlayer = ({
                                 ${
                                   interviewTimeLeft <= 30 ? "animate-pulse" : ""
                                 }`}
-          >
-            {formatTime(interviewTimeLeft)}
-          </div>
-        )}
+            >
+              {formatTime(interviewTimeLeft)}
+            </div>
+          )}
 
-        <video
-          ref={mainVideoRef}
-          className={`w-full h-full object-cover ${
-            isVideoTransitioning ? "opacity-0" : "opacity-100"
-          }`}
-          style={{
-            transition: "opacity 300ms ease-in-out",
-            backgroundColor: "black",
-          }}
-          src={currentVideo?.url || ""}
-          playsInline
-          disablePictureInPicture
-          controlsList="nodownload noplaybackrate"
-          onContextMenu={(e) => e.preventDefault()}
-          onEnded={handleVideoEnd}
-          preload="auto"
-        />
-      </div>
-
-      {/* Right Half - Split into upper and lower sections */}
-      <div className="w-1/2 h-full flex flex-col bg-black">
-        {/* Upper Half - Static Looping Video */}
+          <video
+            ref={mainVideoRef}
+            className={`w-full h-full object-cover ${
+              isVideoTransitioning ? "opacity-0" : "opacity-100"
+            }`}
+            style={{
+              transition: "opacity 300ms ease-in-out",
+              backgroundColor: "black",
+            }}
+            src={currentVideo?.url || ""}
+            playsInline
+            disablePictureInPicture
+            controlsList="nodownload noplaybackrate"
+            onContextMenu={(e) => e.preventDefault()}
+            onEnded={handleVideoEnd}
+            preload="auto"
+          />
+        </div>
+        
+        {/* Lower Half - Static Looping Video - No margin/padding */}
         <div className="w-full h-1/2 bg-black">
           <video
             autoPlay
@@ -126,18 +126,18 @@ const VideoPlayer = ({
             style={{ backgroundColor: "black" }}
           />
         </div>
-        
-        {/* Lower Half - Webcam */}
-        <div className="w-full h-1/2 bg-black">
-          <video
-            ref={webcamRef}
-            autoPlay
-            playsInline
-            muted
-            className="w-full h-full object-cover"
-            style={{ backgroundColor: "black" }}
-          />
-        </div>
+      </div>
+
+      {/* Right Half - Full Webcam - No margin/padding */}
+      <div className="w-1/2 h-full bg-black">
+        <video
+          ref={webcamRef}
+          autoPlay
+          playsInline
+          muted
+          className="w-full h-full object-cover"
+          style={{ backgroundColor: "black" }}
+        />
       </div>
 
       {/* Recording Timer */}

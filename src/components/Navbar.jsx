@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Menu, X, LogOut } from "lucide-react";
+import { Menu, X, LogOut, UserCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -63,13 +63,22 @@ const Navbar = () => {
             ))}
             <div className="flex items-center gap-4">
               {userIsLoggedIn ? (
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 text-gray-700 font-medium hover:text-primary transition-colors duration-300"
-                >
-                  <LogOut size={18} />
-                  <span>Logout</span>
-                </button>
+                <>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 text-gray-700 font-medium hover:text-primary transition-colors duration-300"
+                  >
+                    <LogOut size={18} />
+                    <span>Logout</span>
+                  </button>
+                  <Link
+                    to="/profile"
+                    className="flex items-center gap-2 text-gray-700 font-medium hover:text-primary transition-colors duration-300"
+                  >
+                    <UserCircle size={20} />
+                    <span className="sr-only md:not-sr-only">Profile</span>
+                  </Link>
+                </>
               ) : (
                 <>
                   <Link
@@ -117,13 +126,22 @@ const Navbar = () => {
                 </Link>
               ))}
               {userIsLoggedIn ? (
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 w-full py-2 text-gray-700 hover:text-primary font-medium"
-                >
-                  <LogOut size={18} />
-                  <span>Logout</span>
-                </button>
+                <>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 w-full py-2 text-gray-700 hover:text-primary font-medium"
+                  >
+                    <LogOut size={18} />
+                    <span>Logout</span>
+                  </button>
+                  <Link
+                    to="/profile"
+                    className="flex items-center gap-2 w-full py-2 text-gray-700 hover:text-primary font-medium"
+                  >
+                    <UserCircle size={18} />
+                    <span>Profile</span>
+                  </Link>
+                </>
               ) : (
                 <Link
                   to="/auth"

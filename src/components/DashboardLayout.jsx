@@ -11,9 +11,9 @@ const DashboardLayout = ({ children }) => {
   };
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
-      <div className="w-72 bg-background-secondary/50 border-r border-border/50">
+      <div className="w-72 bg-background-secondary/50 border-r border-border/50 overflow-y-auto">
         {/* Logo/Brand */}
         <div className="p-4 border-b border-border/50">
           <h1 className="text-2xl font-bold text-teal">Interview AI</h1>
@@ -67,7 +67,7 @@ const DashboardLayout = ({ children }) => {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col overflow-y-auto">
         {/* Top Navigation Bar */}
         <header className="h-16 border-b border-border/50 bg-background-secondary/50 px-6 flex items-center justify-between">
           {/* Page Title */}
@@ -90,7 +90,7 @@ const DashboardLayout = ({ children }) => {
 
             {/* Dropdown Menu */}
             {isUserMenuOpen && (
-              <div className="absolute right-0 mt-2 w-48 rounded-lg bg-background border border-border shadow-lg py-1">
+              <div className="absolute right-0 mt-2 w-48 rounded-lg bg-background border border-border shadow-lg py-1 z-50">
                 <button className="w-full text-left px-4 py-2 text-sm hover:bg-secondary transition-colors">Profile</button>
                 <button className="w-full text-left px-4 py-2 text-sm hover:bg-secondary transition-colors">Settings</button>
                 <div className="border-t border-border my-1"></div>
@@ -106,8 +106,8 @@ const DashboardLayout = ({ children }) => {
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-auto">
-          <div className="h-full">
+        <main className="flex-1 overflow-y-auto">
+          <div className="min-h-full">
             {children}
           </div>
         </main>

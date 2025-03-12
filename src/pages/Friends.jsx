@@ -105,6 +105,9 @@ const Friends = () => {
   const lastMessageRef = useRef(null);
   const isInitialLoad = useRef(true);
 
+  // Add this new state for the exit confirmation dialog
+  const [showExitConfirmation, setShowExitConfirmation] = useState(false);
+
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     handleResize();
@@ -815,11 +818,7 @@ const Friends = () => {
         <div className="flex-1 min-w-0">
           <h3 className="font-medium truncate">{friend.name}</h3>
           <p className="text-sm text-muted truncate">
-            {type === "new"
-              ? "Suggested Friend"
-              : friend.online
-              ? "Online"
-              : "Offline"}
+    
           </p>
         </div>
         {type === "new" && (
@@ -1248,17 +1247,29 @@ const Friends = () => {
 
   // End the call and clean up
   const endCall = () => {
-    if (twilioRoom) {
-      twilioRoom.disconnect();
-    }
+    // If confirmation is already showing, actually end the call
+    if (showExitConfirmation) {
+      if (twilioRoom) {
+        twilioRoom.disconnect();
+      }
 
-    setTwilioRoom(null);
-    setActiveCall(null);
-    setCallToken(null);
-    setCallRoom(null);
-    setCallParticipants([]);
-    setIsMuted(false);
-    setIsVideoOff(false);
+      setTwilioRoom(null);
+      setActiveCall(null);
+      setCallToken(null);
+      setCallRoom(null);
+      setCallParticipants([]);
+      setIsMuted(false);
+      setIsVideoOff(false);
+      setShowExitConfirmation(false);
+    } else {
+      // Otherwise just show the confirmation
+      setShowExitConfirmation(true);
+      
+      // Auto-hide the confirmation after 3 seconds if not acted upon
+      setTimeout(() => {
+        setShowExitConfirmation(false);
+      }, 3000);
+    }
   };
 
   if (!isAuthenticated()) {
@@ -1277,7 +1288,7 @@ const Friends = () => {
   }
 
   return (
-    <div className="h-[calc(100vh-5rem)] bg-background overflow-hidden">
+    <div className="h-[calc(100vh-5rem)] bg-background overflow-hidden friends-page-container">
       <div className="container h-full max-w-[1400px] mx-auto p-4">
         <div className="h-full rounded-xl border bg-white shadow-lg overflow-hidden flex">
           {/* Sidebar */}
@@ -1379,11 +1390,7 @@ const Friends = () => {
                     <div>
                       <h3 className="font-medium">{activeChatUser.name}</h3>
                       <p className="text-xs text-muted">
-                        {activeCall
-                          ? "In Call"
-                          : activeChatUser.online
-                          ? "Online"
-                          : "Offline"}
+                
                       </p>
                     </div>
                   </div>
@@ -1408,83 +1415,115 @@ const Friends = () => {
                 </div>
 
                 {activeCall ? (
-                  // Video call UI
-                  <div className="flex-1 flex flex-col overflow-hidden">
-                    <div className="flex-1 flex flex-col md:flex-row p-4 gap-4">
-                      {/* Local video */}
-                      <div className="w-full md:w-1/2 h-48 md:h-auto bg-gray-900 rounded-lg overflow-hidden relative">
-                        <video
-                          ref={localVideoRef}
-                          autoPlay
-                          muted
-                          playsInline
-                          className="w-full h-full object-cover"
-                        ></video>
-                        <div className="absolute bottom-2 left-2 bg-black/50 px-2 py-1 rounded text-white text-sm">
-                          You
+                  // Video call UI - Now takes over the whole interface
+                  <div className="absolute inset-0 z-10">
+                    {/* Semi-transparent blurred background */}
+                    <div className="absolute inset-0 bg-background/80 backdrop-blur-md"></div>
+                    
+                    <div className="relative h-full flex flex-col p-4 z-20">
+                      {/* Call info bar */}
+                      <div className="bg-black/40 text-white px-4 py-2 rounded-lg mb-4 flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-8 w-8 border-2 border-white">
+                            <AvatarFallback className="bg-primary text-primary-foreground">
+                              {getInitials(activeChatUser.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span>Call with {activeChatUser.name}</span>
                         </div>
-                        {isVideoOff && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-gray-900/80">
-                            <VideoOff size={48} className="text-white/50" />
-                          </div>
-                        )}
+                        <div className="text-sm">
+                          {callParticipants.length > 0 ? "Connected" : "Connecting..."}
+                        </div>
                       </div>
-
-                      {/* Remote video */}
-                      <div className="w-full md:w-1/2 h-48 md:h-auto bg-gray-900 rounded-lg overflow-hidden relative">
-                        {callParticipants.length > 0 ? (
-                          <>
-                            <video
-                              ref={remoteVideoRef}
-                              autoPlay
-                              playsInline
-                              className="w-full h-full object-cover"
-                            ></video>
-                            <div className="absolute bottom-2 left-2 bg-black/50 px-2 py-1 rounded text-white text-sm">
-                              {activeChatUser.name}
+                      
+                      <div className="flex-1 flex flex-col md:flex-row gap-4 justify-center items-center">
+                        {/* Local video */}
+                        <div className="w-full md:w-1/2 h-48 md:h-[60vh] bg-gray-900 rounded-lg overflow-hidden relative shadow-xl">
+                          <video
+                            ref={localVideoRef}
+                            autoPlay
+                            muted
+                            playsInline
+                            className="w-full h-full object-cover"
+                          ></video>
+                          <div className="absolute bottom-2 left-2 bg-black/50 px-2 py-1 rounded text-white text-sm">
+                            You
+                          </div>
+                          {isVideoOff && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-gray-900/80">
+                              <VideoOff size={48} className="text-white/50" />
                             </div>
-                          </>
-                        ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center text-white">
-                            <div className="w-12 h-12 border-4 border-t-blue-500 border-gray-200 rounded-full animate-spin mb-4"></div>
-                            <p>Waiting for {activeChatUser.name} to join...</p>
-                          </div>
-                        )}
+                          )}
+                        </div>
+
+                        {/* Remote video */}
+                        <div className="w-full md:w-1/2 h-48 md:h-[60vh] bg-gray-900 rounded-lg overflow-hidden relative shadow-xl">
+                          {callParticipants.length > 0 ? (
+                            <>
+                              <video
+                                ref={remoteVideoRef}
+                                autoPlay
+                                playsInline
+                                className="w-full h-full object-cover"
+                              ></video>
+                              <div className="absolute bottom-2 left-2 bg-black/50 px-2 py-1 rounded text-white text-sm">
+                                {activeChatUser.name}
+                              </div>
+                            </>
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-white">
+                              <div className="w-12 h-12 border-4 border-t-blue-500 border-gray-200 rounded-full animate-spin mb-4"></div>
+                              <p>Waiting for {activeChatUser.name} to join...</p>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Video call controls */}
-                    <div className="p-4 border-t bg-gray-50 flex justify-center gap-4">
-                      <Button
-                        variant={isMuted ? "destructive" : "outline"}
-                        size="icon"
-                        className="rounded-full h-12 w-12"
-                        onClick={toggleMute}
-                      >
-                        {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
-                      </Button>
+                      {/* Video call controls */}
+                      <div className="p-4 mt-4 flex justify-center gap-4">
+                        <Button
+                          variant={isMuted ? "destructive" : "outline"}
+                          size="icon"
+                          className="rounded-full h-12 w-12 shadow-lg transition-all hover:scale-110"
+                          onClick={toggleMute}
+                        >
+                          {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
+                        </Button>
 
-                      <Button
-                        variant={isVideoOff ? "destructive" : "outline"}
-                        size="icon"
-                        className="rounded-full h-12 w-12"
-                        onClick={toggleVideo}
-                      >
-                        {isVideoOff ? (
-                          <VideoOff size={20} />
-                        ) : (
-                          <Video size={20} />
-                        )}
-                      </Button>
+                        <Button
+                          variant={isVideoOff ? "destructive" : "outline"}
+                          size="icon"
+                          className="rounded-full h-12 w-12 shadow-lg transition-all hover:scale-110"
+                          onClick={toggleVideo}
+                        >
+                          {isVideoOff ? (
+                            <VideoOff size={20} />
+                          ) : (
+                            <Video size={20} />
+                          )}
+                        </Button>
 
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        className="rounded-full h-12 w-12"
-                        onClick={endCall}
-                      >
-                        <X size={20} />
-                      </Button>
+                        {/* Exit call button with confirmation */}
+                        <div className="relative">
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            className={`rounded-full h-12 w-12 shadow-lg transition-all ${
+                              showExitConfirmation ? "scale-110 animate-pulse" : "hover:scale-110"
+                            }`}
+                            onClick={endCall}
+                          >
+                            <X size={20} />
+                          </Button>
+                          
+                          {/* Exit confirmation tooltip */}
+                          {showExitConfirmation && (
+                            <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/80 text-white px-3 py-1 rounded text-sm whitespace-nowrap">
+                              Click again to end call
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -1679,7 +1718,8 @@ document.head.appendChild(toastStyles);
 // Add a style to ensure proper layout and scrolling
 const chatStyles = document.createElement("style");
 chatStyles.innerHTML = `
-  html, body, #root {
+  /* Only apply overflow: hidden to the Friends page container, not to the whole document */
+  .friends-page-container {
     height: 100%;
     overflow: hidden;
   }

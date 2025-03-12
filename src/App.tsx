@@ -23,6 +23,7 @@ import Performance from "./pages/performance";
 import PracticeOptions from "./pages/PracticeOptions";
 import MockOptions from "./pages/MockOptions";
 import Friends from "./pages/Friends";
+import Profile from "./pages/Profile";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -61,6 +62,7 @@ const App = () => (
               <Route path="/mock-options" element={<MockOptions />} />
               <Route path="/mock" element={<InterviewMockPage />} />
               <Route path="/friends" element={<Friends />} />
+              <Route path="/profile" element={<Profile />} />
             </Route>
     
             {/* Dashboard routes with dashboard layout */}
@@ -68,7 +70,6 @@ const App = () => (
               <Route path="/dashboard" element={<NotFound />} />
               <Route path="/history" element={<NotFound />} />
               <Route path="/settings" element={<NotFound />} />
-              <Route path="/profile" element={<NotFound />} />
               {/* Add more dashboard routes here */}
             </Route>
 

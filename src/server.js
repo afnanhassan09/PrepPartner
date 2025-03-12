@@ -1,4 +1,3 @@
-// Base configuration for API requests
 const BASE_URL = "https://preppartner-backend.onrender.com";
 
 import { io } from "socket.io-client";
@@ -720,6 +719,39 @@ class APIService {
       method: "POST",
       body: JSON.stringify({ roomName }),
     });
+  }
+
+  /**
+   * Join a video call room and update the participant status
+   * @param {string} roomName - The name of the room to join
+   * @returns {Promise<Object>} Join status response
+   */
+  static async joinVideoCall(roomName) {
+    return this.authenticatedRequest("/api/video/join", {
+      method: "POST",
+      body: JSON.stringify({ roomName }),
+    });
+  }
+
+  /**
+   * Leave a video call room and update the participant status
+   * @param {string} roomName - The name of the room to leave
+   * @returns {Promise<Object>} Leave status response
+   */
+  static async leaveVideoCall(roomName) {
+    return this.authenticatedRequest("/api/video/leave", {
+      method: "POST",
+      body: JSON.stringify({ roomName }),
+    });
+  }
+
+  /**
+   * Get the status of a video call
+   * @param {string} roomName - The name of the room to check
+   * @returns {Promise<Object>} Video call status
+   */
+  static async getVideoCallStatus(roomName) {
+    return this.authenticatedRequest(`/api/video/status/${roomName}`);
   }
 }
 

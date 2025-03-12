@@ -111,6 +111,12 @@ const Friends = () => {
   // Add state for showing the scroll to bottom button
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
 
+  // Add new state to track joined meetings
+  const [joinedMeetings, setJoinedMeetings] = useState(new Set());
+
+  // Add state to track call status data
+  const [callStatuses, setCallStatuses] = useState({});
+
   // Add this new function to handle scroll events in the chat container
   const handleChatScroll = () => {
     if (chatContainerRef.current) {
@@ -514,16 +520,65 @@ const Friends = () => {
     try {
       setLoading((prev) => ({ ...prev, chat: true }));
       const chatMessages = await APIService.getChatWithUser(userId);
+      console.log("Chat messages received:", chatMessages);
+
+      // Process video calls to update joined status
+      const newCallStatuses = {};
+      const newJoinedMeetings = new Set();
+      const currentUserId = getUserId(user);
 
       // Format messages for our UI
-      const formattedMessages = chatMessages.map((msg, index) => ({
-        id: index,
-        sender: msg.senderId === userId ? "them" : "me",
-        text: msg.message,
-        timestamp: msg.createdAt,
-        seen: msg.seen,
-      }));
+      const formattedMessages = chatMessages.map((msg, index) => {
+        // Handle video call messages
+        if (msg.video_call && msg.room_name) {
+          console.log("Processing video call message:", msg);
+          
+          // Ensure arrays are properly initialized
+          const participants = msg.participants || [];
+          const leftParticipants = msg.left_participants || [];
+          
+          // Store call status information
+          newCallStatuses[msg.room_name] = {
+            participants: participants,
+            leftParticipants: leftParticipants,
+            status: msg.call_status || 'created',
+            roomId: msg.room_id,
+          };
 
+          // Check if current user is a participant (convert to strings for comparison)
+          const isParticipant = participants.some(p => {
+            const pId = typeof p === 'object' ? (p._id || p.id) : p;
+            return pId?.toString() === currentUserId?.toString();
+          });
+          
+          if (isParticipant) {
+            console.log(`User ${currentUserId} is a participant in room ${msg.room_name}`);
+            newJoinedMeetings.add(msg.room_name);
+          }
+        }
+
+        return {
+          id: index,
+          sender: msg.senderId === userId ? "them" : "me",
+          text: msg.message,
+          timestamp: msg.createdAt,
+          seen: msg.seen,
+          isVideoCall: msg.video_call,
+          roomName: msg.room_name,
+          roomId: msg.room_id,
+          callStatus: msg.call_status,
+          participants: msg.participants,
+          leftParticipants: msg.left_participants
+        };
+      });
+
+      // Update states
+      setCallStatuses(newCallStatuses);
+      setJoinedMeetings(newJoinedMeetings);
+      
+      console.log("Updated call statuses:", newCallStatuses);
+      console.log("Updated joined meetings:", Array.from(newJoinedMeetings));
+      
       setMessages((prev) => ({
         ...prev,
         [userId]: formattedMessages,
@@ -1070,10 +1125,29 @@ const Friends = () => {
     }
   };
 
-  // Handle joining a video call
+  // Update joinVideoCall function to handle server errors better
   const joinVideoCall = async (roomName) => {
+    // Check if user already joined this meeting
+    if (joinedMeetings.has(roomName)) {
+      toast({
+        title: "Already Joined",
+        description: "You've already joined this meeting",
+        variant: "default",
+      });
+      return;
+    }
+    
     try {
       console.log("Joining video call for room:", roomName);
+
+      // Call the API to update join status
+      try {
+        const joinResponse = await APIService.joinVideoCall(roomName);
+        console.log("Join video call response:", joinResponse);
+      } catch (joinError) {
+        console.error("Error in joinVideoCall API call:", joinError);
+        // Continue with the flow - we'll still try to get a token and join
+      }
 
       // Get a token for this room
       const response = await APIService.getVideoToken(roomName);
@@ -1083,6 +1157,40 @@ const Friends = () => {
         setCallToken(response.token);
         setCallRoom(roomName);
         setActiveCall(activeChatUser);
+
+        // Add this room to joined meetings (even if API call failed, we're still joining)
+        setJoinedMeetings(prev => {
+          const updated = new Set(prev);
+          updated.add(roomName);
+          return updated;
+        });
+
+        // Update call status locally
+        const userId = getUserId(user);
+        setCallStatuses(prev => {
+          const currentStatus = prev[roomName] || {
+            participants: [],
+            leftParticipants: [],
+            status: 'active'
+          };
+          
+          // Add current user to participants if not already there
+          if (!currentStatus.participants.some(p => {
+            const pId = typeof p === 'object' ? (p._id || p.id) : p;
+            return pId?.toString() === userId?.toString();
+          })) {
+            return {
+              ...prev,
+              [roomName]: {
+                ...currentStatus,
+                participants: [...currentStatus.participants, userId],
+                status: 'active'
+              }
+            };
+          }
+          
+          return prev;
+        });
 
         // Initialize the video call
         initializeVideoCall(response.token, roomName);
@@ -1264,67 +1372,38 @@ const Friends = () => {
     }
   };
 
-  // Create a separate cleanup function for video calls
-  const cleanupVideoCall = () => {
+  // Update the cleanupVideoCall function to record when user leaves
+  const cleanupVideoCall = async () => {
     console.log("Cleaning up video call");
     
-    // Stop and detach all tracks
-    if (localVideoRef.current && localVideoRef.current.srcObject) {
-      const tracks = localVideoRef.current.srcObject.getTracks();
-      tracks.forEach(track => {
-        console.log("Stopping local track:", track.kind);
-        track.stop();
-        track.enabled = false;
-      });
-      localVideoRef.current.srcObject = null;
-    }
-    
-    if (remoteVideoRef.current && remoteVideoRef.current.srcObject) {
-      const tracks = remoteVideoRef.current.srcObject.getTracks();
-      tracks.forEach(track => {
-        console.log("Stopping remote track:", track.kind);
-        track.stop();
-        track.enabled = false;
-      });
-      remoteVideoRef.current.srcObject = null;
-    }
-
-    // Disconnect from the room if still connected
-    if (twilioRoom) {
+    // Track that user has left this call on the server
+    if (callRoom) {
       try {
-        // Clean up local participant tracks
-        if (twilioRoom.localParticipant) {
-          twilioRoom.localParticipant.tracks.forEach(publication => {
-            if (publication.track) {
-              console.log("Stopping publication track:", publication.track.kind);
-              publication.track.stop();
-              publication.track.disable();
-              try {
-                publication.unpublish();
-              } catch (e) {
-                console.log("Error unpublishing track:", e);
-              }
-            }
-          });
-        }
+        await APIService.leaveVideoCall(callRoom);
         
-        // Disconnect from Twilio room
-        twilioRoom.disconnect();
-      } catch (e) {
-        console.error("Error disconnecting from Twilio room:", e);
+        // Update call status locally
+        setCallStatuses(prev => {
+          if (prev[callRoom]) {
+            const userIdStr = getUserId(user);
+            return {
+              ...prev,
+              [callRoom]: {
+                ...prev[callRoom],
+                leftParticipants: [
+                  ...(prev[callRoom].leftParticipants || []),
+                  { _id: userIdStr, timestamp: new Date() }
+                ]
+              }
+            };
+          }
+          return prev;
+        });
+      } catch (err) {
+        console.error("Error recording call exit:", err);
       }
     }
-
-    // Force release camera and microphone permissions
-    navigator.mediaDevices.getUserMedia({ audio: true, video: true })
-      .then(stream => {
-        stream.getTracks().forEach(track => {
-          console.log("Stopping remaining track:", track.kind);
-          track.stop();
-          track.enabled = false;
-        });
-      })
-      .catch(err => console.log('No additional media tracks to clean up'));
+    
+    // ... existing cleanup code ...
 
     // Reset all video call related state
     setTwilioRoom(null);
@@ -1405,6 +1484,98 @@ const Friends = () => {
       }, 3000);
     }
   };
+
+  // Add effect to listen for call events
+  useEffect(() => {
+    if (socketRef.current) {
+      // Remove any existing listeners to prevent duplicates
+      socketRef.current.off("call_event");
+      
+      // Set up listener for call events
+      socketRef.current.on("call_event", (data) => {
+        console.log("Received call event:", data);
+        
+        if (data.event === 'user_joined' || data.event === 'user_left') {
+          // Refresh call status
+          if (data.roomName) {
+            // Update the call status for this room
+            setCallStatuses(prev => {
+              const current = prev[data.roomName] || { 
+                participants: [], 
+                leftParticipants: [] 
+              };
+              
+              if (data.event === 'user_joined') {
+                // Add user to participants if not already there
+                const participants = current.participants || [];
+                if (!participants.includes(data.userId)) {
+                  participants.push(data.userId);
+                }
+                
+                return {
+                  ...prev,
+                  [data.roomName]: {
+                    ...current,
+                    participants,
+                    status: 'active'
+                  }
+                };
+              } else if (data.event === 'user_left') {
+                // Add user to left participants
+                const leftParticipants = current.leftParticipants || [];
+                if (!leftParticipants.some(p => p._id === data.userId)) {
+                  leftParticipants.push({ 
+                    _id: data.userId, 
+                    timestamp: new Date() 
+                  });
+                }
+                
+                return {
+                  ...prev,
+                  [data.roomName]: {
+                    ...current,
+                    leftParticipants
+                  }
+                };
+              }
+              
+              return prev;
+            });
+            
+            // Show a notification
+            const eventUser = data.user?.name || 'Someone';
+            const action = data.event === 'user_joined' ? 'joined' : 'left';
+            
+            toast({
+              title: `Call Update`,
+              description: `${eventUser} has ${action} the call`,
+              duration: 5000,
+            });
+            
+            // If we're in a call and the other person left, end our call
+            if (data.event === 'user_left' && activeCall && callRoom === data.roomName) {
+              toast({
+                title: "Call Ended",
+                description: `${eventUser} has left the call`,
+                duration: 3000,
+              });
+              
+              // Clean up the call if we're still in it
+              if (twilioRoom) {
+                cleanupVideoCall();
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.off("call_event");
+      }
+    };
+  }, [socketRef.current, activeCall, callRoom]);
 
   if (!isAuthenticated()) {
     return (
@@ -1707,22 +1878,54 @@ const Friends = () => {
                                         <Video size={16} className={msg.sender === "me" ? "text-primary-foreground" : "text-primary"} />
                                         Video Call Invitation
                                       </p>
-                                      <Button
-                                        variant={msg.sender === "me" ? "secondary" : "default"}
-                                        size="sm"
-                                        onClick={() => {
-                                          const roomName =
-                                            msg.roomName ||
-                                            msg.text.split(
-                                              "Video call invitation: "
-                                            )[1];
-                                          joinVideoCall(roomName);
-                                        }}
-                                        className="w-full flex items-center justify-center gap-2 rounded-md hover:shadow-md transition-all mt-2 h-10"
-                                      >
-                                        <PhoneCall size={16} />
-                                        <span className="font-medium">Join Video Call</span>
-                                      </Button>
+                                      {(() => {
+                                        const roomName = msg.roomName || msg.text.split("Video call invitation: ")[1];
+                                        const hasJoined = joinedMeetings.has(roomName);
+                                        const callStatus = callStatuses[roomName];
+                                        
+                                        // Check if other user left the call
+                                        const otherUserId = getUserId(activeChatUser);
+                                        const otherUserLeft = callStatus?.leftParticipants?.some(p => {
+                                          // Handle different object formats
+                                          if (typeof p === 'object') {
+                                            const leftId = p._id || p.id;
+                                            return leftId?.toString() === otherUserId?.toString();
+                                          }
+                                          return p?.toString() === otherUserId?.toString();
+                                        });
+                                        
+                                        // Determine button state and text
+                                        let buttonDisabled = hasJoined || (callStatus?.status === 'ended');
+                                        let buttonIcon = <PhoneCall size={16} />;
+                                        let buttonText = "Join Video Call";
+                                        
+                                        if (hasJoined) {
+                                          buttonIcon = <UserCheck size={16} />;
+                                          buttonText = "You joined this meeting";
+                                        } else if (otherUserLeft) {
+                                          buttonIcon = <X size={16} />;
+                                          buttonText = `${activeChatUser.name} left the call`;
+                                          buttonDisabled = true;
+                                        } else if (callStatus?.status === 'ended') {
+                                          buttonIcon = <X size={16} />;
+                                          buttonText = "Call ended";
+                                          buttonDisabled = true;
+                                        }
+                                        
+                                        return (
+                                          <Button
+                                            variant={msg.sender === "me" ? "secondary" : "default"}
+                                            size="sm"
+                                            onClick={() => joinVideoCall(roomName)}
+                                            disabled={buttonDisabled}
+                                            className={`w-full flex items-center justify-center gap-2 rounded-md hover:shadow-md transition-all mt-2 h-10 
+                                              ${buttonDisabled ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                          >
+                                            {buttonIcon}
+                                            <span className="font-medium">{buttonText}</span>
+                                          </Button>
+                                        );
+                                      })()}
                                     </div>
                                   ) : (
                                     <p>{msg.text}</p>

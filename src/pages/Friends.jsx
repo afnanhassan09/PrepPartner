@@ -22,7 +22,6 @@ import {
   VideoOff,
   ScreenShare,
   X,
-  CheckCheck,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import APIService from "../server";
@@ -95,8 +94,6 @@ const Friends = () => {
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [callParticipants, setCallParticipants] = useState([]);
   const [twilioRoom, setTwilioRoom] = useState(null);
-  // Add state to track joined video calls
-  const [joinedCalls, setJoinedCalls] = useState([]);
 
   // Refs for video elements
   const localVideoRef = useRef(null);
@@ -1027,84 +1024,51 @@ const Friends = () => {
       const userId = getUserId(activeChatUser);
       console.log("User ID for meeting:", userId);
 
-      // Generate a unique room name that both users can access
-      const uniqueRoomId = `room_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-      const roomName = uniqueRoomId;
-      const roomId = uniqueRoomId;
+      // Check if we have a valid token
+      const token = APIService.getToken();
+      console.log("Using auth token:", token ? "Valid token" : "No token");
 
-      // Add message to UI immediately for better UX
-      const newMessage = {
-        id: Date.now(),
-        sender: "me",
-        text: `Video call invitation: ${roomName}`,
-        timestamp: new Date().toISOString(),
-        isVideoCall: true,
-        roomName: roomName,
-        roomId: roomId,
-      };
+      const response = await APIService.createMeeting(activeChatUser);
+      console.log("Meeting creation response:", response);
 
-      setMessages((prev) => {
-        const existingMessages = prev[getUserId(activeChatUser)] || [];
-        return {
-          ...prev,
-          [getUserId(activeChatUser)]: [...existingMessages, newMessage],
-        };
-      });
-
-      // Try to send via socket if available
-      if (socketRef.current && socketRef.current.connected) {
-        console.log("Attempting to send video call invitation via socket");
-        socketRef.current.emit("send_message", {
-          senderId: getUserId(user),
-          receiverId: getUserId(activeChatUser),
-          message: `Video call invitation: ${roomName}`,
+      if (response.roomName && response.roomId) {
+        // Add message to UI immediately for better UX
+        const newMessage = {
+          id: Date.now(),
+          sender: "me",
+          text: `Video call invitation: ${response.roomName}`,
+          timestamp: new Date().toISOString(),
           isVideoCall: true,
-          roomName: roomName,
-          roomId: roomId
+          roomName: response.roomName,
+          roomId: response.roomId,
+        };
+
+        setMessages((prev) => {
+          const existingMessages = prev[getUserId(activeChatUser)] || [];
+          return {
+            ...prev,
+            [getUserId(activeChatUser)]: [...existingMessages, newMessage],
+          };
         });
+
+        toast({
+          title: "Success",
+          description: "Video call created successfully",
+        });
+      } else {
+        console.error("Invalid meeting response:", response);
+        throw new Error("Invalid meeting response");
       }
-
-      toast({
-        title: "Video Call Created",
-        description: "Video call invitation has been sent",
-        duration: 3000,
-      });
-
-      // Join the call immediately
-      joinVideoCall(roomName);
     } catch (error) {
       console.error("Error creating meeting:", error);
       toast({
         title: "Error",
-        description: "Failed to create video call. Please try again.",
+        description:
+          "Failed to create video call: " + (error.message || "Unknown error"),
         variant: "destructive",
-        duration: 5000,
       });
     }
   };
-
-  // Add useEffect to store/load joined calls in localStorage
-  useEffect(() => {
-    // Load joined calls from localStorage on component mount
-    const storedJoinedCalls = localStorage.getItem('joinedVideoCalls');
-    if (storedJoinedCalls) {
-      try {
-        const parsedCalls = JSON.parse(storedJoinedCalls);
-        if (Array.isArray(parsedCalls)) {
-          setJoinedCalls(parsedCalls);
-        }
-      } catch (error) {
-        console.error('Error parsing joined calls from localStorage:', error);
-      }
-    }
-  }, []);
-
-  // Update localStorage when joinedCalls changes
-  useEffect(() => {
-    if (joinedCalls.length > 0) {
-      localStorage.setItem('joinedVideoCalls', JSON.stringify(joinedCalls));
-    }
-  }, [joinedCalls]);
 
   // Handle joining a video call
   const joinVideoCall = async (roomName) => {
@@ -1119,9 +1083,6 @@ const Friends = () => {
         setCallToken(response.token);
         setCallRoom(roomName);
         setActiveCall(activeChatUser);
-        
-        // Add this room to the list of joined calls
-        setJoinedCalls(prev => [...prev, roomName]);
 
         // Initialize the video call
         initializeVideoCall(response.token, roomName);
@@ -1746,40 +1707,22 @@ const Friends = () => {
                                         <Video size={16} className={msg.sender === "me" ? "text-primary-foreground" : "text-primary"} />
                                         Video Call Invitation
                                       </p>
-                                      {(() => {
-                                        // Extract the room name
-                                        const roomName = msg.roomName || 
-                                          (msg.text.includes("Video call invitation:") ? 
-                                            msg.text.split("Video call invitation: ")[1] : null);
-                                        
-                                        // Check if this call has been joined
-                                        const hasBeenJoined = joinedCalls.includes(roomName);
-                                        
-                                        if (hasBeenJoined) {
-                                          return (
-                                            <div className="mt-2 flex items-center justify-center gap-2 py-2 px-4 bg-gray-100 rounded-md">
-                                              <CheckCheck size={16} className="text-green-600" />
-                                              <span className="text-sm font-medium text-gray-700">
-                                                Video call completed
-                                              </span>
-                                            </div>
-                                          );
-                                        } else {
-                                          return (
-                                            <Button
-                                              variant={msg.sender === "me" ? "secondary" : "default"}
-                                              size="sm"
-                                              onClick={() => {
-                                                joinVideoCall(roomName);
-                                              }}
-                                              className="w-full flex items-center justify-center gap-2 rounded-md hover:shadow-md transition-all mt-2 h-10"
-                                            >
-                                              <PhoneCall size={16} />
-                                              <span className="font-medium">Join Video Call</span>
-                                            </Button>
-                                          );
-                                        }
-                                      })()}
+                                      <Button
+                                        variant={msg.sender === "me" ? "secondary" : "default"}
+                                        size="sm"
+                                        onClick={() => {
+                                          const roomName =
+                                            msg.roomName ||
+                                            msg.text.split(
+                                              "Video call invitation: "
+                                            )[1];
+                                          joinVideoCall(roomName);
+                                        }}
+                                        className="w-full flex items-center justify-center gap-2 rounded-md hover:shadow-md transition-all mt-2 h-10"
+                                      >
+                                        <PhoneCall size={16} />
+                                        <span className="font-medium">Join Video Call</span>
+                                      </Button>
                                     </div>
                                   ) : (
                                     <p>{msg.text}</p>

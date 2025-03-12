@@ -22,6 +22,7 @@ import {
   VideoOff,
   ScreenShare,
   X,
+  CheckCheck,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import APIService from "../server";
@@ -94,6 +95,8 @@ const Friends = () => {
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [callParticipants, setCallParticipants] = useState([]);
   const [twilioRoom, setTwilioRoom] = useState(null);
+  // Add state to track joined video calls
+  const [joinedCalls, setJoinedCalls] = useState([]);
 
   // Refs for video elements
   const localVideoRef = useRef(null);
@@ -1083,6 +1086,9 @@ const Friends = () => {
         setCallToken(response.token);
         setCallRoom(roomName);
         setActiveCall(activeChatUser);
+        
+        // Add this room to the list of joined calls
+        setJoinedCalls(prev => [...prev, roomName]);
 
         // Initialize the video call
         initializeVideoCall(response.token, roomName);
@@ -1585,22 +1591,22 @@ const Friends = () => {
                         <Button
                           variant={isMuted ? "destructive" : "outline"}
                           size="icon"
-                          className="rounded-full h-12 w-12 shadow-lg transition-all hover:scale-110"
+                          className="rounded-full h-12 w-12 shadow-lg transition-all hover:scale-110 bg-white/90 backdrop-blur-sm"
                           onClick={toggleMute}
                         >
-                          {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
+                          {isMuted ? <MicOff size={20} className="text-red-500" /> : <Mic size={20} className="text-primary" />}
                         </Button>
 
                         <Button
                           variant={isVideoOff ? "destructive" : "outline"}
                           size="icon"
-                          className="rounded-full h-12 w-12 shadow-lg transition-all hover:scale-110"
+                          className="rounded-full h-12 w-12 shadow-lg transition-all hover:scale-110 bg-white/90 backdrop-blur-sm"
                           onClick={toggleVideo}
                         >
                           {isVideoOff ? (
-                            <VideoOff size={20} />
+                            <VideoOff size={20} className="text-red-500" />
                           ) : (
-                            <Video size={20} />
+                            <Video size={20} className="text-primary" />
                           )}
                         </Button>
 
@@ -1611,10 +1617,10 @@ const Friends = () => {
                             size="icon"
                             className={`rounded-full h-12 w-12 shadow-lg transition-all ${
                               showExitConfirmation ? "scale-110 animate-pulse" : "hover:scale-110"
-                            }`}
+                            } bg-red-500/90 backdrop-blur-sm`}
                             onClick={endCall}
                           >
-                            <X size={20} />
+                            <X size={20} className="text-white" />
                           </Button>
                           
                           {/* Exit confirmation tooltip */}
@@ -1648,13 +1654,12 @@ const Friends = () => {
                       <div className="flex items-center gap-2">
                         {!activeCall && (
                           <Button
-                            variant="outline"
-                            size="sm"
                             onClick={createMeeting}
-                            className="flex items-center gap-2"
+                            className="flex items-center gap-2 bg-primary/10 hover:bg-primary/20 border border-primary/20 hover:border-primary/30 transition-all rounded-full h-9 px-4"
+                            size="sm"
                           >
-                            <Video size={16} />
-                            <span className="hidden sm:inline">Video Call</span>
+                            <Video size={16} className="text-primary" />
+                            <span className="font-medium text-black">Video Call</span>
                           </Button>
                         )}
                         {isMobile && (
@@ -1704,25 +1709,44 @@ const Friends = () => {
                                   {msg.isVideoCall ||
                                   msg.text.includes("Video call invitation:") ? (
                                     <div className="space-y-2">
-                                      <p className="font-medium">
+                                      <p className="font-medium flex items-center gap-2">
+                                        <Video size={16} className={msg.sender === "me" ? "text-primary-foreground" : "text-primary"} />
                                         Video Call Invitation
                                       </p>
-                                      <Button
-                                        variant="secondary"
-                                        size="sm"
-                                        onClick={() => {
-                                          const roomName =
-                                            msg.roomName ||
-                                            msg.text.split(
-                                              "Video call invitation: "
-                                            )[1];
-                                          joinVideoCall(roomName);
-                                        }}
-                                        className="w-full flex items-center justify-center gap-2"
-                                      >
-                                        <PhoneCall size={16} />
-                                        Join Call
-                                      </Button>
+                                      {(() => {
+                                        // Extract the room name
+                                        const roomName = msg.roomName || 
+                                          (msg.text.includes("Video call invitation:") ? 
+                                            msg.text.split("Video call invitation: ")[1] : null);
+                                        
+                                        // Check if this call has been joined
+                                        const hasBeenJoined = joinedCalls.includes(roomName);
+                                        
+                                        if (hasBeenJoined) {
+                                          return (
+                                            <div className="mt-2 flex items-center justify-center gap-2 py-2 px-4 bg-gray-100 rounded-md">
+                                              <CheckCheck size={16} className="text-green-600" />
+                                              <span className="text-sm font-medium text-gray-700">
+                                                Video call completed
+                                              </span>
+                                            </div>
+                                          );
+                                        } else {
+                                          return (
+                                            <Button
+                                              variant={msg.sender === "me" ? "secondary" : "default"}
+                                              size="sm"
+                                              onClick={() => {
+                                                joinVideoCall(roomName);
+                                              }}
+                                              className="w-full flex items-center justify-center gap-2 rounded-md hover:shadow-md transition-all mt-2 h-10"
+                                            >
+                                              <PhoneCall size={16} />
+                                              <span className="font-medium">Join Video Call</span>
+                                            </Button>
+                                          );
+                                        }
+                                      })()}
                                     </div>
                                   ) : (
                                     <p>{msg.text}</p>

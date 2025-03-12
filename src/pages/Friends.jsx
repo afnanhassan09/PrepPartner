@@ -1276,9 +1276,50 @@ const Friends = () => {
     // If confirmation is already showing, actually end the call
     if (showExitConfirmation) {
       if (twilioRoom) {
+        // Disconnect from Twilio room
         twilioRoom.disconnect();
+
+        // Clean up video elements and stop their tracks
+        if (localVideoRef.current && localVideoRef.current.srcObject) {
+          const tracks = localVideoRef.current.srcObject.getTracks();
+          tracks.forEach(track => {
+            track.stop(); // Stop each track
+            track.enabled = false;
+          });
+          localVideoRef.current.srcObject = null;
+        }
+        if (remoteVideoRef.current && remoteVideoRef.current.srcObject) {
+          const tracks = remoteVideoRef.current.srcObject.getTracks();
+          tracks.forEach(track => {
+            track.stop(); // Stop each track
+            track.enabled = false;
+          });
+          remoteVideoRef.current.srcObject = null;
+        }
+
+        // Clean up local participant tracks
+        if (twilioRoom.localParticipant) {
+          twilioRoom.localParticipant.tracks.forEach(publication => {
+            if (publication.track) {
+              publication.track.stop();
+              publication.track.disable();
+              publication.unpublish();
+            }
+          });
+        }
+
+        // Clean up any remaining MediaStreamTracks
+        navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+          .then(stream => {
+            stream.getTracks().forEach(track => {
+              track.stop();
+              track.enabled = false;
+            });
+          })
+          .catch(err => console.log('No additional media tracks to clean up'));
       }
 
+      // Reset all video call related state
       setTwilioRoom(null);
       setActiveCall(null);
       setCallToken(null);
@@ -1287,8 +1328,13 @@ const Friends = () => {
       setIsMuted(false);
       setIsVideoOff(false);
       setShowExitConfirmation(false);
+
+      // Add a small delay before scrolling to the latest messages
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
     } else {
-      // Otherwise just show the confirmation
+      // Show the confirmation dialog
       setShowExitConfirmation(true);
       
       // Auto-hide the confirmation after 3 seconds if not acted upon

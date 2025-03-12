@@ -107,6 +107,30 @@ const Friends = () => {
 
   // Add this new state for the exit confirmation dialog
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
+  
+  // Add state for showing the scroll to bottom button
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+
+  // Add this new function to handle scroll events in the chat container
+  const handleChatScroll = () => {
+    if (chatContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+      const isScrolledUp = scrollHeight - scrollTop - clientHeight > 100;
+      
+      setShowScrollToBottom(isScrolledUp);
+    }
+  };
+
+  // Move the scroll to bottom function to component level scope
+  const scrollToBottom = () => {
+    if (chatContainerRef.current) {
+      setTimeout(() => {
+        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        setShowScrollToBottom(false);
+        console.log("Scrolled to bottom");
+      }, 100);
+    }
+  };
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -304,16 +328,6 @@ const Friends = () => {
       }
     };
 
-    // Add a dedicated scroll to bottom function for reuse
-    const scrollToBottom = () => {
-      if (chatContainerRef.current) {
-        setTimeout(() => {
-          chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-          console.log("Scrolled to bottom");
-        }, 100);
-      }
-    };
-
     // Helper function to add message to state - update to include scrolling
     const addMessageToState = (
       senderId,
@@ -388,12 +402,8 @@ const Friends = () => {
   useEffect(() => {
     if (activeChatUser) {
       fetchChatMessages(activeChatUser._id).then(() => {
-        // Scroll to bottom after messages are loaded
-        setTimeout(() => {
-          if (chatContainerRef.current) {
-            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-          }
-        }, 100); // Small delay to ensure messages are rendered
+        // Use the scrollToBottom function instead of duplicating code
+        scrollToBottom();
       });
     }
   }, [activeChatUser]);
@@ -1395,41 +1405,6 @@ const Friends = () => {
           >
             {activeChatUser ? (
               <>
-                {/* Chat header - fixed height */}
-                <div className="p-4 border-b flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="h-10 w-10 border-2 border-primary">
-                      <AvatarFallback className="bg-primary text-primary-foreground">
-                        {getInitials(activeChatUser.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="font-medium">{activeChatUser.name}</h3>
-                      <p className="text-xs text-muted">
-                
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {!activeCall && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={createMeeting}
-                        className="flex items-center gap-2"
-                      >
-                        <Video size={16} />
-                        <span className="hidden sm:inline">Video Call</span>
-                      </Button>
-                    )}
-                    {isMobile && (
-                      <Button variant="ghost" size="sm" onClick={closeChat}>
-                        ✕
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
                 {activeCall ? (
                   // Video call UI - Now takes over the whole interface
                   <div className="absolute inset-0 z-10">
@@ -1543,101 +1518,159 @@ const Friends = () => {
                     </div>
                   </div>
                 ) : (
-                  // Regular Chat UI - Fix the container height and overflow
-                  <>
-                    {/* Message container - this should scroll independently */}
-                    <div
-                      ref={chatContainerRef}
-                      className="flex-1 overflow-y-auto p-4 space-y-4 chat-messages-container"
-                      style={{
-                        height: "calc(100% - 130px)",
-                        maxHeight: "calc(100vh - 230px)",
-                        overflowY: "auto"
-                      }}
-                    >
-                      {loading.chat ? (
-                        <div className="text-center py-8">
-                          Loading messages...
-                        </div>
-                      ) : messages[activeChatUser._id]?.length > 0 ? (
-                        <>
-                          {messages[activeChatUser._id].map((msg, index) => (
-                            <div
-                              key={msg.id}
-                              ref={
-                                index ===
-                                messages[activeChatUser._id].length - 1
-                                  ? lastMessageRef
-                                  : null
-                              }
-                              className={`flex ${
-                                msg.sender === "me"
-                                  ? "justify-end"
-                                  : "justify-start"
-                              }`}
-                            >
-                              <div
-                                className={`max-w-[80%] p-3 rounded-lg ${
-                                  msg.sender === "me"
-                                    ? "bg-primary text-primary-foreground rounded-tr-none"
-                                    : "bg-secondary text-secondary-foreground rounded-tl-none"
-                                }`}
-                              >
-                                {msg.isVideoCall ||
-                                msg.text.includes("Video call invitation:") ? (
-                                  <div className="space-y-2">
-                                    <p className="font-medium">
-                                      Video Call Invitation
-                                    </p>
-                                    <Button
-                                      variant="secondary"
-                                      size="sm"
-                                      onClick={() => {
-                                        const roomName =
-                                          msg.roomName ||
-                                          msg.text.split(
-                                            "Video call invitation: "
-                                          )[1];
-                                        joinVideoCall(roomName);
-                                      }}
-                                      className="w-full flex items-center justify-center gap-2"
-                                    >
-                                      <PhoneCall size={16} />
-                                      Join Call
-                                    </Button>
-                                  </div>
-                                ) : (
-                                  <p>{msg.text}</p>
-                                )}
-                                <p className="text-xs opacity-70 mt-1">
-                                  {new Date(msg.timestamp).toLocaleTimeString(
-                                    [],
-                                    {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    }
-                                  )}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                        </>
-                      ) : (
-                        <div className="text-center py-8 text-muted">
-                          <MessageSquare
-                            size={48}
-                            className="mx-auto mb-2 opacity-50"
-                          />
-                          <p>No messages yet</p>
-                          <p className="text-sm">
-                            Send a message to start the conversation
+                  // Regular Chat UI with fixed layout - single scrollbar
+                  <div className="flex flex-col h-full relative">
+                    {/* Chat header - fixed height */}
+                    <div className="p-4 border-b flex items-center justify-between flex-shrink-0">
+                      <div className="flex items-center space-x-3">
+                        <Avatar className="h-10 w-10 border-2 border-primary">
+                          <AvatarFallback className="bg-primary text-primary-foreground">
+                            {getInitials(activeChatUser.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="font-medium">{activeChatUser.name}</h3>
+                          <p className="text-xs text-muted">
+                    
                           </p>
                         </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {!activeCall && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={createMeeting}
+                            className="flex items-center gap-2"
+                          >
+                            <Video size={16} />
+                            <span className="hidden sm:inline">Video Call</span>
+                          </Button>
+                        )}
+                        {isMobile && (
+                          <Button variant="ghost" size="sm" onClick={closeChat}>
+                            ✕
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Content container with messages - takes up all available space minus header and input heights */}
+                    <div className="h-[calc(100%_-_180px)]">
+                      {/* Message container - the only scrollable element */}
+                      <div
+                        ref={chatContainerRef}
+                        className="h-full overflow-y-auto p-4 pb-20 space-y-4 chat-messages-container"
+                        onScroll={handleChatScroll}
+                      >
+                        {loading.chat ? (
+                          <div className="text-center py-8">
+                            Loading messages...
+                          </div>
+                        ) : messages[activeChatUser._id]?.length > 0 ? (
+                          <>
+                            {messages[activeChatUser._id].map((msg, index) => (
+                              <div
+                                key={msg.id}
+                                ref={
+                                  index ===
+                                  messages[activeChatUser._id].length - 1
+                                    ? lastMessageRef
+                                    : null
+                                }
+                                className={`flex ${
+                                  msg.sender === "me"
+                                    ? "justify-end"
+                                    : "justify-start"
+                                }`}
+                              >
+                                <div
+                                  className={`max-w-[80%] p-3 rounded-lg ${
+                                    msg.sender === "me"
+                                      ? "bg-primary text-primary-foreground rounded-tr-none"
+                                      : "bg-secondary text-secondary-foreground rounded-tl-none"
+                                  }`}
+                                >
+                                  {msg.isVideoCall ||
+                                  msg.text.includes("Video call invitation:") ? (
+                                    <div className="space-y-2">
+                                      <p className="font-medium">
+                                        Video Call Invitation
+                                      </p>
+                                      <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={() => {
+                                          const roomName =
+                                            msg.roomName ||
+                                            msg.text.split(
+                                              "Video call invitation: "
+                                            )[1];
+                                          joinVideoCall(roomName);
+                                        }}
+                                        className="w-full flex items-center justify-center gap-2"
+                                      >
+                                        <PhoneCall size={16} />
+                                        Join Call
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <p>{msg.text}</p>
+                                  )}
+                                  <p className="text-xs opacity-70 mt-1">
+                                    {new Date(msg.timestamp).toLocaleTimeString(
+                                      [],
+                                      {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      }
+                                    )}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </>
+                        ) : (
+                          <div className="text-center py-8 text-muted">
+                            <MessageSquare
+                              size={48}
+                              className="mx-auto mb-2 opacity-50"
+                            />
+                            <p>No messages yet</p>
+                            <p className="text-sm">
+                              Send a message to start the conversation
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Scroll to bottom button - positioned absolutely */}
+                      {showScrollToBottom && (
+                        <button
+                          onClick={scrollToBottom}
+                          className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-10 bg-primary text-white rounded-full p-2 shadow-lg hover:bg-primary/90 transition-all animate-bounce"
+                          aria-label="Scroll to latest message"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-6 w-6"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                            />
+                          </svg>
+                        </button>
                       )}
                     </div>
 
-                    {/* Message input - fixed height */}
-                    <div className="p-4 border-t bg-white">
+                    {/* Message input - fixed at bottom */}
+                    <div className="border-t bg-white p-4 pt-5 pb-5 flex-shrink-0 message-input-container">
                       <div className="flex space-x-2">
                         <Input
                           type="text"
@@ -1655,7 +1688,7 @@ const Friends = () => {
                         </Button>
                       </div>
                     </div>
-                  </>
+                  </div>
                 )}
               </>
             ) : (
@@ -1742,38 +1775,64 @@ chatStyles.innerHTML = `
     overflow: hidden;
   }
   
-  /* Better chat container scrolling */
-  .chat-messages-container {
-    flex: 1 1 auto !important;
-    overflow-y: auto !important;
-    scroll-behavior: smooth !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 1rem !important;
-  }
-  
-  /* Make sure the chat container is scrollable */
-  .flex-1.overflow-y-auto {
-    overflow-y: auto !important;
-    height: calc(100vh - 260px) !important;
-    min-height: 200px !important;
-    max-height: calc(100vh - 230px) !important;
-  }
-  
-  /* Ensure main container has proper layout */
+  /* Main container should have no overflow */
   .h-full.rounded-xl.border.bg-white.shadow-lg.overflow-hidden.flex {
     display: flex !important;
     flex-direction: row !important;
     height: calc(100vh - 5rem) !important;
     max-height: calc(100vh - 5rem) !important;
+    overflow: hidden !important;
   }
   
-  /* Chat area properly fills space */
+  /* Better chat container scrolling - this is the only element that should scroll */
+  .chat-messages-container {
+    overflow-y: auto !important;
+    scroll-behavior: smooth !important;
+    padding: 1rem !important;
+    padding-bottom: 3rem !important; /* Add more padding at bottom to prevent messages being hidden */
+  }
+  
+  /* Chat area properly fills space with no overflow */
   .flex-1.flex.flex-col.overflow-hidden {
     display: flex !important;
     flex-direction: column !important;
     height: 100% !important;
     overflow: hidden !important;
+  }
+  
+  /* Ensure proper flex layout for the chat UI */
+  .flex.flex-col.h-full {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+  }
+  
+  /* Style for the message input area */
+  .message-input-container {
+    background-color: white !important;
+    border-top: 1px solid var(--border) !important;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05) !important;
+    padding: 15px !important;
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 10 !important;
+    width: 100% !important;
+    flex-shrink: 0 !important;
+  }
+  
+  /* Style the scroll to bottom button */
+  button[aria-label="Scroll to latest message"] {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    opacity: 0.9 !important;
+    transition: all 0.2s ease !important;
+    z-index: 11 !important; /* Ensure it's above the input box */
+  }
+  
+  button[aria-label="Scroll to latest message"]:hover {
+    transform: scale(1.1) !important;
+    opacity: 1 !important;
   }
 `;
 document.head.appendChild(chatStyles);

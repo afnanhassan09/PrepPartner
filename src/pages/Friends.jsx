@@ -372,25 +372,27 @@ const Friends = () => {
   // Fetch chat messages when active chat user changes
   useEffect(() => {
     if (activeChatUser) {
-      fetchChatMessages(activeChatUser._id);
+      fetchChatMessages(activeChatUser._id).then(() => {
+        // Scroll to bottom after messages are loaded
+        setTimeout(() => {
+          if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+          }
+        }, 100); // Small delay to ensure messages are rendered
+      });
     }
   }, [activeChatUser]);
 
-  // Remove the old scroll effect and replace with these new ones
+  // Update the effect that handles scrolling when receiving messages
   useEffect(() => {
-    // Only set auto-scroll when a new message is sent by the current user
-    if (lastSentMessage.current) {
-      setAutoScroll(true);
+    // This will scroll to the bottom when messages state changes
+    // (like when receiving a new message)
+    if (activeChatUser && chatContainerRef.current && messages[getUserId(activeChatUser)]?.length > 0) {
+      setTimeout(() => {
+        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      }, 100);
     }
-  }, [messages]);
-
-  useEffect(() => {
-    // Handle auto-scroll only when explicitly set
-    if (autoScroll && chatContainerRef.current && lastMessageRef.current) {
-      lastMessageRef.current.scrollIntoView({ behavior: "smooth" });
-      setAutoScroll(false);
-    }
-  }, [autoScroll]);
+  }, [messages, activeChatUser]);
 
   // Add a reconnection mechanism
   useEffect(() => {
@@ -575,7 +577,7 @@ const Friends = () => {
     setActiveChatUser(null);
   };
 
-  // Modify the sendMessage function
+  // Modify the sendMessage function to correctly scroll after sending a message
   const sendMessage = async () => {
     if (!message.trim()) return;
 
@@ -662,8 +664,13 @@ const Friends = () => {
     };
 
     setMessage("");
-    // Set auto-scroll after sending a message
-    setAutoScroll(true);
+    
+    // Use a timeout to ensure DOM is updated before scrolling
+    setTimeout(() => {
+      if (chatContainerRef.current) {
+        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      }
+    }, 100);
 
     try {
       console.log(
@@ -1532,109 +1539,115 @@ const Friends = () => {
                     {/* Message container - this should scroll independently */}
                     <div
                       ref={chatContainerRef}
-                      className="flex-1 overflow-y-auto p-4 space-y-4"
+                      className="flex-1 overflow-y-auto p-4 space-y-4 chat-messages-container"
                       style={{
                         height: "calc(100% - 130px)",
-                      }} /* Fixed height accounting for header and input area */
+                        maxHeight: "calc(100vh - 230px)",
+                        overflowY: "auto",
+                        display: "flex",
+                        flexDirection: "column"
+                      }}
                     >
-                      {loading.chat ? (
-                        <div className="text-center py-8">
-                          Loading messages...
-                        </div>
-                      ) : messages[activeChatUser._id]?.length > 0 ? (
-                        <>
-                          {messages[activeChatUser._id].map((msg, index) => (
-                            <div
-                              key={msg.id}
-                              ref={
-                                index ===
-                                messages[activeChatUser._id].length - 1
-                                  ? lastMessageRef
-                                  : null
-                              }
-                              className={`flex ${
-                                msg.sender === "me"
-                                  ? "justify-end"
-                                  : "justify-start"
-                              }`}
-                            >
+                      <div className="flex-grow flex flex-col space-y-4">
+                        {loading.chat ? (
+                          <div className="text-center py-8">
+                            Loading messages...
+                          </div>
+                        ) : messages[activeChatUser._id]?.length > 0 ? (
+                          <>
+                            {messages[activeChatUser._id].map((msg, index) => (
                               <div
-                                className={`max-w-[80%] p-3 rounded-lg ${
+                                key={msg.id}
+                                ref={
+                                  index ===
+                                  messages[activeChatUser._id].length - 1
+                                    ? lastMessageRef
+                                    : null
+                                }
+                                className={`flex ${
                                   msg.sender === "me"
-                                    ? "bg-primary text-primary-foreground rounded-tr-none"
-                                    : "bg-secondary text-secondary-foreground rounded-tl-none"
+                                    ? "justify-end"
+                                    : "justify-start"
                                 }`}
                               >
-                                {msg.isVideoCall ||
-                                msg.text.includes("Video call invitation:") ? (
-                                  <div className="space-y-2">
-                                    <p className="font-medium">
-                                      Video Call Invitation
-                                    </p>
-                                    <Button
-                                      variant="secondary"
-                                      size="sm"
-                                      onClick={() => {
-                                        const roomName =
-                                          msg.roomName ||
-                                          msg.text.split(
-                                            "Video call invitation: "
-                                          )[1];
-                                        joinVideoCall(roomName);
-                                      }}
-                                      className="w-full flex items-center justify-center gap-2"
-                                    >
-                                      <PhoneCall size={16} />
-                                      Join Call
-                                    </Button>
-                                  </div>
-                                ) : (
-                                  <p>{msg.text}</p>
-                                )}
-                                <p className="text-xs opacity-70 mt-1">
-                                  {new Date(msg.timestamp).toLocaleTimeString(
-                                    [],
-                                    {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    }
+                                <div
+                                  className={`max-w-[80%] p-3 rounded-lg ${
+                                    msg.sender === "me"
+                                      ? "bg-primary text-primary-foreground rounded-tr-none"
+                                      : "bg-secondary text-secondary-foreground rounded-tl-none"
+                                  }`}
+                                >
+                                  {msg.isVideoCall ||
+                                  msg.text.includes("Video call invitation:") ? (
+                                    <div className="space-y-2">
+                                      <p className="font-medium">
+                                        Video Call Invitation
+                                      </p>
+                                      <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={() => {
+                                          const roomName =
+                                            msg.roomName ||
+                                            msg.text.split(
+                                              "Video call invitation: "
+                                            )[1];
+                                          joinVideoCall(roomName);
+                                        }}
+                                        className="w-full flex items-center justify-center gap-2"
+                                      >
+                                        <PhoneCall size={16} />
+                                        Join Call
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <p>{msg.text}</p>
                                   )}
-                                </p>
+                                  <p className="text-xs opacity-70 mt-1">
+                                    {new Date(msg.timestamp).toLocaleTimeString(
+                                      [],
+                                      {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      }
+                                    )}
+                                  </p>
+                                </div>
                               </div>
-                            </div>
-                          ))}
-                        </>
-                      ) : (
-                        <div className="text-center py-8 text-muted">
-                          <MessageSquare
-                            size={48}
-                            className="mx-auto mb-2 opacity-50"
-                          />
-                          <p>No messages yet</p>
-                          <p className="text-sm">
-                            Send a message to start the conversation
-                          </p>
-                        </div>
-                      )}
-                    </div>
+                            ))}
+                          </>
+                        ) : (
+                          <div className="text-center py-8 text-muted">
+                            <MessageSquare
+                              size={48}
+                              className="mx-auto mb-2 opacity-50"
+                            />
+                            <p>No messages yet</p>
+                            <p className="text-sm">
+                              Send a message to start the conversation
+                            </p>
+                          </div>
+                        )}
+                      </div>
 
-                    {/* Message input - fixed height */}
-                    <div className="p-4 border-t bg-white">
-                      <div className="flex space-x-2">
-                        <Input
-                          type="text"
-                          placeholder="Type a message..."
-                          value={message}
-                          onChange={(e) => setMessage(e.target.value)}
-                          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                          className="flex-1"
-                        />
-                        <Button
-                          onClick={sendMessage}
-                          className="bg-primary hover:bg-primary/90"
-                        >
-                          <Send size={18} />
-                        </Button>
+                      {/* Message input - fixed height */}
+                      <div className="p-4 border-t bg-white">
+                        <div className="flex space-x-2">
+                          <Input
+                            type="text"
+                            placeholder="Type a message..."
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                            className="flex-1"
+                          />
+                          <Button
+                            onClick={sendMessage}
+                            className="bg-primary hover:bg-primary/90"
+                          >
+                            <Send size={18} />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </>
@@ -1726,8 +1739,34 @@ chatStyles.innerHTML = `
   
   /* Ensure that the chat container scrolls properly */
   .flex-1.overflow-y-auto {
-    flex: 1 1 auto;
-    min-height: 0; /* This is important for flex containers with overflow */
+    flex: 1 1 auto !important;
+    min-height: 0 !important; /* This is important for flex containers with overflow */
+    overflow-y: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  /* Fix message container spacing */
+  [ref="chatContainerRef"] {
+    max-height: calc(100vh - 230px) !important;
+    height: calc(100% - 130px) !important;
+    overflow-y: auto !important;
+  }
+  
+  /* Ensure main container has proper layout */
+  .h-full.rounded-xl.border.bg-white.shadow-lg.overflow-hidden.flex {
+    display: flex !important;
+    flex-direction: row !important;
+    height: calc(100vh - 5rem) !important;
+    max-height: calc(100vh - 5rem) !important;
+  }
+  
+  /* Chat area properly fills space */
+  .flex-1.flex.flex-col.overflow-hidden {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    overflow: hidden !important;
   }
 `;
 document.head.appendChild(chatStyles);

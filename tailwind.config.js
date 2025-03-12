@@ -25,19 +25,19 @@ module.exports = {
           DEFAULT: "#000000",
         },
         teal: {
-          DEFAULT: "#003841",
+          DEFAULT: "#004D40",
           foreground: "#FFFFFF",
         },
         primary: {
-          DEFAULT: "#F3C178",
-          foreground: "#000000",
+          DEFAULT: "#3DD598",
+          foreground: "#FFFFFF",
         },
         secondary: {
-          DEFAULT: "#E6E6FA",
+          DEFAULT: "#D1C4E9",
           foreground: "#000000",
         },
         background: {
-          DEFAULT: "#FFFFFF",
+          DEFAULT: "#F5F5F5",
           secondary: "#E8F5E9",
         },
         muted: {

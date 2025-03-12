@@ -1027,51 +1027,84 @@ const Friends = () => {
       const userId = getUserId(activeChatUser);
       console.log("User ID for meeting:", userId);
 
-      // Check if we have a valid token
-      const token = APIService.getToken();
-      console.log("Using auth token:", token ? "Valid token" : "No token");
+      // Generate a unique room name that both users can access
+      const uniqueRoomId = `room_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      const roomName = uniqueRoomId;
+      const roomId = uniqueRoomId;
 
-      const response = await APIService.createMeeting(activeChatUser);
-      console.log("Meeting creation response:", response);
+      // Add message to UI immediately for better UX
+      const newMessage = {
+        id: Date.now(),
+        sender: "me",
+        text: `Video call invitation: ${roomName}`,
+        timestamp: new Date().toISOString(),
+        isVideoCall: true,
+        roomName: roomName,
+        roomId: roomId,
+      };
 
-      if (response.roomName && response.roomId) {
-        // Add message to UI immediately for better UX
-        const newMessage = {
-          id: Date.now(),
-          sender: "me",
-          text: `Video call invitation: ${response.roomName}`,
-          timestamp: new Date().toISOString(),
-          isVideoCall: true,
-          roomName: response.roomName,
-          roomId: response.roomId,
+      setMessages((prev) => {
+        const existingMessages = prev[getUserId(activeChatUser)] || [];
+        return {
+          ...prev,
+          [getUserId(activeChatUser)]: [...existingMessages, newMessage],
         };
+      });
 
-        setMessages((prev) => {
-          const existingMessages = prev[getUserId(activeChatUser)] || [];
-          return {
-            ...prev,
-            [getUserId(activeChatUser)]: [...existingMessages, newMessage],
-          };
+      // Try to send via socket if available
+      if (socketRef.current && socketRef.current.connected) {
+        console.log("Attempting to send video call invitation via socket");
+        socketRef.current.emit("send_message", {
+          senderId: getUserId(user),
+          receiverId: getUserId(activeChatUser),
+          message: `Video call invitation: ${roomName}`,
+          isVideoCall: true,
+          roomName: roomName,
+          roomId: roomId
         });
-
-        toast({
-          title: "Success",
-          description: "Video call created successfully",
-        });
-      } else {
-        console.error("Invalid meeting response:", response);
-        throw new Error("Invalid meeting response");
       }
+
+      toast({
+        title: "Video Call Created",
+        description: "Video call invitation has been sent",
+        duration: 3000,
+      });
+
+      // Join the call immediately
+      joinVideoCall(roomName);
     } catch (error) {
       console.error("Error creating meeting:", error);
       toast({
         title: "Error",
-        description:
-          "Failed to create video call: " + (error.message || "Unknown error"),
+        description: "Failed to create video call. Please try again.",
         variant: "destructive",
+        duration: 5000,
       });
     }
   };
+
+  // Add useEffect to store/load joined calls in localStorage
+  useEffect(() => {
+    // Load joined calls from localStorage on component mount
+    const storedJoinedCalls = localStorage.getItem('joinedVideoCalls');
+    if (storedJoinedCalls) {
+      try {
+        const parsedCalls = JSON.parse(storedJoinedCalls);
+        if (Array.isArray(parsedCalls)) {
+          setJoinedCalls(parsedCalls);
+        }
+      } catch (error) {
+        console.error('Error parsing joined calls from localStorage:', error);
+      }
+    }
+  }, []);
+
+  // Update localStorage when joinedCalls changes
+  useEffect(() => {
+    if (joinedCalls.length > 0) {
+      localStorage.setItem('joinedVideoCalls', JSON.stringify(joinedCalls));
+    }
+  }, [joinedCalls]);
 
   // Handle joining a video call
   const joinVideoCall = async (roomName) => {

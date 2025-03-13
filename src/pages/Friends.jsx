@@ -1412,7 +1412,83 @@ const Friends = () => {
       }
     }
     
-    // ... existing cleanup code ...
+    // Properly clean up Twilio room and all tracks
+    if (twilioRoom) {
+      try {
+        // Disconnect from the Twilio room
+        twilioRoom.disconnect();
+        
+        // Stop all local tracks
+        twilioRoom.localParticipant.tracks.forEach(publication => {
+          const track = publication.track;
+          if (track) {
+            track.stop(); // This properly stops the camera/microphone
+            track.detach().forEach(element => {
+              if (element.parentNode) {
+                element.parentNode.removeChild(element);
+              }
+            });
+          }
+        });
+        
+        // Clean up any remote participant tracks
+        twilioRoom.participants.forEach(participant => {
+          participant.tracks.forEach(publication => {
+            if (publication.track) {
+              publication.track.detach().forEach(element => {
+                if (element.parentNode) {
+                  element.parentNode.removeChild(element);
+                }
+              });
+            }
+          });
+        });
+        
+        console.log("Successfully cleaned up all media tracks and disconnected from room");
+      } catch (err) {
+        console.error("Error cleaning up Twilio room:", err);
+      }
+    }
+    
+    // Clean up video elements
+    if (localVideoRef.current) {
+      const stream = localVideoRef.current.srcObject;
+      if (stream) {
+        // Stop all tracks in the stream to fully release camera/mic
+        stream.getTracks().forEach(track => {
+          track.stop();
+          console.log(`Stopped ${track.kind} track`);
+        });
+      }
+      localVideoRef.current.srcObject = null;
+    }
+    
+    if (remoteVideoRef.current) {
+      const stream = remoteVideoRef.current.srcObject;
+      if (stream) {
+        // Stop all tracks in the remote stream
+        stream.getTracks().forEach(track => {
+          track.stop();
+          console.log(`Stopped remote ${track.kind} track`);
+        });
+      }
+      remoteVideoRef.current.srcObject = null;
+    }
+    
+    // Additional cleanup for any lingering MediaStream tracks
+    try {
+      // Force browser to release camera/mic by requesting and immediately stopping
+      navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+        .then(stream => {
+          stream.getTracks().forEach(track => {
+            track.stop();
+            console.log(`Released ${track.kind} device`);
+          });
+        })
+        .catch(err => console.log("No additional media devices to clean up"));
+    } catch (err) {
+      console.log("Error during additional media cleanup:", err);
+    }
 
     // Reset all video call related state
     setTwilioRoom(null);

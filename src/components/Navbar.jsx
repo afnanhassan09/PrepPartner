@@ -42,7 +42,7 @@ const Navbar = () => {
             to="/"
             className="flex items-center space-x-2 transition-transform duration-300 hover:scale-105"
           >
-            <img src={logo} alt="PrepPartner Logo" className="w-30 h-20" />
+            <img src={logo} alt="PrepPartner Logo" className="w-30 h-12" />
        
           </Link>
 

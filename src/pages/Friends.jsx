@@ -1301,12 +1301,17 @@ const Friends = () => {
     // Handle room disconnection events
     room.on("disconnected", (room, error) => {
       console.log("Disconnected from room due to:", error || "user action");
+      if (error) {
+        console.error("Twilio disconnect error details:", error);
+      }
       cleanupVideoCall();
     });
     
-    // Add more error handlers
+    // Handle more error types with explicit handlers
     room.on("reconnecting", error => {
       console.log("Reconnecting to room due to:", error);
+      console.error("Twilio reconnection error details:", error);
+      
       toast({
         title: "Connection Issue",
         description: "Trying to reconnect to the call...",
@@ -1314,13 +1319,17 @@ const Friends = () => {
       });
     });
     
-    room.on("reconnected", () => {
-      console.log("Reconnected to room");
+    // If reconnection fails after multiple attempts
+    room.on("reconnectionFailed", error => {
+      console.error("Twilio reconnection failed:", error);
       toast({
-        title: "Reconnected",
-        description: "You've been reconnected to the call",
+        title: "Connection Failed",
+        description: "Could not reconnect to the call. Ending call.",
+        variant: "destructive",
         duration: 3000,
       });
+      
+      cleanupVideoCall();
     });
   };
 
@@ -1358,16 +1367,10 @@ const Friends = () => {
       prevParticipants.filter((p) => p !== participant)
     );
 
-    // Force check if we should end the call - either when all participants leave
-    // or when we detect the remote participant left
-    const shouldEndCall = twilioRoom && (
-      twilioRoom.participants.size === 0 || 
-      // Check if the participant that left is the remote user (not us)
-      (participant.identity !== twilioRoom.localParticipant.identity)
-    );
-
-    if (shouldEndCall) {
-      console.log("Other participant left or room empty, ending call");
+    // Always end the call when the remote participant leaves
+    // This ensures we don't get stuck with a white screen
+    if (twilioRoom && participant.identity !== twilioRoom.localParticipant.identity) {
+      console.log("Remote participant left, ending call automatically");
       
       // Show a toast notification
       toast({
@@ -1381,48 +1384,48 @@ const Friends = () => {
     }
   };
 
-  // Update the cleanupVideoCall function to record when user leaves
+  // Completely updated cleanupVideoCall function with more aggressive camera cleanup
   const cleanupVideoCall = async () => {
-    console.log("Cleaning up video call");
+    console.log("Starting aggressive video call cleanup");
     
-    // Track that user has left this call on the server
+    // 1. Immediately update UI state to ensure responsive interface
+    setActiveCall(null);
+    setTwilioRoom(null);
+    setCallToken(null);
+    setCallRoom(null);
+    setCallParticipants([]);
+    setIsMuted(false);
+    setIsVideoOff(false);
+    setShowExitConfirmation(false);
+    
+    // 2. Try to notify the server, but don't block on it
     if (callRoom) {
       try {
-        await APIService.leaveVideoCall(callRoom);
-        
-        // Update call status locally
-        setCallStatuses(prev => {
-          if (prev[callRoom]) {
-            const userIdStr = getUserId(user);
-            return {
-              ...prev,
-              [callRoom]: {
-                ...prev[callRoom],
-                leftParticipants: [
-                  ...(prev[callRoom].leftParticipants || []),
-                  { _id: userIdStr, timestamp: new Date() }
-                ]
-              }
-            };
-          }
-          return prev;
-        });
+        APIService.leaveVideoCall(callRoom)
+          .then(response => {
+            console.log("Successfully recorded call exit:", response);
+          })
+          .catch(err => {
+            console.error("Error recording call exit (non-blocking):", err);
+          });
       } catch (err) {
-        console.error("Error recording call exit:", err);
+        console.error("Error initiating call exit request:", err);
       }
     }
     
-    // Properly clean up Twilio room and all tracks
+    // 3. Collect all media tracks that need to be stopped in a single array
+    const allTracksToStop = [];
+
+    // 4. First stop the Twilio room and its tracks
     if (twilioRoom) {
       try {
-        // Disconnect from the Twilio room
-        twilioRoom.disconnect();
-        
-        // Stop all local tracks
+        // Get all local tracks before disconnecting
         twilioRoom.localParticipant.tracks.forEach(publication => {
           const track = publication.track;
           if (track) {
-            track.stop(); // This properly stops the camera/microphone
+            allTracksToStop.push(track);
+            
+            // Also detach from DOM
             track.detach().forEach(element => {
               if (element.parentNode) {
                 element.parentNode.removeChild(element);
@@ -1431,10 +1434,12 @@ const Friends = () => {
           }
         });
         
-        // Clean up any remote participant tracks
+        // Do the same for all remote participant tracks
         twilioRoom.participants.forEach(participant => {
           participant.tracks.forEach(publication => {
             if (publication.track) {
+              allTracksToStop.push(publication.track);
+              
               publication.track.detach().forEach(element => {
                 if (element.parentNode) {
                   element.parentNode.removeChild(element);
@@ -1444,66 +1449,99 @@ const Friends = () => {
           });
         });
         
-        console.log("Successfully cleaned up all media tracks and disconnected from room");
+        // Now disconnect the room
+        twilioRoom.disconnect();
+        console.log("Disconnected from Twilio room");
       } catch (err) {
-        console.error("Error cleaning up Twilio room:", err);
+        console.error("Error during Twilio room cleanup:", err);
       }
     }
     
-    // Clean up video elements
-    if (localVideoRef.current) {
-      const stream = localVideoRef.current.srcObject;
-      if (stream) {
-        // Stop all tracks in the stream to fully release camera/mic
-        stream.getTracks().forEach(track => {
-          track.stop();
-          console.log(`Stopped ${track.kind} track`);
-        });
-      }
-      localVideoRef.current.srcObject = null;
-    }
-    
-    if (remoteVideoRef.current) {
-      const stream = remoteVideoRef.current.srcObject;
-      if (stream) {
-        // Stop all tracks in the remote stream
-        stream.getTracks().forEach(track => {
-          track.stop();
-          console.log(`Stopped remote ${track.kind} track`);
-        });
-      }
-      remoteVideoRef.current.srcObject = null;
-    }
-    
-    // Additional cleanup for any lingering MediaStream tracks
+    // 5. Collect tracks from video elements
     try {
-      // Force browser to release camera/mic by requesting and immediately stopping
-      navigator.mediaDevices.getUserMedia({ audio: true, video: true })
-        .then(stream => {
+      // Local video element
+      if (localVideoRef.current) {
+        const stream = localVideoRef.current.srcObject;
+        if (stream) {
           stream.getTracks().forEach(track => {
-            track.stop();
-            console.log(`Released ${track.kind} device`);
+            allTracksToStop.push(track);
           });
-        })
-        .catch(err => console.log("No additional media devices to clean up"));
+        }
+        localVideoRef.current.srcObject = null;
+      }
+      
+      // Remote video element
+      if (remoteVideoRef.current) {
+        const stream = remoteVideoRef.current.srcObject;
+        if (stream) {
+          stream.getTracks().forEach(track => {
+            allTracksToStop.push(track);
+          });
+        }
+        remoteVideoRef.current.srcObject = null;
+      }
     } catch (err) {
-      console.log("Error during additional media cleanup:", err);
+      console.error("Error collecting tracks from video elements:", err);
     }
-
-    // Reset all video call related state
-    setTwilioRoom(null);
-    setActiveCall(null);
-    setCallToken(null);
-    setCallRoom(null);
-    setCallParticipants([]);
-    setIsMuted(false);
-    setIsVideoOff(false);
-    setShowExitConfirmation(false);
-
-    // Add a small delay before scrolling to the latest messages
+    
+    // 6. Stop all collected tracks
+    console.log(`Stopping ${allTracksToStop.length} media tracks`);
+    allTracksToStop.forEach(track => {
+      try {
+        track.stop();
+        console.log(`Stopped ${track.kind} track with ID: ${track.id}`);
+      } catch (err) {
+        console.error(`Error stopping track: ${err.message}`);
+      }
+    });
+    
+    // 7. Special forced camera cleanup - force browser to release camera
+    try {
+      // Try multiple methods to ensure camera release
+      
+      // Method 1: Request access and then immediately release
+      const cleanupWithNewRequest = async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+          if (stream) {
+            stream.getTracks().forEach(track => {
+              track.stop();
+              console.log(`Force-released ${track.kind} device, ID: ${track.id}`);
+            });
+          }
+        } catch (e) {
+          console.log("No additional media devices to clean up");
+        }
+      };
+      
+      // Method 2: Try to enumerate devices to trigger camera release
+      const forceEnumerateDevices = async () => {
+        try {
+          await navigator.mediaDevices.enumerateDevices();
+          console.log("Force enumerated devices to help release camera");
+        } catch (e) {
+          console.log("Could not enumerate devices");
+        }
+      };
+      
+      // Run all methods in sequence
+      await cleanupWithNewRequest();
+      await forceEnumerateDevices();
+      
+      // Method 3: Last resort - force garbage collection by null assignment
+      localVideoRef.current = null;
+      remoteVideoRef.current = null;
+      
+    } catch (err) {
+      console.log("Error during forced camera cleanup:", err);
+    }
+    
+    // 8. Scroll back to chat messages to improve user experience
     setTimeout(() => {
       scrollToBottom();
     }, 100);
+    
+    console.log("Video call cleanup complete");
   };
 
   // Handle a new track from a participant
@@ -1661,6 +1699,78 @@ const Friends = () => {
       }
     };
   }, [socketRef.current, activeCall, callRoom]);
+
+  // Add a component unmount cleanup for video call
+  useEffect(() => {
+    // Clean up function that runs when component unmounts or dependencies change
+    return () => {
+      // If there's an active call when navigating away, clean it up
+      if (twilioRoom) {
+        console.log("Component unmounting with active call, cleaning up");
+        cleanupVideoCall();
+      }
+    };
+  }, [twilioRoom]); // Only re-run if twilioRoom changes
+
+  // Add a listener for Twilio Room errors that might not trigger other events
+  useEffect(() => {
+    if (twilioRoom) {
+      const handleError = (error) => {
+        console.error("Twilio room error:", error);
+        toast({
+          title: "Video Call Error",
+          description: "There was a problem with the video call. Ending call.",
+          variant: "destructive",
+          duration: 5000,
+        });
+        
+        // End the call on any error
+        cleanupVideoCall();
+      };
+      
+      twilioRoom.on('error', handleError);
+      
+      return () => {
+        twilioRoom.off('error', handleError);
+      };
+    }
+  }, [twilioRoom]);
+
+  // Add this effect with a more aggressive cleanup for component unmount
+  useEffect(() => {
+    return () => {
+      // This will run when the component unmounts
+      console.log("Friends component unmounting, performing global cleanup");
+      
+      // First clean up any ongoing call
+      if (twilioRoom || activeCall) {
+        cleanupVideoCall();
+      }
+      
+      // Additional global cleanup to force release all media devices
+      try {
+        // Try to close any active MediaStreams by forcing a new request
+        navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+          .then(stream => {
+            stream.getTracks().forEach(track => {
+              track.stop();
+              console.log(`Unmount cleanup: Released ${track.kind} device`);
+            });
+            
+            // Force reset video elements
+            if (localVideoRef.current) localVideoRef.current.srcObject = null;
+            if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+            
+            // Null out the refs to help garbage collection
+            localVideoRef.current = null;
+            remoteVideoRef.current = null;
+          })
+          .catch(e => console.log("No media devices to clean up on unmount"));
+      } catch (e) {
+        console.log("Error during unmount media cleanup:", e);
+      }
+    };
+  }, []);
 
   if (!isAuthenticated()) {
     return (

@@ -107,8 +107,9 @@ class APIService {
    * Send a message via socket
    * @param {string|Object} receiver - The recipient's user ID or user object
    * @param {string} message - The message content
+   * @param {boolean} skipSave - Whether to skip saving the message on the server
    */
-  static sendSocketMessage(receiver, message) {
+  static sendSocketMessage(receiver, message, skipSave = false) {
     // Get receiver ID consistently
     const receiverId =
       typeof receiver === "object" ? this.getUserId(receiver) : receiver;
@@ -149,6 +150,7 @@ class APIService {
       }
     }
 
+    // Check socket connection
     if (!this.socket) {
       console.error("Socket not initialized");
       if (this.userId) {
@@ -168,13 +170,14 @@ class APIService {
       }
     }
 
-    console.log(`Sending message to ${receiverId}: ${message}`);
+    console.log(`Sending message to ${receiverId} via socket with skipSave=${skipSave}`);
 
     try {
       this.socket.emit("send_message", {
         senderId: this.userId,
         receiverId,
         message,
+        skipSave // Pass the flag to tell server not to save this message again
       });
       return true;
     } catch (error) {
@@ -645,25 +648,31 @@ class APIService {
     }
 
     try {
-      // Save to database via REST API but don't emit from server
+      // First, try to save via API call
+      console.log("Saving message via API");
       const response = await this.authenticatedRequest("/api/user/message", {
         method: "POST",
         body: JSON.stringify({
           receiverId,
           message,
-          skipEmit: true, // Add this flag to tell the server not to emit
+          skipEmit: true, // Skip server-side emit
         }),
       });
 
-      // After successful API call, emit via socket for real-time delivery
-      this.sendSocketMessage(receiverId, message);
+      // If the message was saved successfully, emit it via socket for real-time delivery
+      if (response.success) {
+        console.log("Message saved successfully, emitting via socket with skipSave");
+        // Pass true for skipSave to prevent duplicate saving
+        this.sendSocketMessage(receiverId, message, true);
+      }
 
       return response;
     } catch (error) {
       console.error("Error sending message via API:", error);
 
       // Try socket as fallback if API fails
-      const socketSent = this.sendSocketMessage(receiverId, message);
+      console.log("API call failed, trying socket as fallback");
+      const socketSent = this.sendSocketMessage(receiverId, message, false);
       if (socketSent) {
         return {
           success: true,

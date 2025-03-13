@@ -520,69 +520,78 @@ const Friends = () => {
     try {
       setLoading((prev) => ({ ...prev, chat: true }));
       const chatMessages = await APIService.getChatWithUser(userId);
-      console.log("Chat messages received:", chatMessages);
 
-      // Process video calls to update joined status
-      const newCallStatuses = {};
-      const newJoinedMeetings = new Set();
-      const currentUserId = getUserId(user);
+      // Process to remove potential duplicates
+      const uniqueMessages = [];
+      const messageKeys = new Set();
 
-      // Format messages for our UI
-      const formattedMessages = chatMessages.map((msg, index) => {
-        // Handle video call messages
-        if (msg.video_call && msg.room_name) {
-          console.log("Processing video call message:", msg);
+      // Format messages for our UI and deduplicate
+      for (const msg of chatMessages) {
+        // Create a unique key for this message
+        const messageKey = `${msg.senderId}_${msg.receiverId}_${msg.message}_${msg.createdAt}`;
+        
+        // Only add if we haven't seen this message before
+        if (!messageKeys.has(messageKey)) {
+          messageKeys.add(messageKey);
           
-          // Ensure arrays are properly initialized
-          const participants = msg.participants || [];
-          const leftParticipants = msg.left_participants || [];
-          
-          // Store call status information
-          newCallStatuses[msg.room_name] = {
-            participants: participants,
-            leftParticipants: leftParticipants,
-            status: msg.call_status || 'created',
-            roomId: msg.room_id,
-          };
+          // Process video call messages
+          if (msg.video_call && msg.room_name) {
+            console.log("Processing video call message:", msg);
+            
+            // Ensure arrays are properly initialized
+            const participants = msg.participants || [];
+            const leftParticipants = msg.left_participants || [];
+            
+            // Store call status information
+            setCallStatuses(prev => ({
+              ...prev,
+              [msg.room_name]: {
+                participants: participants,
+                leftParticipants: leftParticipants,
+                status: msg.call_status || 'created',
+                roomId: msg.room_id,
+              }
+            }));
 
-          // Check if current user is a participant (convert to strings for comparison)
-          const isParticipant = participants.some(p => {
-            const pId = typeof p === 'object' ? (p._id || p.id) : p;
-            return pId?.toString() === currentUserId?.toString();
-          });
-          
-          if (isParticipant) {
-            console.log(`User ${currentUserId} is a participant in room ${msg.room_name}`);
-            newJoinedMeetings.add(msg.room_name);
+            // Check if current user is a participant (convert to strings for comparison)
+            const isParticipant = participants.some(p => {
+              const pId = typeof p === 'object' ? (p._id || p.id) : p;
+              return pId?.toString() === getUserId(user)?.toString();
+            });
+            
+            if (isParticipant) {
+              console.log(`User ${getUserId(user)} is a participant in room ${msg.room_name}`);
+              setJoinedMeetings(prev => {
+                const updated = new Set(prev);
+                updated.add(msg.room_name);
+                return updated;
+              });
+            }
           }
+
+          uniqueMessages.push({
+            id: msg._id || Date.now() + uniqueMessages.length,
+            sender: msg.senderId === userId ? "them" : "me",
+            text: msg.message,
+            timestamp: msg.createdAt,
+            seen: msg.seen,
+            isVideoCall: msg.video_call,
+            roomName: msg.room_name,
+            roomId: msg.room_id,
+            callStatus: msg.call_status,
+            participants: msg.participants,
+            leftParticipants: msg.left_participants
+          });
         }
+      }
 
-        return {
-          id: index,
-          sender: msg.senderId === userId ? "them" : "me",
-          text: msg.message,
-          timestamp: msg.createdAt,
-          seen: msg.seen,
-          isVideoCall: msg.video_call,
-          roomName: msg.room_name,
-          roomId: msg.room_id,
-          callStatus: msg.call_status,
-          participants: msg.participants,
-          leftParticipants: msg.left_participants
-        };
-      });
-
-      // Update states
-      setCallStatuses(newCallStatuses);
-      setJoinedMeetings(newJoinedMeetings);
-      
-      console.log("Updated call statuses:", newCallStatuses);
-      console.log("Updated joined meetings:", Array.from(newJoinedMeetings));
+      console.log(`Fetched ${chatMessages.length} messages, ${uniqueMessages.length} after deduplication`);
       
       setMessages((prev) => ({
         ...prev,
-        [userId]: formattedMessages,
+        [userId]: uniqueMessages,
       }));
+      
     } catch (err) {
       console.error("Error fetching chat messages:", err);
       // Initialize with empty array if no messages

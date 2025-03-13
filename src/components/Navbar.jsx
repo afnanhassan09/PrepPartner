@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Menu, X, LogOut, UserCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import logo from "../assets/logo2.png";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,8 +31,8 @@ const Navbar = () => {
     { name: "Friends", href: "/friends" },
   ];
   
-  // Determine which nav items to show
-  const navItems = [...publicNavItems, ...(userIsLoggedIn ? protectedNavItems : [])];
+  // Determine which nav items to show - only show protected items when logged in
+  const navItems = userIsLoggedIn ? protectedNavItems : publicNavItems;
 
   return (
     <header className="py-4">
@@ -41,12 +42,8 @@ const Navbar = () => {
             to="/"
             className="flex items-center space-x-2 transition-transform duration-300 hover:scale-105"
           >
-            <div className="w-10 h-10 bg-primary rounded-md flex items-center justify-center">
-              <span className="text-2xl font-bold text-primary-foreground">
-                P
-              </span>
-            </div>
-            <span className="text-xl font-semibold text-teal">PrepPartner</span>
+            <img src={logo} alt="PrepPartner Logo" className="w-30 h-20" />
+       
           </Link>
 
           {/* Desktop Menu */}
@@ -64,29 +61,32 @@ const Navbar = () => {
             <div className="flex items-center gap-4">
               {userIsLoggedIn ? (
                 <>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-2 text-gray-700 font-medium hover:text-primary transition-colors duration-300"
-                  >
-                    <LogOut size={18} />
-                    <span>Logout</span>
-                  </button>
-                  <Link
-                    to="/profile"
-                    className="flex items-center gap-2 text-gray-700 font-medium hover:text-primary transition-colors duration-300"
-                  >
-                    <UserCircle size={20} />
-                    <span className="sr-only md:not-sr-only">Profile</span>
-                  </Link>
+                  <div className="relative group">
+                    <Link
+                      to="/profile"
+                      className="flex items-center gap-2 text-gray-700 font-medium hover:text-primary transition-colors duration-300"
+                    >
+                      <UserCircle size={20} />
+                      <span className="sr-only md:not-sr-only">Profile</span>
+                    </Link>
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
+                      <Link
+                        to="/dashboard"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        Dashboard
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  </div>
                 </>
               ) : (
                 <>
-                  <Link
-                    to="/auth"
-                    className="text-gray-700 font-medium hover:text-primary transition-colors duration-300"
-                  >
-                    Login
-                  </Link>
                   <Link
                     to="/auth"
                     className="bg-[#4169FB] text-white px-6 py-2.5 rounded-full font-medium 
@@ -94,7 +94,7 @@ const Navbar = () => {
                       hover:shadow-lg hover:shadow-[#4169FB]/20 
                       active:transform active:scale-95"
                   >
-                    Get Started
+                    Login
                   </Link>
                 </>
               )}
@@ -127,13 +127,12 @@ const Navbar = () => {
               ))}
               {userIsLoggedIn ? (
                 <>
-                  <button
-                    onClick={handleLogout}
+                  <Link
+                    to="/dashboard"
                     className="flex items-center gap-2 w-full py-2 text-gray-700 hover:text-primary font-medium"
                   >
-                    <LogOut size={18} />
-                    <span>Logout</span>
-                  </button>
+                    <span>Dashboard</span>
+                  </Link>
                   <Link
                     to="/profile"
                     className="flex items-center gap-2 w-full py-2 text-gray-700 hover:text-primary font-medium"
@@ -141,13 +140,20 @@ const Navbar = () => {
                     <UserCircle size={18} />
                     <span>Profile</span>
                   </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 w-full py-2 text-gray-700 hover:text-primary font-medium"
+                  >
+                    <LogOut size={18} />
+                    <span>Logout</span>
+                  </button>
                 </>
               ) : (
                 <Link
                   to="/auth"
                   className="block py-2 text-[#4169FB] font-medium hover:text-[#4169FB]/90"
                 >
-                  Login/Signup
+                  Login
                 </Link>
               )}
             </div>

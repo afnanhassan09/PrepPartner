@@ -63,11 +63,12 @@ const App = () => (
               <Route path="/mock" element={<InterviewMockPage />} />
               <Route path="/friends" element={<Friends />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/dashboard" element={<Profile />} />
             </Route>
     
             {/* Dashboard routes with dashboard layout */}
             <Route element={<DashboardLayoutWrapper />}>
-              <Route path="/dashboard" element={<NotFound />} />
+           
               <Route path="/history" element={<NotFound />} />
               <Route path="/settings" element={<NotFound />} />
               {/* Add more dashboard routes here */}

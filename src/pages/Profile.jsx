@@ -238,36 +238,6 @@ const Profile = () => {
             )}
           </div>
 
-          {/* Account Settings Card */}
-          <div className="bg-white p-8 rounded-lg shadow-xl mt-8 animate-fade-up delay-100">
-            <h2 className="text-3xl font-bold text-teal mb-8">Account Settings</h2>
-            
-            <div className="space-y-6">
-              <div className="p-6 border border-border rounded-lg hover:border-primary transition-all duration-300 bg-background">
-                <h3 className="text-xl font-semibold text-primary mb-2">Change Password</h3>
-                <p className="text-muted mb-4">Update your password to keep your account secure</p>
-                <button className="bg-background-secondary text-primary px-6 py-2.5 rounded-full font-medium hover:bg-background-secondary/80 transition-all duration-300">
-                  Change Password
-                </button>
-              </div>
-              
-              <div className="p-6 border border-border rounded-lg hover:border-primary transition-all duration-300 bg-background">
-                <h3 className="text-xl font-semibold text-primary mb-2">Notification Preferences</h3>
-                <p className="text-muted mb-4">Manage how and when you receive notifications</p>
-                <button className="bg-background-secondary text-primary px-6 py-2.5 rounded-full font-medium hover:bg-background-secondary/80 transition-all duration-300">
-                  Manage Notifications
-                </button>
-              </div>
-              
-              <div className="p-6 border border-red-100 rounded-lg hover:border-red-300 transition-all duration-300 bg-red-50">
-                <h3 className="text-xl font-semibold text-red-600 mb-2">Delete Account</h3>
-                <p className="text-red-500 mb-4">Permanently delete your account and all associated data</p>
-                <button className="bg-white text-red-600 border border-red-300 px-6 py-2.5 rounded-full font-medium hover:bg-red-50 transition-all duration-300">
-                  Delete Account
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
     </div>

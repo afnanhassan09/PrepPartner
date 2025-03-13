@@ -49,24 +49,24 @@ const VideoPlayer = ({
       className="relative w-full rounded-xl overflow-hidden shadow-xl bg-black flex"
       style={{ height: "calc(100vh * 0.7)" }}
     >
+      {/* Start Button Overlay - Now covering the entire video player */}
+      {showStartButton && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
+          <button
+            onClick={handleStartClick}
+            className="px-8 py-4 bg-teal text-white rounded-xl font-semibold 
+                       hover:bg-teal-600 transition-all duration-200 
+                       transform hover:scale-105 shadow-lg"
+          >
+            Start Interview
+          </button>
+        </div>
+      )}
+
       {/* Left Half - Split into upper and lower sections with no gap */}
       <div className="w-1/2 h-full flex flex-col bg-black">
         {/* Upper Half - AI Video */}
         <div className="w-full h-1/2 relative bg-black">
-          {/* Start Button Overlay */}
-          {showStartButton && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
-              <button
-                onClick={handleStartClick}
-                className="px-8 py-4 bg-teal text-white rounded-xl font-semibold 
-                             hover:bg-teal-600 transition-all duration-200 
-                             transform hover:scale-105 shadow-lg"
-              >
-                Start Interview
-              </button>
-            </div>
-          )}
-
           {/* Countdown Timer */}
           {isCountdownActive && timeLeft > 0 && (
             <div
@@ -114,17 +114,19 @@ const VideoPlayer = ({
           />
         </div>
         
-        {/* Lower Half - Static Looping Video - No margin/padding */}
+        {/* Lower Half - Static Looping Video - Only plays after interview starts */}
         <div className="w-full h-1/2 bg-black">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="w-full h-full object-cover"
-            src="https://studyninja.s3.ap-south-1.amazonaws.com/videos/Mock+Pause+Video.mp4"
-            style={{ backgroundColor: "black" }}
-          />
+          {!showStartButton && (
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full h-full object-cover"
+              src="https://studyninja.s3.ap-south-1.amazonaws.com/videos/Mock+Pause+Video.mp4"
+              style={{ backgroundColor: "black" }}
+            />
+          )}
         </div>
       </div>
 

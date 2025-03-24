@@ -20,7 +20,7 @@ const Timer = ({ isRunning }) => {
   };
 
   return (
-    <div className="bg-white px-4 py-2 rounded shadow">
+    <div className="bg-background px-4 py-2 rounded shadow">
       {formatTime(time)}
     </div>
   );

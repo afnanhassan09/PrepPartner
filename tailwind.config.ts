@@ -25,15 +25,15 @@ export default {
           DEFAULT: "#000000",
         },
         teal: {
-          DEFAULT: "#003841",
+          DEFAULT: "rgb(9, 54, 62)", // #09363E
           foreground: "#FFFFFF",
         },
         primary: {
-          DEFAULT: "#F3C178",
+          DEFAULT: "rgb(15, 186, 113)", // #0FBA71
           foreground: "#000000",
         },
         secondary: {
-          DEFAULT: "#E6E6FA",
+          DEFAULT: "rgb(219, 207, 252)", // #DBCFFC
           foreground: "#000000",
         },
         background: {
@@ -41,7 +41,11 @@ export default {
           secondary: "#E8F5E9",
         },
         muted: {
-          DEFAULT: "#6B7280",
+          DEFAULT: "rgb(136, 143, 155)", // #888F9B
+          foreground: "#000000",
+        },
+        accent: {
+          DEFAULT: "rgb(234, 217, 63)", // #EAD93F
           foreground: "#000000",
         },
       },

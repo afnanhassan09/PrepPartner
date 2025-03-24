@@ -109,13 +109,13 @@ const Plan = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case "Good":
-        return "bg-green-500"
+        return "bg-primary"
       case "Okay":
-        return "bg-yellow-500"
+        return "bg-accent"
       case "Needs Improvement":
-        return "bg-red-500"
+        return "bg-secondary"
       default:
-        return "bg-gray-500"
+        return "bg-muted"
     }
   }
 
@@ -299,12 +299,12 @@ const Plan = () => {
               {cases.map((caseItem, index) => (
                 <div
                   key={index}
-                  className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 ${casesCompleted[caseItem] ? "bg-green-50 border-green-300" : "hover:bg-teal-50"}`}
+                  className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 ${casesCompleted[caseItem] ? "bg-primary/10 border-primary" : "hover:bg-secondary/10"}`}
                   onClick={() => toggleCaseCompleted(caseItem)}
                 >
                   <div className="flex items-center">
                     <div
-                      className={`w-6 h-6 rounded border flex items-center justify-center mr-3 ${casesCompleted[caseItem] ? "bg-green-500 border-green-500" : "border-gray-400"}`}
+                      className={`w-6 h-6 rounded border flex items-center justify-center mr-3 ${casesCompleted[caseItem] ? "bg-primary border-primary" : "border-muted"}`}
                     >
                       {casesCompleted[caseItem] && (
                         <svg
@@ -319,13 +319,13 @@ const Plan = () => {
                       )}
                     </div>
                     <span
-                      className={`font-medium ${casesCompleted[caseItem] ? "line-through text-green-700" : "text-gray-800"}`}
+                      className={`font-medium ${casesCompleted[caseItem] ? "line-through text-primary" : "text-foreground"}`}
                     >
                       {caseItem}
                     </span>
                   </div>
                   {casesCompleted[caseItem] && (
-                    <div className="mt-2 text-sm text-green-600 pl-9">Completed! Great job!</div>
+                    <div className="mt-2 text-sm text-primary pl-9">Completed! Great job!</div>
                   )}
                 </div>
               ))}
@@ -337,7 +337,7 @@ const Plan = () => {
         <div className="flex flex-wrap justify-center gap-4 mb-16">
           <a
             href="/interview-prep"
-            className="bg-teal hover:bg-teal-dark text-white font-medium py-3 px-6 rounded-lg transition-colors duration-300 flex items-center"
+            className="bg-teal text-teal-foreground font-medium py-3 px-6 rounded-lg transition-colors duration-300 flex items-center"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

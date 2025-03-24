@@ -1,12 +1,22 @@
-import { ArrowRight, CheckCircle, Star, Users, Award } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useEffect } from "react";
-gsap.registerPlugin(ScrollTrigger);
+"use client"
+
+import { ArrowRight, CheckCircle, Star, Users, Award } from "lucide-react"
+import { useNavigate } from "react-router-dom"
+import gsap from "gsap"
+import { ScrollTrigger } from "gsap/ScrollTrigger"
+import { ScrollToPlugin } from "gsap/ScrollToPlugin"
+import { useEffect, useRef } from "react"
+//how to import css  ?
+import "./index.css"
+
+gsap.registerPlugin(ScrollTrigger, ScrollToPlugin)
 
 const Index = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
+  const mainRef = useRef(null)
+  const featuresRef = useRef(null)
+  const featureCardsRef = useRef([])
+
   const features = [
     {
       icon: <CheckCircle className="w-8 h-8 text-[#3DD598]" />,
@@ -23,7 +33,7 @@ const Index = () => {
       title: "Real Questions",
       description: "Access our database of real interview questions",
     },
-  ];
+  ]
 
   const successStories = [
     {
@@ -44,18 +54,13 @@ const Index = () => {
       story: "Best interview preparation platform!",
       rating: 5,
     },
-  ];
+  ]
 
   const pricingPlans = [
     {
       name: "Basic",
       price: "Free",
-      features: [
-        "5 Mock Interviews",
-        "Basic AI Feedback",
-        "Interview Question Bank",
-        "Community Support",
-      ],
+      features: ["5 Mock Interviews", "Basic AI Feedback", "Interview Question Bank", "Community Support"],
       recommended: false,
     },
     {
@@ -73,80 +78,288 @@ const Index = () => {
     {
       name: "Enterprise",
       price: "Custom",
-      features: [
-        "Team Management",
-        "Custom Question Sets",
-        "Dedicated Support",
-        "Analytics Dashboard",
-        "API Access",
-      ],
+      features: ["Team Management", "Custom Question Sets", "Dedicated Support", "Analytics Dashboard", "API Access"],
       recommended: false,
     },
-  ];
+  ]
 
   const stats = [
     { value: "50K+", label: "Success Stories" },
     { value: "95%", label: "Success Rate" },
     { value: "1000+", label: "Interview Questions" },
     { value: "24/7", label: "AI Support" },
-  ];
+  ]
 
   useEffect(() => {
-    // Fade in and slide from left for features
-    gsap.from(".feature-card", {
-      scrollTrigger: {
-        trigger: ".feature-card",
-        start: "top bottom",
-        end: "bottom center",
-        scrub: 1,
-      },
-      x: -100,
-      opacity: 0,
-      stagger: 0.2,
-    });
+    // Create a context for GSAP animations
+    const ctx = gsap.context(() => {
+      // Hero section entrance animation
+      const heroTimeline = gsap.timeline()
+      heroTimeline
+        .from(".hero-badge", {
+          opacity: 0,
+          y: 30,
+          duration: 0.8,
+          ease: "power3.out",
+        })
+        .from(
+          ".hero-heading span",
+          {
+            opacity: 0,
+            y: 50,
+            stagger: 0.2,
+            duration: 0.8,
+            ease: "back.out(1.7)",
+          },
+          "-=0.4",
+        )
+        .from(
+          ".hero-description",
+          {
+            opacity: 0,
+            y: 30,
+            duration: 0.8,
+            ease: "power2.out",
+          },
+          "-=0.6",
+        )
+        .from(
+          ".hero-cta",
+          {
+            opacity: 0,
+            y: 20,
+            stagger: 0.15,
+            duration: 0.6,
+            ease: "power2.out",
+          },
+          "-=0.4",
+        )
+        .from(
+          ".hero-image-container",
+          {
+            opacity: 0,
+            scale: 0.9,
+            duration: 1,
+            ease: "power2.out",
+          },
+          "-=0.8",
+        )
+        .from(
+          ".floating-stat",
+          {
+            opacity: 0,
+            scale: 0.5,
+            stagger: 0.2,
+            duration: 0.6,
+            ease: "back.out(2)",
+          },
+          "-=0.6",
+        )
 
-    // Staggered reveal for success stories
-    gsap.from(".success-story", {
-      scrollTrigger: {
-        trigger: ".success-stories",
-        start: "top center",
-        end: "bottom center",
-        scrub: 1,
-      },
-      y: 50,
-      opacity: 0,
-      stagger: 0.3,
-    });
+      // Create a scroll trigger for the features section that pins it until all animations complete
+      let featuresScrollTrigger = ScrollTrigger.create({
+        trigger: ".features-section",
+        start: "top 20%",
+        end: "+=500",
+        pin: true,
+        anticipatePin: 1,
+        pinSpacing: true,
+      })
 
-    // Stats counter animation
-    gsap.from(".stat-number", {
-      scrollTrigger: {
-        trigger: ".stats-section",
-        start: "top center",
-        end: "bottom center",
-        scrub: 1,
-      },
-      textContent: 0,
-      duration: 2,
-      snap: { textContent: 1 },
-      stagger: 0.2,
-    });
-  }, []);
+      // Create a timeline for the features section animations
+      const featuresTimeline = gsap.timeline({
+        scrollTrigger: {
+          trigger: ".features-section",
+          start: "top 20%",
+          toggleActions: "play none none reset",
+          onEnter: () => {
+            // Temporarily disable scrolling when entering the section
+            document.body.style.overflow = "hidden"
+          },
+        },
+        onComplete: () => {
+          // Re-enable scrolling when the animation is complete
+          document.body.style.overflow = "auto"
+          // Wait a moment before killing the scroll trigger to ensure smooth transition
+          setTimeout(() => {
+            featuresScrollTrigger.kill()
+          }, 300)
+        },
+      })
+
+      // Animate the title first
+      featuresTimeline
+        .from(".features-section .text-center", {
+          opacity: 0,
+          y: 30,
+          duration: 0.8,
+          ease: "power2.out",
+        })
+        
+      // Then animate each feature card one after another with fixed durations (not scrub-based)
+      featureCardsRef.current.forEach((card, index) => {
+        if (card) {
+          featuresTimeline.from(
+            card,
+            {
+              opacity: 0,
+              y: 60,
+              duration: 0.8,
+              ease: "back.out(1.7)",
+            },
+            "-=0.4" // Overlap for smoother sequence
+          )
+        }
+      })
+      
+      // Short pause at the end before unpinning
+      featuresTimeline.to({}, { duration: 0.5 })
+
+      // Success stories
+      gsap.from(".success-story", {
+        scrollTrigger: {
+          trigger: ".success-stories",
+          start: "top 75%",
+          toggleActions: "play none none none",
+        },
+        opacity: 0,
+        y: 60,
+        stagger: 0.2,
+        duration: 0.8,
+        ease: "back.out(1.7)",
+      })
+
+      // Stats section
+      const statsTimeline = gsap.timeline({
+        scrollTrigger: {
+          trigger: ".stats-section",
+          start: "top 75%",
+          toggleActions: "play none none none",
+        },
+      })
+
+      statsTimeline
+        .from(".stats-heading", {
+          opacity: 0,
+          y: 30,
+          duration: 0.6,
+          ease: "power2.out",
+        })
+        .from(
+          ".stat-card",
+          {
+            opacity: 0,
+            y: 40,
+            stagger: 0.15,
+            duration: 0.8,
+            ease: "power3.out",
+          },
+          "-=0.3",
+        )
+
+      // FAQ section
+      gsap.from(".faq-item", {
+        scrollTrigger: {
+          trigger: ".faq-section",
+          start: "top 75%",
+          toggleActions: "play none none none",
+        },
+        opacity: 0,
+        y: 40,
+        stagger: 0.15,
+        duration: 0.7,
+        ease: "power2.out",
+      })
+
+      // CTA section
+      const ctaTimeline = gsap.timeline({
+        scrollTrigger: {
+          trigger: ".cta-section",
+          start: "top 80%",
+          toggleActions: "play none none none",
+        },
+      })
+
+      ctaTimeline
+        .from(".cta-heading", {
+          opacity: 0,
+          y: 40,
+          duration: 0.8,
+          ease: "power2.out",
+        })
+        .from(
+          ".cta-description",
+          {
+            opacity: 0,
+            y: 30,
+            duration: 0.7,
+            ease: "power2.out",
+          },
+          "-=0.5",
+        )
+        .from(
+          ".cta-button",
+          {
+            opacity: 0,
+            y: 20,
+            scale: 0.9,
+            duration: 0.6,
+            ease: "back.out(1.7)",
+          },
+          "-=0.4",
+        )
+        .from(
+          ".cta-badge",
+          {
+            opacity: 0,
+            scale: 0.5,
+            stagger: 0.2,
+            duration: 0.6,
+            ease: "back.out(2)",
+          },
+          "-=0.4",
+        )
+
+      // Parallax effects
+      gsap.to(".parallax-bg", {
+        scrollTrigger: {
+          trigger: "body",
+          start: "top top",
+          end: "bottom top",
+          scrub: 0.5,
+        },
+        y: (i, el) => -150 * Number.parseFloat(el.getAttribute("data-speed")),
+        ease: "none",
+      })
+    }, mainRef)
+
+    return () => ctx.revert() // Cleanup
+  }, [])
+
+  // Function to set refs for feature cards
+  const setFeatureCardRef = (el, index) => {
+    featureCardsRef.current[index] = el
+  }
 
   return (
-    <div className="bg-[#F5F5F5]">
+    <div ref={mainRef} className="bg-white overflow-hidden">
       {/* Hero Section */}
-      <section className="relative min-h-screen overflow-hidden bg-gradient-to-b from-[#F5F5F5] to-[#E8F5E9]">
+      <section className="relative min-h-screen overflow-hidden bg-gradient-to-b from-white to-[#E8F5E9]">
         {/* Animated background blobs */}
         <div className="absolute inset-0 overflow-hidden -z-10">
-          <div className="absolute top-1/4 -left-10 w-72 h-72 bg-[#3DD598]/30 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
           <div
-            className="absolute top-1/3 -right-10 w-72 h-72 bg-[#D1C4E9]/30 rounded-full mix-blend-multiply filter blur-xl animate-blob"
-            style={{ animationDelay: "2s" }}
+            className="parallax-bg absolute top-1/4 -left-10 w-72 h-72 bg-[#3DD598]/30 rounded-full mix-blend-multiply filter blur-xl animate-blob"
+            data-speed="0.5"
           ></div>
           <div
-            className="absolute -bottom-8 left-1/2 w-72 h-72 bg-[#004D40]/30 rounded-full mix-blend-multiply filter blur-xl animate-blob"
+            className="parallax-bg absolute top-1/3 -right-10 w-72 h-72 bg-[#D1C4E9]/30 rounded-full mix-blend-multiply filter blur-xl animate-blob"
+            style={{ animationDelay: "2s" }}
+            data-speed="0.8"
+          ></div>
+          <div
+            className="parallax-bg absolute -bottom-8 left-1/2 w-72 h-72 bg-[#004D40]/30 rounded-full mix-blend-multiply filter blur-xl animate-blob"
             style={{ animationDelay: "4s" }}
+            data-speed="0.3"
           ></div>
         </div>
 
@@ -154,25 +367,23 @@ const Index = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8 relative">
               {/* Floating badge */}
-              <div className="inline-flex items-center space-x-2 bg-white/80 backdrop-blur-sm px-6 py-3 rounded-full shadow-xl animate-float">
+              <div className="hero-badge inline-flex items-center space-x-2 bg-white/80 backdrop-blur-sm px-6 py-3 rounded-full shadow-xl animate-float">
                 <span className="relative w-3 h-3">
                   <span className="absolute inline-flex h-full w-full rounded-full bg-[#004D40] opacity-75 animate-ping"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-[#004D40]"></span>
                 </span>
-                <span className="text-sm font-medium">
-                  PrepPartner: Your Path to Interview Success
-                </span>
+                <span className="text-sm font-medium">PrepPartner: Your Path to Interview Success</span>
               </div>
 
               {/* Modern gradient heading */}
-              <h1 className="text-6xl font-bold leading-tight">
-                <span className="bg-gradient-to-r from-[#004D40] via-[#3DD598] to-[#D1C4E9] bg-clip-text text-transparent animate-gradient-xy">
+              <h1 className="hero-heading text-6xl font-bold leading-tight">
+                <span className="inline-block bg-gradient-to-r from-[#004D40] via-[#3DD598] to-[#D1C4E9] bg-clip-text text-transparent animate-gradient-xy">
                   Master your interview skills with
                 </span>
                 <br />
-                realtime feedback,
+                <span className="inline-block">realtime feedback,</span>
                 <br />
-                <span className="relative">
+                <span className="relative inline-block">
                   AI-powered practice sessions.
                   <svg
                     className="absolute -bottom-2 left-0 w-full"
@@ -191,11 +402,16 @@ const Index = () => {
                 </span>
               </h1>
 
+              <p className="hero-description text-lg text-[#6B7280] max-w-xl">
+                Prepare for your next interview with confidence using our AI-powered platform that provides real-time
+                feedback and personalized coaching.
+              </p>
+
               {/* Modern CTA buttons */}
               <div className="flex flex-col sm:flex-row gap-4 pt-8">
                 <button
                   onClick={() => navigate("/interview")}
-                  className="group relative px-8 py-4 bg-[#004D40] overflow-hidden rounded-full transition-all duration-300"
+                  className="hero-cta group relative px-8 py-4 bg-[#004D40] overflow-hidden rounded-full transition-all duration-300"
                 >
                   <div className="absolute inset-0 w-0 bg-[#3DD598] transition-all duration-[400ms] ease-out group-hover:w-full"></div>
                   <span className="relative text-white group-hover:text-white flex items-center justify-center">
@@ -204,7 +420,7 @@ const Index = () => {
                   </span>
                 </button>
 
-                <button className="relative px-8 py-4 bg-white/80 backdrop-blur-sm rounded-full border border-[#E2E8F0] hover:border-[#3DD598] transition-all duration-300 hover:shadow-lg hover:shadow-[#3DD598]/20">
+                <button className="hero-cta relative px-8 py-4 bg-white/80 backdrop-blur-sm rounded-full border border-[#E2E8F0] hover:border-[#3DD598] transition-all duration-300 hover:shadow-lg hover:shadow-[#3DD598]/20">
                   <span className="relative flex items-center justify-center">
                     Watch Demo
                     <span className="ml-2 relative w-5 h-5 flex items-center justify-center">
@@ -217,7 +433,7 @@ const Index = () => {
             </div>
 
             {/* Modern image section with floating elements */}
-            <div className="relative">
+            <div className="hero-image-container relative">
               <div className="absolute inset-0 bg-gradient-to-r from-[#3DD598]/10 to-[#D1C4E9]/10 rounded-2xl transform rotate-3 animate-pulse-glow"></div>
               <div className="relative z-10 rounded-2xl overflow-hidden shadow-2xl">
                 <img
@@ -226,19 +442,13 @@ const Index = () => {
                   className="w-full h-auto transform transition-transform hover:scale-105 duration-500"
                 />
                 {/* Floating stats cards */}
-                <div
-                  className="absolute right-1 top-1 animate-float"
-                  style={{ animationDelay: "1s" }}
-                >
+                <div className="floating-stat absolute right-1 top-1 animate-float" style={{ animationDelay: "1s" }}>
                   <div className="bg-white/90 backdrop-blur-sm p-4 rounded-xl shadow-xl">
                     <div className="text-2xl font-bold text-[#004D40]">95%</div>
                     <div className="text-sm text-[#6B7280]">Success Rate</div>
                   </div>
                 </div>
-                <div
-                  className="absolute left-1 bottom-1 animate-float"
-                  style={{ animationDelay: "2s" }}
-                >
+                <div className="floating-stat absolute left-1 bottom-1 animate-float" style={{ animationDelay: "2s" }}>
                   <div className="bg-white/90 backdrop-blur-sm p-4 rounded-xl shadow-xl">
                     <div className="text-2xl font-bold text-[#3DD598]">24/7</div>
                     <div className="text-sm text-[#6B7280]">Support</div>
@@ -251,7 +461,7 @@ const Index = () => {
       </section>
 
       {/* Why Choose Us Section - Completely Redesigned */}
-      <section className="py-20 relative overflow-hidden">
+      <section ref={featuresRef} className="features-section py-20 relative overflow-hidden">
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(61,213,152,0.05)_50%,transparent_75%)] bg-[length:20px_20px] animate-shimmer"></div>
         </div>
@@ -270,7 +480,11 @@ const Index = () => {
 
           <div className="grid md:grid-cols-3 gap-12">
             {features.map((feature, index) => (
-              <div key={index} className="feature-card relative group">
+              <div 
+                key={index} 
+                ref={(el) => setFeatureCardRef(el, index)}
+                className="feature-card relative group"
+              >
                 {/* Animated background */}
                 <div className="absolute -inset-1 bg-gradient-to-r from-[#3DD598] to-[#004D40] rounded-lg blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
 
@@ -306,7 +520,7 @@ const Index = () => {
       </section>
 
       {/* Success Stories Section - Updated Design */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      <section className="success-stories py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-[#3DD598]/5 to-[#D1C4E9]/5"></div>
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-16">
@@ -318,7 +532,7 @@ const Index = () => {
             </h2>
           </div>
 
-          <div className="success-stories grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-8">
             {successStories.map((story, index) => (
               <div key={index} className="success-story group relative">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#3DD598] to-[#D1C4E9] rounded-3xl opacity-0 group-hover:opacity-10 blur-xl transition-all duration-500"></div>
@@ -331,25 +545,17 @@ const Index = () => {
 
                   <div className="flex items-center mb-6 gap-4">
                     <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#3DD598]/20 to-[#D1C4E9]/20 flex items-center justify-center">
-                      <span className="text-xl font-bold text-[#004D40]">
-                        {story.name[0]}
-                      </span>
+                      <span className="text-xl font-bold text-[#004D40]">{story.name[0]}</span>
                     </div>
                     <div>
-                      <h3 className="font-semibold text-lg text-[#004D40]">
-                        {story.name}
-                      </h3>
+                      <h3 className="font-semibold text-lg text-[#004D40]">{story.name}</h3>
                       <p className="text-sm text-[#6B7280]">{story.role}</p>
                     </div>
                   </div>
 
                   <blockquote className="relative mb-6">
-                    <div className="absolute -left-2 -top-2 text-4xl text-[#3DD598] opacity-20">
-                      "
-                    </div>
-                    <p className="text-[#6B7280] relative z-10 italic pl-4">
-                      {story.story}
-                    </p>
+                    <div className="absolute -left-2 -top-2 text-4xl text-[#3DD598] opacity-20">"</div>
+                    <p className="text-[#6B7280] relative z-10 italic pl-4">{story.story}</p>
                   </blockquote>
 
                   <div className="flex space-x-1">
@@ -369,10 +575,16 @@ const Index = () => {
       </section>
 
       {/* Statistics Section - Modernized */}
-      <section className="py-20 px-4 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#F5F5F5] to-[#E8F5E9]/30"></div>
+      <section className="stats-section py-20 px-4 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-white to-[#E8F5E9]/30"></div>
 
         <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="stats-heading text-5xl font-bold bg-gradient-to-r from-[#004D40] to-[#3DD598] bg-clip-text text-transparent mb-4">
+              Our Impact
+            </h2>
+          </div>
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
               <div key={index} className="stat-card relative group">
@@ -383,9 +595,7 @@ const Index = () => {
                 <div className="relative bg-white/50 backdrop-blur-sm rounded-2xl p-8 border border-[#3DD598]/10 group-hover:border-[#3DD598]/30 transition-all duration-300 hover:transform hover:-translate-y-2">
                   {/* Floating icon */}
                   <div className="absolute -top-4 -right-4 w-12 h-12 bg-gradient-to-br from-[#3DD598] to-[#004D40] rounded-xl rotate-12 group-hover:rotate-0 transition-transform duration-300 flex items-center justify-center">
-                    <span className="text-white text-xl font-bold">
-                      {index + 1}
-                    </span>
+                    <span className="text-white text-xl font-bold">{index + 1}</span>
                   </div>
 
                   <div className="text-4xl font-bold bg-gradient-to-r from-[#004D40] to-[#3DD598] bg-clip-text text-transparent mb-2 animate-pulse">
@@ -403,7 +613,7 @@ const Index = () => {
       </section>
 
       {/* FAQ Section - Updated Design */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      <section className="faq-section py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <span className="px-4 py-2 rounded-full bg-[#D1C4E9] text-[#004D40] text-sm font-medium mb-4 inline-block">
@@ -433,7 +643,7 @@ const Index = () => {
                 a: "Our question bank is updated weekly with real questions from recent interviews across various industries.",
               },
             ].map((faq, index) => (
-              <div key={index} className="group relative">
+              <div key={index} className="faq-item group relative">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#3DD598] to-[#004D40] rounded-3xl opacity-0 group-hover:opacity-10 blur-xl transition-all duration-500"></div>
                 <div className="relative bg-white/80 backdrop-blur-sm p-8 rounded-3xl transition-all duration-500 hover:shadow-2xl hover:shadow-[#3DD598]/20 hover:-translate-y-2">
                   <div className="absolute -left-4 -top-4 w-12 h-12 bg-gradient-to-br from-[#004D40] to-[#3DD598] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500">
@@ -443,9 +653,7 @@ const Index = () => {
                   <h3 className="text-xl font-semibold mb-4 text-[#004D40] group-hover:text-[#3DD598] transition-colors duration-300">
                     {faq.q}
                   </h3>
-                  <p className="text-[#6B7280] group-hover:text-black transition-colors duration-300">
-                    {faq.a}
-                  </p>
+                  <p className="text-[#6B7280] group-hover:text-black transition-colors duration-300">{faq.a}</p>
                 </div>
               </div>
             ))}
@@ -453,72 +661,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Stay Connected Section - Redesigned */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-[#3DD598]/5 to-[#004D40]/5"></div>
-
-        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
-          <div className="space-y-8 relative">
-            {/* Floating elements */}
-            <div className="absolute -top-20 -left-20 w-40 h-40 bg-[#3DD598]/10 rounded-full blur-3xl animate-pulse"></div>
-            <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-[#004D40]/10 rounded-full blur-3xl animate-pulse"></div>
-
-            <h2 className="text-4xl font-bold relative">
-              <span className="bg-gradient-to-r from-[#004D40] to-[#3DD598] bg-clip-text text-transparent">
-                Stay connected with
-              </span>
-              <br />
-              <span className="relative inline-block">
-                24/7 team connectivity
-                <svg
-                  className="absolute -bottom-2 left-0 w-full"
-                  height="6"
-                  viewBox="0 0 100 6"
-                >
-                  <path
-                    d="M0 3 Q 25 0, 50 3 Q 75 6, 100 3"
-                    stroke="#3DD598"
-                    strokeWidth="2"
-                    fill="none"
-                  />
-                </svg>
-              </span>
-            </h2>
-
-            <p className="text-[#6B7280] text-lg relative z-10">
-              Keep your team aligned and informed with real-time updates and
-              seamless communication
-            </p>
-
-            {/* Team members with modern design */}
-            <div className="flex -space-x-4">
-              {["John Doe", "Sarah Kim", "Luis Silva"].map((name, index) => (
-                <div key={index} className="relative group">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#3DD598] to-[#004D40] p-1 transform transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">
-                    <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-lg font-bold text-[#004D40]">
-                      {name[0]}
-                    </div>
-                  </div>
-                  <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-1 bg-white/80 backdrop-blur-sm rounded-full text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    {name}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Modern visual element */}
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#3DD598]/20 to-[#004D40]/20 rounded-3xl blur-2xl"></div>
-            <div className="relative bg-white/50 backdrop-blur-sm rounded-3xl p-8 border border-[#3DD598]/20">
-              {/* Add your visual content here */}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section - Modernized */}
-      <section className="py-20 px-4 relative overflow-hidden">
+      <section className="cta-section py-20 px-4 relative overflow-hidden">
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-r from-[#3DD598]/10 to-[#004D40]/10"></div>
           <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(61,213,152,0.05)_50%,transparent_75%)] bg-[length:20px_20px] animate-shimmer"></div>
@@ -526,7 +670,7 @@ const Index = () => {
 
         <div className="max-w-4xl mx-auto text-center relative">
           <div className="space-y-8">
-            <h2 className="text-5xl font-bold">
+            <h2 className="cta-heading text-5xl font-bold">
               <span className="bg-gradient-to-r from-[#004D40] to-[#3DD598] bg-clip-text text-transparent">
                 Ready to Ace Your
               </span>
@@ -537,14 +681,13 @@ const Index = () => {
               </span>
             </h2>
 
-            <p className="text-lg text-[#6B7280] max-w-2xl mx-auto">
-              Join thousands of successful professionals who transformed their
-              interview performance with PrepPartner
+            <p className="cta-description text-lg text-[#6B7280] max-w-2xl mx-auto">
+              Join thousands of successful professionals who transformed their interview performance with PrepPartner
             </p>
 
             <button
               onClick={() => navigate("/signup")}
-              className="group relative inline-flex items-center justify-center px-8 py-4 overflow-hidden rounded-full bg-gradient-to-r from-[#3DD598] to-[#004D40] transition-all duration-300"
+              className="cta-button group relative inline-flex items-center justify-center px-8 py-4 overflow-hidden rounded-full bg-gradient-to-r from-[#3DD598] to-[#004D40] transition-all duration-300"
             >
               <div className="absolute inset-0 w-0 bg-white transition-all duration-[400ms] ease-out group-hover:w-full"></div>
               <span className="relative text-white group-hover:text-[#004D40] flex items-center">
@@ -554,18 +697,12 @@ const Index = () => {
             </button>
 
             {/* Floating badges */}
-            <div
-              className="absolute -top-4 -left-4 animate-float"
-              style={{ animationDelay: "0s" }}
-            >
+            <div className="cta-badge absolute -top-4 -left-4 animate-float" style={{ animationDelay: "0s" }}>
               <div className="bg-white/90 backdrop-blur-sm p-3 rounded-xl shadow-xl">
                 <CheckCircle className="w-6 h-6 text-[#3DD598]" />
               </div>
             </div>
-            <div
-              className="absolute -bottom-4 -right-4 animate-float"
-              style={{ animationDelay: "1s" }}
-            >
+            <div className="cta-badge absolute -bottom-4 -right-4 animate-float" style={{ animationDelay: "1s" }}>
               <div className="bg-white/90 backdrop-blur-sm p-3 rounded-xl shadow-xl">
                 <Star className="w-6 h-6 text-[#3DD598]" />
               </div>
@@ -574,7 +711,8 @@ const Index = () => {
         </div>
       </section>
     </div>
-  );
-};
+  )
+}
 
-export default Index;
+export default Index
+

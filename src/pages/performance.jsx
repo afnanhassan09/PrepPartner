@@ -125,7 +125,7 @@ const Performance = () => {
                 <p className="text-4xl font-bold text-teal">{weeklyStats.current}</p>
                 <p className="text-sm text-muted mt-1">stations</p>
               </div>
-              <div className={`flex items-center ${weeklyStats.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <div className={`flex items-center ${weeklyStats.change >= 0 ? 'text-primary' : 'text-accent'}`}>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
                     d={weeklyStats.change >= 0 
@@ -207,10 +207,10 @@ const Performance = () => {
                       <p className="text-sm text-muted">{type}</p>
                     </div>
                     <span className={`px-2 py-1 rounded-full text-xs ${
-                      averageScore >= 90 ? 'bg-green-100 text-green-800' :
-                      averageScore >= 80 ? 'bg-blue-100 text-blue-800' :
-                      averageScore >= 70 ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
+                      averageScore >= 90 ? 'bg-primary/20 text-primary' :
+                      averageScore >= 80 ? 'bg-teal/20 text-teal' :
+                      averageScore >= 70 ? 'bg-accent/20 text-accent' :
+                      'bg-secondary/20 text-secondary'
                     }`}>
                       {averageScore}% avg
                     </span>
@@ -280,15 +280,15 @@ const Performance = () => {
                     <td className="px-6 py-4 text-sm text-foreground">{entry.type}</td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 rounded-full text-xs ${
-                        entry.score >= 90 ? 'bg-green-100 text-green-800' :
-                        entry.score >= 80 ? 'bg-blue-100 text-blue-800' :
-                        entry.score >= 70 ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
+                        entry.score >= 90 ? 'bg-primary/20 text-primary' :
+                        entry.score >= 80 ? 'bg-teal/20 text-teal' :
+                        entry.score >= 70 ? 'bg-accent/20 text-accent' :
+                        'bg-secondary/20 text-secondary'
                       }`}>
                         {entry.score}%
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-foreground">{entry.duration} min</td>
+                    <td className="px-6 py-4 text-sm text-foreground">{entry.duration} minutes</td>
                   </tr>
                 ))}
               </tbody>

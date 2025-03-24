@@ -25,6 +25,7 @@ import MockOptions from "./pages/MockOptions";
 import Friends from "./pages/Friends";
 import Profile from "./pages/Profile";
 import { AuthProvider } from "./contexts/AuthContext";
+import VerifyEmail from './pages/VerifyEmail';
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,7 @@ const App = () => (
               <Route path="/contact" element={<Contact />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/interview-prep" element={<InterviewPrep />} />
               <Route path="/plan" element={<Plan />} />
               <Route path="/prep" element={<Prep />} />

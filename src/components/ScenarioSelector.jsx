@@ -19,7 +19,7 @@ const ScenarioSelector = ({ selectedScenario, onScenarioChange }) => {
             onClick={() => onScenarioChange(scenario)}
             className={`w-full text-left px-4 py-2 rounded ${
               selectedScenario === scenario
-                ? 'bg-primary text-white'
+                ? 'bg-primary text-primary-foreground'
                 : 'hover:bg-background-secondary'
             }`}
           >

@@ -6,7 +6,7 @@ function Footer() {
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
         <div className="col-span-1 md:col-span-2">
           <h3 className="text-2xl font-bold mb-4 hover:text-primary transition-colors duration-300">PrepPartner</h3>
-          <p className="max-w-md hover:text-white transition-colors duration-300">Your trusted partner in interview preparation. Join thousands of successful candidates who have achieved their career goals with PrepPartner.</p>
+          <p className="max-w-md hover:text-primary-foreground transition-colors duration-300">Your trusted partner in interview preparation. Join thousands of successful candidates who have achieved their career goals with PrepPartner.</p>
         </div>
         <div>
           <h4 className="font-semibold mb-4">Quick Links</h4>
@@ -34,7 +34,7 @@ function Footer() {
             ].map((item) => (
               <li 
                 key={item}
-                className="hover:text-white transition-colors duration-300"
+                className="hover:text-primary-foreground transition-colors duration-300"
               >
                 {item}
               </li>
@@ -43,7 +43,7 @@ function Footer() {
         </div>
       </div>
       <div className="max-w-7xl mx-auto mt-8 pt-8 border-t border-teal-foreground/20">
-        <p className="text-center hover:text-white transition-colors duration-300">
+        <p className="text-center hover:text-primary-foreground transition-colors duration-300">
           &copy; 2024 PrepPartner. All rights reserved.
         </p>
       </div>

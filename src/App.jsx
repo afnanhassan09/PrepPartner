@@ -28,3 +28,25 @@ globalToastStyles.innerHTML = `
   }
 `;
 document.head.appendChild(globalToastStyles); 
+
+// Import the new component at the top
+import VerifyEmail from './pages/VerifyEmail';
+
+// ... existing imports ...
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        {/* Existing routes */}
+        <Route path="/" element={<Home />} />
+        <Route path="/auth" element={<Auth />} />
+        {/* Add the new verification route */}
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        {/* Other existing routes */}
+      </Routes>
+    </Router>
+  );
+}
+
+export default App; 

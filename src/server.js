@@ -1,4 +1,4 @@
-const BASE_URL = "https://preppartner-backend.onrender.com";
+const BASE_URL = "http://localhost:3000";
 
 import { io } from "socket.io-client";
 
@@ -761,6 +761,84 @@ class APIService {
    */
   static async getVideoCallStatus(roomName) {
     return this.authenticatedRequest(`/api/video/status/${roomName}`);
+  }
+
+  /**
+   * Verifies user email with token
+   * @param {Object} tokenData - Object containing verification token
+   * @returns {Promise<Object>} Verification response
+   */
+  static async verifyEmail(tokenData) {
+    try {
+      const response = await fetch(`${BASE_URL}/api/auth/verifyEmail`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(tokenData),
+      });
+
+      const data = await response.json();
+      console.log("DATA REPONSE",data)
+
+      if (!response.ok) {
+        throw new Error(data.message || "Email verification failed");
+      }
+
+      return data;
+    } catch (error) {
+      console.error("Error verifying email:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create friendship questionnaire
+   * @param {Object} questionnaireData - The questionnaire data (age, gender, country, about, etc.)
+   * @returns {Promise<Object>} Response from creating questionnaire
+   */
+  static async createFriendshipQuestionnaire(questionnaireData) {
+    try {
+      return this.authenticatedRequest("/api/user/fillForm", {
+        method: "POST",
+        body: JSON.stringify(questionnaireData),
+      });
+    } catch (error) {
+      console.error("Error creating friendship questionnaire:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get available friends (users who have filled questionnaires)
+   * @returns {Promise<Object>} List of available users with their questionnaire data
+   */
+  static async getAvailableFriends() {
+    try {
+      return this.authenticatedRequest("/api/user/friends/available");
+    } catch (error) {
+      console.error("Error getting available friends:", error);
+      // If 404 error (no available users), return empty array
+      if (error.message === "No available users found") {
+        return { available_friends: [] };
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Toggle user availability
+   * @returns {Promise<Object>} Response with availability status
+   */
+  static async toggleAvailability() {
+    try {
+      return this.authenticatedRequest("/api/user/changeAvailability", {
+        method: "GET"
+      });
+    } catch (error) {
+      console.error("Error toggling availability:", error);
+      throw error;
+    }
   }
 }
 

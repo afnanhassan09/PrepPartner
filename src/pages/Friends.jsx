@@ -56,6 +56,23 @@ if (typeof window !== "undefined") {
   }
 }
 
+// Add these imports at the top with the other imports
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+
 const Friends = () => {
   const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
@@ -116,6 +133,102 @@ const Friends = () => {
 
   // Add state to track call status data
   const [callStatuses, setCallStatuses] = useState({});
+
+  // Add these state variables in the component
+  const [showQuestionnaireForm, setShowQuestionnaireForm] = useState(false);
+  const [userQuestionnaire, setUserQuestionnaire] = useState(null);
+  const [showUserDetails, setShowUserDetails] = useState(false);
+  const [selectedUserDetails, setSelectedUserDetails] = useState(null);
+
+  // Add a new state for availability
+  const [isAvailable, setIsAvailable] = useState(false);
+
+  // Define form schema
+  const formSchema = z.object({
+    age: z.string().min(1, { message: "Age is required" }),
+    gender: z.string().min(1, { message: "Gender is required" }),
+    country: z.string().min(1, { message: "Country is required" }),
+    about: z.string().min(10, { message: "Please write at least 10 characters" }),
+    university: z.string().min(1, { message: "University is required" }),
+    major: z.string().min(1, { message: "Major is required" }),
+    year: z.string().min(1, { message: "Year is required" }),
+  });
+
+  // Initialize react-hook-form
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      age: "",
+      gender: "",
+      country: "",
+      about: "",
+      university: "",
+      major: "",
+      year: "",
+    },
+  });
+
+  // Add this effect to check if user has filled questionnaire
+  useEffect(() => {
+    if (isAuthenticated() && user) {
+      // Check if questionnaire is filled
+      if (user.questionnaireFilled === false) {
+        setShowQuestionnaireForm(true);
+      }
+    }
+  }, [isAuthenticated, user]);
+
+  // Add this function to handle form submission
+  const onSubmitQuestionnaire = async (data) => {
+    try {
+      console.log("Submitting questionnaire data:", data);
+      
+      // First try with the new endpoint
+      let response;
+      try {
+        response = await APIService.createFriendshipQuestionnaire(data);
+        } catch (error) {
+        console.error("Primary endpoint failed, trying alternative:", error);
+        
+        // If that fails, try with the endpoint from your controller code
+        response = await APIService.authenticatedRequest("/api/users/fillForm", {
+          method: "POST",
+          body: JSON.stringify(data),
+        });
+      }
+      
+      if (response) {
+        toast({
+          title: "Success",
+          description: "Your questionnaire has been submitted successfully!",
+        });
+        setShowQuestionnaireForm(false);
+        
+        // Update user in context to reflect questionnaire is filled
+        if (user) {
+          user.questionnaireFilled = true;
+        }
+      }
+    } catch (error) {
+      console.error("Error submitting questionnaire:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit questionnaire. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Add this function to view user details
+  const viewUserDetails = (user) => {
+    if (!user) return;
+    
+    const userId = getUserId(user);
+    if (!userId) return;
+    
+    setSelectedUserDetails(user);
+    setShowUserDetails(true);
+  };
 
   // Add this new function to handle scroll events in the chat container
   const handleChatScroll = () => {
@@ -500,10 +613,20 @@ const Friends = () => {
   const fetchOnlineUsers = async () => {
     try {
       setLoading((prev) => ({ ...prev, online: true }));
-      const response = await APIService.getOnlineUsers();
-      setGlobalUsers(response.online_users || []);
+      
+      // First try to get available friends with questionnaires
+      try {
+        const response = await APIService.getAvailableFriends();
+        setGlobalUsers(response.available_friends || []);
+      } catch (err) {
+        console.error("Error fetching available users, falling back to online users:", err);
+        
+        // Fallback to regular online users if the available friends endpoint fails
+        const onlineResponse = await APIService.getOnlineUsers();
+        setGlobalUsers(onlineResponse.online_users || []);
+      }
     } catch (err) {
-      console.error("Error fetching online users:", err);
+      console.error("Error fetching users:", err);
       // If error occurs, set empty array
       setGlobalUsers([]);
     } finally {
@@ -892,7 +1015,13 @@ const Friends = () => {
             : "hover:bg-secondary/50"
         }
       `}
-      onClick={() => openChat(friend)}
+      onClick={() => {
+        if (type === "global") {
+          viewUserDetails(friend);
+        } else {
+          openChat(friend);
+        }
+      }}
     >
       <div className="flex items-center space-x-3">
         <div className="relative">
@@ -908,7 +1037,8 @@ const Friends = () => {
         <div className="flex-1 min-w-0">
           <h3 className="font-medium truncate">{friend.name}</h3>
           <p className="text-sm text-muted truncate">
-    
+            {/* Conditionally show university if available */}
+            {friend.questionnaire ? friend.questionnaire.university : ""}
           </p>
         </div>
         {type === "new" && (
@@ -924,6 +1054,20 @@ const Friends = () => {
           >
             <UserPlus size={16} className="mr-1" />
             Add
+          </Button>
+        )}
+        {type === "global" && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              viewUserDetails(friend);
+            }}
+            className="text-xs"
+          >
+            <UserCircle2 size={16} className="mr-1" />
+            View
           </Button>
         )}
       </div>
@@ -1005,20 +1149,20 @@ const Friends = () => {
   // Update renderGlobalUsersList to use getUserId for keys
   const renderGlobalUsersList = () => {
     if (loading.online) {
-      return <div className="text-center py-8">Loading online users...</div>;
+      return <div className="text-center py-8">Loading available users...</div>;
     }
 
     if (filteredGlobalUsers.length === 0) {
       return (
         <div className="text-center py-8 text-muted">
           <Users size={48} className="mx-auto mb-2 opacity-50" />
-          <p>No online users found</p>
+          <p>No available users found</p>
         </div>
       );
     }
 
     return filteredGlobalUsers.map((user) => (
-      <FriendCard key={getUserId(user)} friend={user} type="new" />
+      <FriendCard key={getUserId(user)} friend={user} type="global" />
     ));
   };
 
@@ -1772,6 +1916,41 @@ const Friends = () => {
     };
   }, []);
 
+  // Add effect to get user availability status when component mounts
+  useEffect(() => {
+    if (isAuthenticated() && user) {
+      setIsAvailable(user.availabe || false);
+    }
+  }, [isAuthenticated, user]);
+
+  // Add function to toggle availability
+  const toggleAvailability = async () => {
+    try {
+      const response = await APIService.toggleAvailability();
+      if (response) {
+        setIsAvailable(!isAvailable);
+        toast({
+          title: isAvailable ? "You are now unavailable" : "You are now available",
+          description: isAvailable 
+            ? "Others won't see you in the available list" 
+            : "Others can now see you in the available list",
+        });
+        
+        // Update user in context
+        if (user) {
+          user.availabe = !isAvailable;
+        }
+      }
+    } catch (error) {
+      console.error("Error toggling availability:", error);
+      toast({
+        title: "Error",
+        description: "Failed to change availability status",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!isAuthenticated()) {
     return (
       <div className="h-[calc(100vh-5rem)] bg-background flex items-center justify-center">
@@ -1798,7 +1977,20 @@ const Friends = () => {
             }`}
           >
             <div className="p-4 border-b">
-              <h1 className="text-2xl font-bold text-teal mb-4">Friends</h1>
+              <div className="flex justify-between items-center mb-4">
+                <h1 className="text-2xl font-bold text-teal">Friends</h1>
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor="availability" className="text-sm text-muted-foreground">
+                    {isAvailable ? "Available" : "Unavailable"}
+                  </Label>
+                  <Switch
+                    id="availability"
+                    checked={isAvailable}
+                    onCheckedChange={toggleAvailability}
+                    className="data-[state=checked]:bg-green-500"
+                  />
+                </div>
+              </div>
               <div className="relative">
                 <Search
                   className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted"
@@ -2241,6 +2433,247 @@ const Friends = () => {
               Send Request
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Questionnaire Form Dialog */}
+      <Dialog open={showQuestionnaireForm} onOpenChange={(open) => {
+        // Only allow closing if user has filled the questionnaire
+        if (!open && user && !user.questionnaireFilled) {
+          toast({
+            title: "Please complete your profile",
+            description: "You need to fill out your questionnaire to continue.",
+            variant: "destructive",
+          });
+          return;
+        }
+        setShowQuestionnaireForm(open);
+      }}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Complete Your Profile</DialogTitle>
+            <DialogDescription>
+              Please fill out this questionnaire to help others get to know you better.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmitQuestionnaire)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="age"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Age</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter your age" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="gender"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Gender</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select gender" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="male">Male</SelectItem>
+                          <SelectItem value="female">Female</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                          <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <FormField
+                control={form.control}
+                name="country"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Country</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your country" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="university"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>University</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter your university" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="major"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Major</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter your major" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <FormField
+                control={form.control}
+                name="year"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Year of Study</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select year" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="1">First Year</SelectItem>
+                        <SelectItem value="2">Second Year</SelectItem>
+                        <SelectItem value="3">Third Year</SelectItem>
+                        <SelectItem value="4">Fourth Year</SelectItem>
+                        <SelectItem value="graduate">Graduate</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="about"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>About Me</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Tell others a bit about yourself..." 
+                        {...field}
+                        className="min-h-[100px]"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="submit">Submit</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* User Details Dialog */}
+      <Dialog open={showUserDetails} onOpenChange={setShowUserDetails}>
+        <DialogContent className="sm:max-w-[500px]">
+          {selectedUserDetails && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback>{getInitials(selectedUserDetails.name)}</AvatarFallback>
+                  </Avatar>
+                  {selectedUserDetails.name}
+                </DialogTitle>
+                <DialogDescription>
+                  Get to know more about this user
+                </DialogDescription>
+              </DialogHeader>
+              
+              {selectedUserDetails.questionnaire ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="font-medium text-muted-foreground">Age</p>
+                      <p>{selectedUserDetails.questionnaire.age}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-muted-foreground">Gender</p>
+                      <p className="capitalize">{selectedUserDetails.questionnaire.gender}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <p className="font-medium text-muted-foreground">Country</p>
+                    <p>{selectedUserDetails.questionnaire.country}</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="font-medium text-muted-foreground">University</p>
+                      <p>{selectedUserDetails.questionnaire.university}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-muted-foreground">Major</p>
+                      <p>{selectedUserDetails.questionnaire.major}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <p className="font-medium text-muted-foreground">Year of Study</p>
+                    <p>
+                      {selectedUserDetails.questionnaire.year === 'graduate' 
+                        ? 'Graduate'
+                        : `Year ${selectedUserDetails.questionnaire.year}`
+                      }
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <p className="font-medium text-muted-foreground">About</p>
+                    <p className="mt-1 text-sm">{selectedUserDetails.questionnaire.about}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="py-4 text-center text-muted-foreground">
+                  <UserCircle2 size={48} className="mx-auto mb-2 opacity-50" />
+                  <p>No profile information available</p>
+                </div>
+              )}
+              
+              <DialogFooter className="flex justify-between">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowUserDetails(false)}
+                >
+                  Close
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowUserDetails(false);
+                    sendFriendRequest(selectedUserDetails);
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <UserPlus size={16} />
+                  Send Friend Request
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>

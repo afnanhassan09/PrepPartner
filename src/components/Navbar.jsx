@@ -52,7 +52,7 @@ const Navbar = () => {
               <Link
                 key={item.name}
                 to={item.href}
-                className="text-gray-700 hover:text-primary font-medium relative group"
+                className="text-foreground hover:text-primary font-medium relative group"
               >
                 {item.name}
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
@@ -64,21 +64,21 @@ const Navbar = () => {
                   <div className="relative group">
                     <Link
                       to="/profile"
-                      className="flex items-center gap-2 text-gray-700 font-medium hover:text-primary transition-colors duration-300"
+                      className="flex items-center gap-2 text-foreground font-medium hover:text-primary transition-colors duration-300"
                     >
                       <UserCircle size={20} />
                       <span className="sr-only md:not-sr-only">Profile</span>
                     </Link>
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
+                    <div className="absolute right-0 mt-2 w-48 bg-background rounded-md shadow-lg py-1 z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
                       <Link
                         to="/dashboard"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        className="block px-4 py-2 text-sm text-foreground hover:bg-background-secondary"
                       >
                         Dashboard
                       </Link>
                       <button
                         onClick={handleLogout}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        className="block w-full text-left px-4 py-2 text-sm text-foreground hover:bg-background-secondary"
                       >
                         Logout
                       </button>
@@ -89,9 +89,9 @@ const Navbar = () => {
                 <>
                   <Link
                     to="/auth"
-                    className="bg-[#4169FB] text-white px-6 py-2.5 rounded-full font-medium 
-                      hover:bg-[#4169FB]/90 transition-all duration-300 
-                      hover:shadow-lg hover:shadow-[#4169FB]/20 
+                    className="bg-primary text-primary-foreground px-6 py-2.5 rounded-full font-medium 
+                      hover:bg-primary/90 transition-all duration-300 
+                      hover:shadow-lg hover:shadow-primary/20 
                       active:transform active:scale-95"
                   >
                     Login
@@ -105,7 +105,7 @@ const Navbar = () => {
           <div className="md:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-gray-700 hover:text-primary"
+              className="text-foreground hover:text-primary"
             >
               {isOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -120,7 +120,7 @@ const Navbar = () => {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className="block py-2 text-gray-700 hover:text-primary font-medium"
+                  className="block py-2 text-foreground hover:text-primary font-medium"
                 >
                   {item.name}
                 </Link>
@@ -129,20 +129,20 @@ const Navbar = () => {
                 <>
                   <Link
                     to="/dashboard"
-                    className="flex items-center gap-2 w-full py-2 text-gray-700 hover:text-primary font-medium"
+                    className="flex items-center gap-2 w-full py-2 text-foreground hover:text-primary font-medium"
                   >
                     <span>Dashboard</span>
                   </Link>
                   <Link
                     to="/profile"
-                    className="flex items-center gap-2 w-full py-2 text-gray-700 hover:text-primary font-medium"
+                    className="flex items-center gap-2 w-full py-2 text-foreground hover:text-primary font-medium"
                   >
                     <UserCircle size={18} />
                     <span>Profile</span>
                   </Link>
                   <button
                     onClick={handleLogout}
-                    className="flex items-center gap-2 w-full py-2 text-gray-700 hover:text-primary font-medium"
+                    className="flex items-center gap-2 w-full py-2 text-foreground hover:text-primary font-medium"
                   >
                     <LogOut size={18} />
                     <span>Logout</span>
@@ -151,7 +151,7 @@ const Navbar = () => {
               ) : (
                 <Link
                   to="/auth"
-                  className="block py-2 text-[#4169FB] font-medium hover:text-[#4169FB]/90"
+                  className="block py-2 text-primary font-medium hover:text-primary/90"
                 >
                   Login
                 </Link>

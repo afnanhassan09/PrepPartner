@@ -53,11 +53,10 @@ const Auth = () => {
           email: formData.email,
           password: formData.password
         });
-        setMessage("Your account has been created successfully. Please log in.");
+        setMessage("Your account has been created successfully. Please check your email for a verification link.");
         setMessageType("success");
         
-        // Switch to login after successful registration
-        setIsLogin(true);
+        // Stay on registration page to show the verification message
         setIsLoading(false);
         return;
       }
@@ -79,7 +78,7 @@ const Auth = () => {
             <button
               onClick={() => setIsLogin(true)}
               className={`flex-1 py-4 text-sm font-medium transition-colors duration-300 ${
-                isLogin ? 'bg-[#F3C178] text-white' : 'bg-gray-50 text-gray-600 hover:text-[#F3C178]'
+                isLogin ? 'bg-[#09363E] text-white' : 'bg-gray-50 text-gray-600 hover:text-[#09363E]'
               }`}
             >
               Login
@@ -87,7 +86,7 @@ const Auth = () => {
             <button
               onClick={() => setIsLogin(false)}
               className={`flex-1 py-4 text-sm font-medium transition-colors duration-300 ${
-                !isLogin ? 'bg-[#F3C178] text-white' : 'bg-gray-50 text-gray-600 hover:text-[#F3C178]'
+                !isLogin ? 'bg-[#09363E] text-white' : 'bg-gray-50 text-gray-600 hover:text-[#09363E]'
               }`}
             >
               Sign Up
@@ -110,7 +109,7 @@ const Auth = () => {
                     value={formData.name}
                     onChange={handleChange}
                     placeholder="Full Name"
-                    className="w-full pl-12 pr-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-[#F3C178]/20 focus:border-[#F3C178] transition-all duration-300"
+                    className="w-full pl-12 pr-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-[#09363E]/20 focus:border-[#09363E] transition-all duration-300"
                     required={!isLogin}
                   />
                 </div>
@@ -124,7 +123,7 @@ const Auth = () => {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="Email Address"
-                  className="w-full pl-12 pr-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-[#F3C178]/20 focus:border-[#F3C178] transition-all duration-300"
+                  className="w-full pl-12 pr-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-[#09363E]/20 focus:border-[#09363E] transition-all duration-300"
                   required
                 />
               </div>
@@ -137,7 +136,7 @@ const Auth = () => {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Password"
-                  className="w-full pl-12 pr-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-[#F3C178]/20 focus:border-[#F3C178] transition-all duration-300"
+                  className="w-full pl-12 pr-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-[#09363E]/20 focus:border-[#09363E] transition-all duration-300"
                   required
                 />
               </div>
@@ -145,7 +144,7 @@ const Auth = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-[#F3C178] text-white py-3 rounded-lg hover:bg-[#F3C178]/90 transition-all duration-300 flex items-center justify-center space-x-2 group animate-fade-up"
+                className="w-full bg-[#09363E] text-white py-3 rounded-lg hover:bg-[#09363E]/90 transition-all duration-300 flex items-center justify-center space-x-2 group animate-fade-up"
                 style={{ animationDelay: '800ms' }}
               >
                 {isLoading ? (
@@ -195,7 +194,7 @@ const Auth = () => {
           {isLogin ? "Don't have an account? " : "Already have an account? "}
           <button
             onClick={() => setIsLogin(!isLogin)}
-            className="text-[#F3C178] font-medium hover:underline"
+            className="text-[#09363E] font-medium hover:underline"
           >
             {isLogin ? 'Sign up' : 'Login'}
           </button>

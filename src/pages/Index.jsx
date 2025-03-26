@@ -1,21 +1,21 @@
-"use client"
+"use client";
 
-import { ArrowRight, CheckCircle, Star, Users, Award } from "lucide-react"
-import { useNavigate } from "react-router-dom"
-import gsap from "gsap"
-import { ScrollTrigger } from "gsap/ScrollTrigger"
-import { ScrollToPlugin } from "gsap/ScrollToPlugin"
-import { useEffect, useRef } from "react"
+import { ArrowRight, CheckCircle, Star, Users, Award } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ScrollToPlugin } from "gsap/ScrollToPlugin";
+import { useEffect, useRef } from "react";
 //how to import css  ?
-import "./index.css"
+import "./index.css";
 
-gsap.registerPlugin(ScrollTrigger, ScrollToPlugin)
+gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
 const Index = () => {
-  const navigate = useNavigate()
-  const mainRef = useRef(null)
-  const featuresRef = useRef(null)
-  const featureCardsRef = useRef([])
+  const navigate = useNavigate();
+  const mainRef = useRef(null);
+  const featuresRef = useRef(null);
+  const featureCardsRef = useRef([]);
 
   const features = [
     {
@@ -33,7 +33,7 @@ const Index = () => {
       title: "Real Questions",
       description: "Access our database of real interview questions",
     },
-  ]
+  ];
 
   const successStories = [
     {
@@ -54,13 +54,18 @@ const Index = () => {
       story: "Best interview preparation platform!",
       rating: 5,
     },
-  ]
+  ];
 
   const pricingPlans = [
     {
       name: "Basic",
       price: "Free",
-      features: ["5 Mock Interviews", "Basic AI Feedback", "Interview Question Bank", "Community Support"],
+      features: [
+        "5 Mock Interviews",
+        "Basic AI Feedback",
+        "Interview Question Bank",
+        "Community Support",
+      ],
       recommended: false,
     },
     {
@@ -78,23 +83,29 @@ const Index = () => {
     {
       name: "Enterprise",
       price: "Custom",
-      features: ["Team Management", "Custom Question Sets", "Dedicated Support", "Analytics Dashboard", "API Access"],
+      features: [
+        "Team Management",
+        "Custom Question Sets",
+        "Dedicated Support",
+        "Analytics Dashboard",
+        "API Access",
+      ],
       recommended: false,
     },
-  ]
+  ];
 
   const stats = [
     { value: "50K+", label: "Success Stories" },
     { value: "95%", label: "Success Rate" },
     { value: "1000+", label: "Interview Questions" },
     { value: "24/7", label: "AI Support" },
-  ]
+  ];
 
   useEffect(() => {
     // Create a context for GSAP animations
     const ctx = gsap.context(() => {
       // Hero section entrance animation
-      const heroTimeline = gsap.timeline()
+      const heroTimeline = gsap.timeline();
       heroTimeline
         .from(".hero-badge", {
           opacity: 0,
@@ -111,7 +122,7 @@ const Index = () => {
             duration: 0.8,
             ease: "back.out(1.7)",
           },
-          "-=0.4",
+          "-=0.4"
         )
         .from(
           ".hero-description",
@@ -121,7 +132,7 @@ const Index = () => {
             duration: 0.8,
             ease: "power2.out",
           },
-          "-=0.6",
+          "-=0.6"
         )
         .from(
           ".hero-cta",
@@ -132,7 +143,7 @@ const Index = () => {
             duration: 0.6,
             ease: "power2.out",
           },
-          "-=0.4",
+          "-=0.4"
         )
         .from(
           ".hero-image-container",
@@ -142,7 +153,7 @@ const Index = () => {
             duration: 1,
             ease: "power2.out",
           },
-          "-=0.8",
+          "-=0.8"
         )
         .from(
           ".floating-stat",
@@ -153,172 +164,105 @@ const Index = () => {
             duration: 0.6,
             ease: "back.out(2)",
           },
-          "-=0.6",
-        )
+          "-=0.6"
+        );
 
-      // Create a scroll trigger for the features section that pins it until all animations complete
-      let featuresScrollTrigger = ScrollTrigger.create({
-        trigger: ".features-section",
-        start: "top 20%",
-        end: "+=500",
-        pin: true,
-        anticipatePin: 1,
-        pinSpacing: true,
-      })
-
-      // Create a timeline for the features section animations
-      const featuresTimeline = gsap.timeline({
-        scrollTrigger: {
-          trigger: ".features-section",
-          start: "top 20%",
-          toggleActions: "play none none reset",
-          onEnter: () => {
-            // Temporarily disable scrolling when entering the section
-            document.body.style.overflow = "hidden"
+      // Function to create animations for section titles and content
+      const animateSection = (sectionClass, itemClass) => {
+        // Animate section title (appears at 50% of viewport - middle of screen)
+        gsap.from(`${sectionClass} .text-center`, {
+          scrollTrigger: {
+            trigger: `${sectionClass} .text-center`,
+            start: "top 50%", // Middle of the viewport
+            toggleActions: "play none none none",
+            once: true,
           },
-        },
-        onComplete: () => {
-          // Re-enable scrolling when the animation is complete
-          document.body.style.overflow = "auto"
-          // Wait a moment before killing the scroll trigger to ensure smooth transition
-          setTimeout(() => {
-            featuresScrollTrigger.kill()
-          }, 300)
-        },
-      })
-
-      // Animate the title first
-      featuresTimeline
-        .from(".features-section .text-center", {
           opacity: 0,
           y: 30,
           duration: 0.8,
           ease: "power2.out",
-        })
-        
-      // Then animate each feature card one after another with fixed durations (not scrub-based)
-      featureCardsRef.current.forEach((card, index) => {
-        if (card) {
-          featuresTimeline.from(
-            card,
-            {
+        });
+
+        // Animate section items
+        gsap.utils
+          .toArray(`${sectionClass} ${itemClass}`)
+          .forEach((item, index) => {
+            gsap.from(item, {
+              scrollTrigger: {
+                trigger: item,
+                start: "top 70%", // Appears before reaching the middle
+                toggleActions: "play none none none",
+                once: true,
+              },
               opacity: 0,
-              y: 60,
-              duration: 0.8,
+              y: 40,
+              duration: 0.7,
               ease: "back.out(1.7)",
-            },
-            "-=0.4" // Overlap for smoother sequence
-          )
-        }
-      })
-      
-      // Short pause at the end before unpinning
-      featuresTimeline.to({}, { duration: 0.5 })
+              delay: 0.1 * index, // Stagger effect
+            });
+          });
+      };
 
-      // Success stories
-      gsap.from(".success-story", {
+      // Animate each section
+      animateSection(".features-section", ".feature-card");
+      animateSection(".success-stories", ".success-story");
+      animateSection(".stats-section", ".stat-card");
+      animateSection(".faq-section", ".faq-item");
+
+      // Special handling for CTA section (different structure)
+      gsap.from(".cta-heading", {
         scrollTrigger: {
-          trigger: ".success-stories",
-          start: "top 75%",
+          trigger: ".cta-heading",
+          start: "top 50%", // Middle of the viewport
           toggleActions: "play none none none",
-        },
-        opacity: 0,
-        y: 60,
-        stagger: 0.2,
-        duration: 0.8,
-        ease: "back.out(1.7)",
-      })
-
-      // Stats section
-      const statsTimeline = gsap.timeline({
-        scrollTrigger: {
-          trigger: ".stats-section",
-          start: "top 75%",
-          toggleActions: "play none none none",
-        },
-      })
-
-      statsTimeline
-        .from(".stats-heading", {
-          opacity: 0,
-          y: 30,
-          duration: 0.6,
-          ease: "power2.out",
-        })
-        .from(
-          ".stat-card",
-          {
-            opacity: 0,
-            y: 40,
-            stagger: 0.15,
-            duration: 0.8,
-            ease: "power3.out",
-          },
-          "-=0.3",
-        )
-
-      // FAQ section
-      gsap.from(".faq-item", {
-        scrollTrigger: {
-          trigger: ".faq-section",
-          start: "top 75%",
-          toggleActions: "play none none none",
+          once: true,
         },
         opacity: 0,
         y: 40,
-        stagger: 0.15,
+        duration: 0.8,
+        ease: "power2.out",
+      });
+
+      gsap.from(".cta-description", {
+        scrollTrigger: {
+          trigger: ".cta-description",
+          start: "top 70%",
+          toggleActions: "play none none none",
+          once: true,
+        },
+        opacity: 0,
+        y: 30,
         duration: 0.7,
         ease: "power2.out",
-      })
+      });
 
-      // CTA section
-      const ctaTimeline = gsap.timeline({
+      gsap.from(".cta-button", {
         scrollTrigger: {
-          trigger: ".cta-section",
-          start: "top 80%",
+          trigger: ".cta-button",
+          start: "top 70%",
           toggleActions: "play none none none",
+          once: true,
         },
-      })
+        opacity: 0,
+        y: 20,
+        scale: 0.9,
+        duration: 0.6,
+        ease: "back.out(1.7)",
+      });
 
-      ctaTimeline
-        .from(".cta-heading", {
-          opacity: 0,
-          y: 40,
-          duration: 0.8,
-          ease: "power2.out",
-        })
-        .from(
-          ".cta-description",
-          {
-            opacity: 0,
-            y: 30,
-            duration: 0.7,
-            ease: "power2.out",
-          },
-          "-=0.5",
-        )
-        .from(
-          ".cta-button",
-          {
-            opacity: 0,
-            y: 20,
-            scale: 0.9,
-            duration: 0.6,
-            ease: "back.out(1.7)",
-          },
-          "-=0.4",
-        )
-        .from(
-          ".cta-badge",
-          {
-            opacity: 0,
-            scale: 0.5,
-            stagger: 0.2,
-            duration: 0.6,
-            ease: "back.out(2)",
-          },
-          "-=0.4",
-        )
+      gsap.from(".cta-badge", {
+        scrollTrigger: {
+          trigger: ".cta-badge",
+          start: "top 70%",
+          toggleActions: "play none none none",
+          once: true,
+        },
+        opacity: 0,
+        scale: 0.5,
+        stagger: 0.2,
+        duration: 0.6,
+        ease: "back.out(2)",
+      });
 
       // Parallax effects
       gsap.to(".parallax-bg", {
@@ -330,16 +274,16 @@ const Index = () => {
         },
         y: (i, el) => -150 * Number.parseFloat(el.getAttribute("data-speed")),
         ease: "none",
-      })
-    }, mainRef)
+      });
+    }, mainRef);
 
-    return () => ctx.revert() // Cleanup
-  }, [])
+    return () => ctx.revert(); // Cleanup
+  }, []);
 
   // Function to set refs for feature cards
   const setFeatureCardRef = (el, index) => {
-    featureCardsRef.current[index] = el
-  }
+    featureCardsRef.current[index] = el;
+  };
 
   return (
     <div ref={mainRef} className="bg-white overflow-hidden">
@@ -363,7 +307,7 @@ const Index = () => {
           ></div>
         </div>
 
-        <div className="max-w-[1400px] mx-auto px-4 pt-32 pb-16">
+        <div className="max-w-[1400px] mx-auto px-4 pt-19 pb-16">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8 relative">
               {/* Floating badge */}
@@ -372,7 +316,9 @@ const Index = () => {
                   <span className="absolute inline-flex h-full w-full rounded-full bg-[#004D40] opacity-75 animate-ping"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-[#004D40]"></span>
                 </span>
-                <span className="text-sm font-medium">PrepPartner: Your Path to Interview Success</span>
+                <span className="text-sm font-medium">
+                  PrepPartner: Your Path to Interview Success
+                </span>
               </div>
 
               {/* Modern gradient heading */}
@@ -403,8 +349,9 @@ const Index = () => {
               </h1>
 
               <p className="hero-description text-lg text-[#6B7280] max-w-xl">
-                Prepare for your next interview with confidence using our AI-powered platform that provides real-time
-                feedback and personalized coaching.
+                Prepare for your next interview with confidence using our
+                AI-powered platform that provides real-time feedback and
+                personalized coaching.
               </p>
 
               {/* Modern CTA buttons */}
@@ -442,15 +389,23 @@ const Index = () => {
                   className="w-full h-auto transform transition-transform hover:scale-105 duration-500"
                 />
                 {/* Floating stats cards */}
-                <div className="floating-stat absolute right-1 top-1 animate-float" style={{ animationDelay: "1s" }}>
+                <div
+                  className="floating-stat absolute right-1 top-1 animate-float"
+                  style={{ animationDelay: "1s" }}
+                >
                   <div className="bg-white/90 backdrop-blur-sm p-4 rounded-xl shadow-xl">
                     <div className="text-2xl font-bold text-[#004D40]">95%</div>
                     <div className="text-sm text-[#6B7280]">Success Rate</div>
                   </div>
                 </div>
-                <div className="floating-stat absolute left-1 bottom-1 animate-float" style={{ animationDelay: "2s" }}>
+                <div
+                  className="floating-stat absolute left-1 bottom-1 animate-float"
+                  style={{ animationDelay: "2s" }}
+                >
                   <div className="bg-white/90 backdrop-blur-sm p-4 rounded-xl shadow-xl">
-                    <div className="text-2xl font-bold text-[#3DD598]">24/7</div>
+                    <div className="text-2xl font-bold text-[#3DD598]">
+                      24/7
+                    </div>
                     <div className="text-sm text-[#6B7280]">Support</div>
                   </div>
                 </div>
@@ -461,7 +416,10 @@ const Index = () => {
       </section>
 
       {/* Why Choose Us Section - Completely Redesigned */}
-      <section ref={featuresRef} className="features-section py-20 relative overflow-hidden">
+      <section
+        ref={featuresRef}
+        className="features-section py-20 relative overflow-hidden"
+      >
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(61,213,152,0.05)_50%,transparent_75%)] bg-[length:20px_20px] animate-shimmer"></div>
         </div>
@@ -480,8 +438,8 @@ const Index = () => {
 
           <div className="grid md:grid-cols-3 gap-12">
             {features.map((feature, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 ref={(el) => setFeatureCardRef(el, index)}
                 className="feature-card relative group"
               >
@@ -545,17 +503,25 @@ const Index = () => {
 
                   <div className="flex items-center mb-6 gap-4">
                     <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#3DD598]/20 to-[#D1C4E9]/20 flex items-center justify-center">
-                      <span className="text-xl font-bold text-[#004D40]">{story.name[0]}</span>
+                      <span className="text-xl font-bold text-[#004D40]">
+                        {story.name[0]}
+                      </span>
                     </div>
                     <div>
-                      <h3 className="font-semibold text-lg text-[#004D40]">{story.name}</h3>
+                      <h3 className="font-semibold text-lg text-[#004D40]">
+                        {story.name}
+                      </h3>
                       <p className="text-sm text-[#6B7280]">{story.role}</p>
                     </div>
                   </div>
 
                   <blockquote className="relative mb-6">
-                    <div className="absolute -left-2 -top-2 text-4xl text-[#3DD598] opacity-20">"</div>
-                    <p className="text-[#6B7280] relative z-10 italic pl-4">{story.story}</p>
+                    <div className="absolute -left-2 -top-2 text-4xl text-[#3DD598] opacity-20">
+                      "
+                    </div>
+                    <p className="text-[#6B7280] relative z-10 italic pl-4">
+                      {story.story}
+                    </p>
                   </blockquote>
 
                   <div className="flex space-x-1">
@@ -595,7 +561,9 @@ const Index = () => {
                 <div className="relative bg-white/50 backdrop-blur-sm rounded-2xl p-8 border border-[#3DD598]/10 group-hover:border-[#3DD598]/30 transition-all duration-300 hover:transform hover:-translate-y-2">
                   {/* Floating icon */}
                   <div className="absolute -top-4 -right-4 w-12 h-12 bg-gradient-to-br from-[#3DD598] to-[#004D40] rounded-xl rotate-12 group-hover:rotate-0 transition-transform duration-300 flex items-center justify-center">
-                    <span className="text-white text-xl font-bold">{index + 1}</span>
+                    <span className="text-white text-xl font-bold">
+                      {index + 1}
+                    </span>
                   </div>
 
                   <div className="text-4xl font-bold bg-gradient-to-r from-[#004D40] to-[#3DD598] bg-clip-text text-transparent mb-2 animate-pulse">
@@ -653,7 +621,9 @@ const Index = () => {
                   <h3 className="text-xl font-semibold mb-4 text-[#004D40] group-hover:text-[#3DD598] transition-colors duration-300">
                     {faq.q}
                   </h3>
-                  <p className="text-[#6B7280] group-hover:text-black transition-colors duration-300">{faq.a}</p>
+                  <p className="text-[#6B7280] group-hover:text-black transition-colors duration-300">
+                    {faq.a}
+                  </p>
                 </div>
               </div>
             ))}
@@ -682,7 +652,8 @@ const Index = () => {
             </h2>
 
             <p className="cta-description text-lg text-[#6B7280] max-w-2xl mx-auto">
-              Join thousands of successful professionals who transformed their interview performance with PrepPartner
+              Join thousands of successful professionals who transformed their
+              interview performance with PrepPartner
             </p>
 
             <button
@@ -697,12 +668,18 @@ const Index = () => {
             </button>
 
             {/* Floating badges */}
-            <div className="cta-badge absolute -top-4 -left-4 animate-float" style={{ animationDelay: "0s" }}>
+            <div
+              className="cta-badge absolute -top-4 -left-4 animate-float"
+              style={{ animationDelay: "0s" }}
+            >
               <div className="bg-white/90 backdrop-blur-sm p-3 rounded-xl shadow-xl">
                 <CheckCircle className="w-6 h-6 text-[#3DD598]" />
               </div>
             </div>
-            <div className="cta-badge absolute -bottom-4 -right-4 animate-float" style={{ animationDelay: "1s" }}>
+            <div
+              className="cta-badge absolute -bottom-4 -right-4 animate-float"
+              style={{ animationDelay: "1s" }}
+            >
               <div className="bg-white/90 backdrop-blur-sm p-3 rounded-xl shadow-xl">
                 <Star className="w-6 h-6 text-[#3DD598]" />
               </div>
@@ -711,8 +688,7 @@ const Index = () => {
         </div>
       </section>
     </div>
-  )
-}
+  );
+};
 
-export default Index
-
+export default Index;

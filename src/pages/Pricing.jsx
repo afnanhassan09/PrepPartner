@@ -70,23 +70,30 @@ const Pricing = () => {
         </div>
 
         <div className="max-w-7xl mx-auto">
-          <div className={`text-center mb-16 transition-all duration-700 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-teal to-primary bg-clip-text text-transparent mb-4">
+          <div
+            className={`text-center mb-16 transition-all duration-700 transform ${
+              isVisible
+                ? "translate-y-0 opacity-100"
+                : "translate-y-10 opacity-0"
+            }`}
+          >
+            <h2 className="text-3xl font-bold text-[#09363E] mb-4">
               Plans & Pricing
             </h2>
             <p className="text-muted max-w-2xl mx-auto">
-              Choose a plan that works for you. All plans include core features to help you succeed.
+              Choose a plan that works for you. All plans include core features
+              to help you succeed.
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {plans.map((plan, index) => (
-              <div 
-                key={index} 
-                className="relative group" 
-                style={{ 
-                  animationDelay: `${index * 150}ms`, 
-                  animation: `fade-up 0.5s ease-out ${index * 150}ms both` 
+              <div
+                key={index}
+                className="relative group"
+                style={{
+                  animationDelay: `${index * 150}ms`,
+                  animation: `fade-up 0.5s ease-out ${index * 150}ms both`,
                 }}
               >
                 {plan.highlighted && (
@@ -131,9 +138,13 @@ const Pricing = () => {
                       <li
                         key={featureIndex}
                         className="flex items-center text-muted group-hover:text-foreground transition-colors duration-300"
-                        style={{ 
-                          animationDelay: `${(index * 100) + (featureIndex * 50)}ms`,
-                          animation: `slide-in 0.4s ease-out ${(index * 100) + (featureIndex * 50)}ms both`
+                        style={{
+                          animationDelay: `${
+                            index * 100 + featureIndex * 50
+                          }ms`,
+                          animation: `slide-in 0.4s ease-out ${
+                            index * 100 + featureIndex * 50
+                          }ms both`,
                         }}
                       >
                         <div className="mr-2 w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-300">

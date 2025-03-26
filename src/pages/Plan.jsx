@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect } from "react";
 
 const Plan = () => {
-  const [interviewDate, setInterviewDate] = useState("")
-  const [notes, setNotes] = useState("")
+  const [interviewDate, setInterviewDate] = useState("");
+  const [notes, setNotes] = useState("");
   const [studyTopics, setStudyTopics] = useState([
     "Clinical Knowledge",
     "Communication Skills",
@@ -14,61 +14,62 @@ const Plan = () => {
     "Physical Examination",
     "Diagnostic Reasoning",
     "Treatment Planning",
-  ])
-  const [selectedTopics, setSelectedTopics] = useState({})
-  const [casesCompleted, setCasesCompleted] = useState({})
-  const [preparationStatus, setPreparationStatus] = useState("Not Started")
-  const [showPopup, setShowPopup] = useState(true)
-  const [activeTab, setActiveTab] = useState("timeline")
+  ]);
+  const [selectedTopics, setSelectedTopics] = useState({});
+  const [casesCompleted, setCasesCompleted] = useState({});
+  const [preparationStatus, setPreparationStatus] = useState("Not Started");
+  const [showPopup, setShowPopup] = useState(true);
+  const [activeTab, setActiveTab] = useState("timeline");
 
   // Generate dates for the next 30 days
   const generateDates = () => {
-    const dates = []
-    const today = new Date()
+    const dates = [];
+    const today = new Date();
 
     for (let i = 0; i < 30; i++) {
-      const date = new Date(today)
-      date.setDate(today.getDate() + i)
-      dates.push(date)
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      dates.push(date);
     }
 
-    return dates
-  }
+    return dates;
+  };
 
-  const dates = generateDates()
+  const dates = generateDates();
 
   // Calculate preparation algorithm
   useEffect(() => {
     if (!interviewDate) {
-      setPreparationStatus("Not Started")
-      return
+      setPreparationStatus("Not Started");
+      return;
     }
 
-    const topicsSelected = Object.keys(selectedTopics).length
-    const casesCompletedCount = Object.values(casesCompleted).filter(Boolean).length
+    const topicsSelected = Object.keys(selectedTopics).length;
+    const casesCompletedCount =
+      Object.values(casesCompleted).filter(Boolean).length;
 
     if (topicsSelected > 6 && casesCompletedCount > 10) {
-      setPreparationStatus("Good")
+      setPreparationStatus("Good");
     } else if (topicsSelected > 3 && casesCompletedCount > 5) {
-      setPreparationStatus("Okay")
+      setPreparationStatus("Okay");
     } else {
-      setPreparationStatus("Needs Improvement")
+      setPreparationStatus("Needs Improvement");
     }
-  }, [selectedTopics, casesCompleted, interviewDate])
+  }, [selectedTopics, casesCompleted, interviewDate]);
 
   const handleTopicChange = (date, topic) => {
     setSelectedTopics((prev) => ({
       ...prev,
       [date.toISOString().split("T")[0]]: topic,
-    }))
-  }
+    }));
+  };
 
   const toggleCaseCompleted = (caseItem) => {
     setCasesCompleted((prev) => ({
       ...prev,
       [caseItem]: !prev[caseItem],
-    }))
-  }
+    }));
+  };
 
   const cases = [
     "Chest Pain Case",
@@ -83,7 +84,7 @@ const Plan = () => {
     "Ethical Dilemma",
     "Communication Challenge",
     "Complex Diagnosis",
-  ]
+  ];
 
   // Timeline milestones
   const milestones = [
@@ -97,41 +98,59 @@ const Plan = () => {
       title: "Mock Interviews",
       description: "Schedule practice interviews with peers or mentors",
     },
-    { date: "1 month before", title: "Intensive Practice", description: "Daily case practice and knowledge review" },
-    { date: "2 weeks before", title: "Final Review", description: "Focus on weak areas and communication skills" },
+    {
+      date: "1 month before",
+      title: "Intensive Practice",
+      description: "Daily case practice and knowledge review",
+    },
+    {
+      date: "2 weeks before",
+      title: "Final Review",
+      description: "Focus on weak areas and communication skills",
+    },
     {
       date: "1 week before",
       title: "Rest & Prepare",
       description: "Light review, ensure good sleep and mental preparation",
     },
-  ]
+  ];
 
   const getStatusColor = (status) => {
     switch (status) {
       case "Good":
-        return "bg-primary"
+        return "bg-primary";
       case "Okay":
-        return "bg-accent"
+        return "bg-accent";
       case "Needs Improvement":
-        return "bg-secondary"
+        return "bg-secondary";
       default:
-        return "bg-muted"
+        return "bg-muted";
     }
-  }
+  };
 
   const formatDate = (date) => {
-    return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
-  }
+    return date.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-gray-50 py-6 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header with Status */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-8">
-          <h1 className="text-5xl md:text-6xl font-bold text-teal leading-tight mb-4 md:mb-0">Interview Preparation Plan</h1>
+          <h1 className="text-5xl md:text-6xl font-bold text-teal leading-tight mb-4 md:mb-0">
+            Interview Preparation Plan
+          </h1>
           <div className="flex items-center space-x-2">
             <span className="text-gray-700">Preparation Status:</span>
-            <span className={`px-3 py-1 rounded-full text-white font-medium ${getStatusColor(preparationStatus)}`}>
+            <span
+              className={`px-3 py-1 rounded-full text-white font-medium ${getStatusColor(
+                preparationStatus
+              )}`}
+            >
               {preparationStatus}
             </span>
           </div>
@@ -140,7 +159,9 @@ const Plan = () => {
         {/* Interview Date and Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-md p-6 flex flex-col">
-            <h2 className="text-xl font-semibold text-teal mb-3">Interview Date</h2>
+            <h2 className="text-xl font-semibold text-teal mb-3">
+              Interview Date
+            </h2>
             <input
               type="date"
               value={interviewDate}
@@ -158,17 +179,25 @@ const Plan = () => {
                   })}
                 </span>
                 <p className="text-gray-600 mt-1">
-                  {Math.ceil((new Date(interviewDate) - new Date()) / (1000 * 60 * 60 * 24))} days remaining
+                  {Math.ceil(
+                    (new Date(interviewDate) - new Date()) /
+                      (1000 * 60 * 60 * 24)
+                  )}{" "}
+                  days remaining
                 </p>
               </div>
             )}
           </div>
 
           <div className="bg-white rounded-xl shadow-md p-6 text-white">
-            <h2 className="text-xl font-semibold text-teal mb-3">Quick Stats</h2>
+            <h2 className="text-xl font-semibold text-teal mb-3">
+              Quick Stats
+            </h2>
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-teal rounded-lg p-3 text-center">
-                <span className="block text-3xl font-bold text-teal text-white">{Object.keys(selectedTopics).length}</span>
+                <span className="block text-3xl font-bold text-teal text-white">
+                  {Object.keys(selectedTopics).length}
+                </span>
                 <span className="text-sm ">Days Planned</span>
               </div>
               <div className="bg-teal rounded-lg p-3 text-center">
@@ -194,19 +223,31 @@ const Plan = () => {
         {/* Tabs */}
         <div className="flex border-b border-gray-300 mb-6">
           <button
-            className={`py-3 px-6 font-medium ${activeTab === "timeline" ? "text-teal border-b-2 border-teal" : "text-gray-600"}`}
+            className={`py-3 px-6 font-medium ${
+              activeTab === "timeline"
+                ? "text-teal border-b-2 border-teal"
+                : "text-gray-600"
+            }`}
             onClick={() => setActiveTab("timeline")}
           >
             Timeline
           </button>
           <button
-            className={`py-3 px-6 font-medium ${activeTab === "calendar" ? "text-teal border-b-2 border-teal" : "text-gray-600"}`}
+            className={`py-3 px-6 font-medium ${
+              activeTab === "calendar"
+                ? "text-teal border-b-2 border-teal"
+                : "text-gray-600"
+            }`}
             onClick={() => setActiveTab("calendar")}
           >
             Calendar
           </button>
           <button
-            className={`py-3 px-6 font-medium ${activeTab === "cases" ? "text-teal border-b-2 border-teal" : "text-gray-600"}`}
+            className={`py-3 px-6 font-medium ${
+              activeTab === "cases"
+                ? "text-teal border-b-2 border-teal"
+                : "text-gray-600"
+            }`}
             onClick={() => setActiveTab("cases")}
           >
             Practice Cases
@@ -216,7 +257,9 @@ const Plan = () => {
         {/* Timeline View */}
         {activeTab === "timeline" && (
           <div className="bg-white rounded-xl shadow-md p-6 mb-8">
-            <h2 className="text-2xl font-semibold text-teal mb-6">ISCP Timeline</h2>
+            <h2 className="text-2xl font-semibold text-teal mb-6">
+              ISCP Timeline
+            </h2>
             <div className="relative">
               {/* Timeline line */}
               <div className="absolute left-0 md:left-1/2 transform md:translate-x-[-50%] h-full w-1 bg-teal-200"></div>
@@ -225,19 +268,27 @@ const Plan = () => {
               {milestones.map((milestone, index) => (
                 <div
                   key={index}
-                  className={`relative flex flex-col md:flex-row items-center mb-12 ${index % 2 === 0 ? "md:flex-row-reverse" : ""}`}
+                  className={`relative flex flex-col md:flex-row items-center mb-12 ${
+                    index % 2 === 0 ? "md:flex-row-reverse" : ""
+                  }`}
                 >
                   <div className="md:w-1/2 flex justify-center md:justify-end md:pr-8">
                     <div
-                      className={`bg-white border-2 ${index % 2 === 0 ? "border-teal-500" : "border-teal-500"} rounded-lg p-4 shadow-md w-full md:w-4/5`}
+                      className={`bg-white border-2 ${
+                        index % 2 === 0 ? "border-teal-500" : "border-teal-500"
+                      } rounded-lg p-4 shadow-md w-full md:w-4/5`}
                     >
-                      <h3 className="text-lg font-semibold">{milestone.title}</h3>
+                      <h3 className="text-lg font-semibold">
+                        {milestone.title}
+                      </h3>
                       <p className="text-gray-600">{milestone.description}</p>
                     </div>
                   </div>
                   <div className="absolute left-0 md:left-1/2 transform md:translate-x-[-50%] flex items-center justify-center">
                     <div
-                      className={`w-10 h-10 rounded-full ${index % 2 === 0 ? "bg-teal-500" : "bg-teal-500"} text-white flex items-center justify-center font-bold`}
+                      className={`w-10 h-10 rounded-full ${
+                        index % 2 === 0 ? "bg-teal-500" : "bg-teal-500"
+                      } text-white flex items-center justify-center font-bold`}
                     >
                       {index + 1}
                     </div>
@@ -256,14 +307,23 @@ const Plan = () => {
         {/* Calendar View */}
         {activeTab === "calendar" && (
           <div className="bg-white rounded-xl shadow-md p-6 mb-8">
-            <h2 className="text-2xl font-semibold text-teal mb-6">Study Calendar</h2>
+            <h2 className="text-2xl font-semibold text-teal mb-6">
+              Study Calendar
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {dates.slice(0, 15).map((date, index) => (
-                <div key={index} className="border rounded-lg overflow-hidden shadow-sm">
-                  <div className="bg-teal-600 text-white p-2 text-center font-medium">{formatDate(date)}</div>
+                <div
+                  key={index}
+                  className="border rounded-lg overflow-hidden shadow-sm"
+                >
+                  <div className="bg-teal-600 text-white p-2 text-center font-medium">
+                    {formatDate(date)}
+                  </div>
                   <div className="p-4">
                     <select
-                      value={selectedTopics[date.toISOString().split("T")[0]] || ""}
+                      value={
+                        selectedTopics[date.toISOString().split("T")[0]] || ""
+                      }
                       onChange={(e) => handleTopicChange(date, e.target.value)}
                       className="border border-gray-300 rounded-lg p-2 w-full mb-2 focus:outline-none focus:ring-2 focus:ring-teal"
                     >
@@ -294,17 +354,27 @@ const Plan = () => {
         {/* Practice Cases */}
         {activeTab === "cases" && (
           <div className="bg-white rounded-xl shadow-md p-6 mb-8">
-            <h2 className="text-2xl font-semibold text-teal mb-6">Practice Cases Tracker</h2>
+            <h2 className="text-2xl font-semibold text-teal mb-6">
+              Practice Cases Tracker
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {cases.map((caseItem, index) => (
                 <div
                   key={index}
-                  className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 ${casesCompleted[caseItem] ? "bg-primary/10 border-primary" : "hover:bg-secondary/10"}`}
+                  className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 ${
+                    casesCompleted[caseItem]
+                      ? "bg-primary/10 border-primary"
+                      : "hover:bg-secondary/10"
+                  }`}
                   onClick={() => toggleCaseCompleted(caseItem)}
                 >
                   <div className="flex items-center">
                     <div
-                      className={`w-6 h-6 rounded border flex items-center justify-center mr-3 ${casesCompleted[caseItem] ? "bg-primary border-primary" : "border-muted"}`}
+                      className={`w-6 h-6 rounded border flex items-center justify-center mr-3 ${
+                        casesCompleted[caseItem]
+                          ? "bg-primary border-primary"
+                          : "border-muted"
+                      }`}
                     >
                       {casesCompleted[caseItem] && (
                         <svg
@@ -314,18 +384,29 @@ const Plan = () => {
                           viewBox="0 0 24 24"
                           stroke="currentColor"
                         >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
                         </svg>
                       )}
                     </div>
                     <span
-                      className={`font-medium ${casesCompleted[caseItem] ? "line-through text-primary" : "text-foreground"}`}
+                      className={`font-medium ${
+                        casesCompleted[caseItem]
+                          ? "line-through text-primary"
+                          : "text-foreground"
+                      }`}
                     >
                       {caseItem}
                     </span>
                   </div>
                   {casesCompleted[caseItem] && (
-                    <div className="mt-2 text-sm text-primary pl-9">Completed! Great job!</div>
+                    <div className="mt-2 text-sm text-primary pl-9">
+                      Completed! Great job!
+                    </div>
                   )}
                 </div>
               ))}
@@ -346,7 +427,12 @@ const Plan = () => {
               viewBox="0 0 24 24"
               stroke="currentColor"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M11 17l-5-5m0 0l5-5m-5 5h12"
+              />
             </svg>
             Back to Interview Prep
           </a>
@@ -378,7 +464,10 @@ const Plan = () => {
         <div className="fixed bottom-4 right-4 bg-white rounded-xl shadow-lg p-5 max-w-xs z-50 border-l-4 border-teal-500 animate-bounce">
           <div className="flex justify-between items-start mb-2">
             <h3 className="font-bold text-teal-800">Interview Prep Tips</h3>
-            <button onClick={() => setShowPopup(false)} className="text-gray-500 hover:text-gray-700">
+            <button
+              onClick={() => setShowPopup(false)}
+              className="text-gray-500 hover:text-gray-700"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-5 w-5"
@@ -386,7 +475,12 @@ const Plan = () => {
                 viewBox="0 0 24 24"
                 stroke="currentColor"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -401,8 +495,7 @@ const Plan = () => {
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default Plan
-
+export default Plan;

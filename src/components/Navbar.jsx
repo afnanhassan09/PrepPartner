@@ -8,12 +8,12 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
-  
+
   const userIsLoggedIn = isAuthenticated();
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate("/");
   };
 
   // Public nav items always visible
@@ -24,13 +24,13 @@ const Navbar = () => {
     { name: "Plans & Pricing", href: "/pricing" },
     { name: "Contact Us", href: "/contact" },
   ];
-  
+
   // Protected nav items only visible when logged in
   const protectedNavItems = [
     { name: "Interview Prep", href: "/interview-prep" },
     { name: "Find a PrepPartner", href: "/friends" },
   ];
-  
+
   // Determine which nav items to show - only show protected items when logged in
   const navItems = userIsLoggedIn ? protectedNavItems : publicNavItems;
 
@@ -43,7 +43,6 @@ const Navbar = () => {
             className="flex items-center space-x-2 transition-transform duration-300 hover:scale-105"
           >
             <img src={logo} alt="PrepPartner Logo" className="w-30 h-12" />
-       
           </Link>
 
           {/* Desktop Menu */}

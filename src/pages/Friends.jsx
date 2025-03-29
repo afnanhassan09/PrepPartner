@@ -69,7 +69,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
@@ -124,7 +130,7 @@ const Friends = () => {
 
   // Add this new state for the exit confirmation dialog
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
-  
+
   // Add state for showing the scroll to bottom button
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
 
@@ -148,7 +154,9 @@ const Friends = () => {
     age: z.string().min(1, { message: "Age is required" }),
     gender: z.string().min(1, { message: "Gender is required" }),
     country: z.string().min(1, { message: "Country is required" }),
-    about: z.string().min(10, { message: "Please write at least 10 characters" }),
+    about: z
+      .string()
+      .min(10, { message: "Please write at least 10 characters" }),
     university: z.string().min(1, { message: "University is required" }),
     major: z.string().min(1, { message: "Major is required" }),
     year: z.string().min(1, { message: "Year is required" }),
@@ -182,28 +190,31 @@ const Friends = () => {
   const onSubmitQuestionnaire = async (data) => {
     try {
       console.log("Submitting questionnaire data:", data);
-      
+
       // First try with the new endpoint
       let response;
       try {
         response = await APIService.createFriendshipQuestionnaire(data);
-        } catch (error) {
+      } catch (error) {
         console.error("Primary endpoint failed, trying alternative:", error);
-        
+
         // If that fails, try with the endpoint from your controller code
-        response = await APIService.authenticatedRequest("/api/users/fillForm", {
-          method: "POST",
-          body: JSON.stringify(data),
-        });
+        response = await APIService.authenticatedRequest(
+          "/api/users/fillForm",
+          {
+            method: "POST",
+            body: JSON.stringify(data),
+          }
+        );
       }
-      
+
       if (response) {
         toast({
           title: "Success",
           description: "Your questionnaire has been submitted successfully!",
         });
         setShowQuestionnaireForm(false);
-        
+
         // Update user in context to reflect questionnaire is filled
         if (user) {
           user.questionnaireFilled = true;
@@ -222,10 +233,10 @@ const Friends = () => {
   // Add this function to view user details
   const viewUserDetails = (user) => {
     if (!user) return;
-    
+
     const userId = getUserId(user);
     if (!userId) return;
-    
+
     setSelectedUserDetails(user);
     setShowUserDetails(true);
   };
@@ -233,9 +244,10 @@ const Friends = () => {
   // Add this new function to handle scroll events in the chat container
   const handleChatScroll = () => {
     if (chatContainerRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+      const { scrollTop, scrollHeight, clientHeight } =
+        chatContainerRef.current;
       const isScrolledUp = scrollHeight - scrollTop - clientHeight > 100;
-      
+
       setShowScrollToBottom(isScrolledUp);
     }
   };
@@ -244,7 +256,8 @@ const Friends = () => {
   const scrollToBottom = () => {
     if (chatContainerRef.current) {
       setTimeout(() => {
-        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        chatContainerRef.current.scrollTop =
+          chatContainerRef.current.scrollHeight;
         setShowScrollToBottom(false);
         console.log("Scrolled to bottom");
       }, 100);
@@ -613,16 +626,33 @@ const Friends = () => {
   const fetchOnlineUsers = async () => {
     try {
       setLoading((prev) => ({ ...prev, online: true }));
-      
+
       // First try to get available friends with questionnaires
       try {
         const response = await APIService.getAvailableFriends();
-        setGlobalUsers(response.available_friends || []);
+        console.log("Available friends response:", response); // Add this debug log
+
+        if (
+          response.available_friends &&
+          Array.isArray(response.available_friends)
+        ) {
+          console.log(
+            `Found ${response.available_friends.length} available friends`
+          ); // Add this
+          setGlobalUsers(response.available_friends);
+        } else {
+          console.error("Response format error:", response);
+          setGlobalUsers([]);
+        }
       } catch (err) {
-        console.error("Error fetching available users, falling back to online users:", err);
-        
+        console.error(
+          "Error fetching available users, falling back to online users:",
+          err
+        );
+
         // Fallback to regular online users if the available friends endpoint fails
         const onlineResponse = await APIService.getOnlineUsers();
+        console.log("Fallback online users response:", onlineResponse); // Add this debug log
         setGlobalUsers(onlineResponse.online_users || []);
       }
     } catch (err) {
@@ -652,39 +682,43 @@ const Friends = () => {
       for (const msg of chatMessages) {
         // Create a unique key for this message
         const messageKey = `${msg.senderId}_${msg.receiverId}_${msg.message}_${msg.createdAt}`;
-        
+
         // Only add if we haven't seen this message before
         if (!messageKeys.has(messageKey)) {
           messageKeys.add(messageKey);
-          
+
           // Process video call messages
           if (msg.video_call && msg.room_name) {
             console.log("Processing video call message:", msg);
-            
+
             // Ensure arrays are properly initialized
             const participants = msg.participants || [];
             const leftParticipants = msg.left_participants || [];
-            
+
             // Store call status information
-            setCallStatuses(prev => ({
+            setCallStatuses((prev) => ({
               ...prev,
               [msg.room_name]: {
                 participants: participants,
                 leftParticipants: leftParticipants,
-                status: msg.call_status || 'created',
+                status: msg.call_status || "created",
                 roomId: msg.room_id,
-              }
+              },
             }));
 
             // Check if current user is a participant (convert to strings for comparison)
-            const isParticipant = participants.some(p => {
-              const pId = typeof p === 'object' ? (p._id || p.id) : p;
+            const isParticipant = participants.some((p) => {
+              const pId = typeof p === "object" ? p._id || p.id : p;
               return pId?.toString() === getUserId(user)?.toString();
             });
-            
+
             if (isParticipant) {
-              console.log(`User ${getUserId(user)} is a participant in room ${msg.room_name}`);
-              setJoinedMeetings(prev => {
+              console.log(
+                `User ${getUserId(user)} is a participant in room ${
+                  msg.room_name
+                }`
+              );
+              setJoinedMeetings((prev) => {
                 const updated = new Set(prev);
                 updated.add(msg.room_name);
                 return updated;
@@ -703,18 +737,19 @@ const Friends = () => {
             roomId: msg.room_id,
             callStatus: msg.call_status,
             participants: msg.participants,
-            leftParticipants: msg.left_participants
+            leftParticipants: msg.left_participants,
           });
         }
       }
 
-      console.log(`Fetched ${chatMessages.length} messages, ${uniqueMessages.length} after deduplication`);
-      
+      console.log(
+        `Fetched ${chatMessages.length} messages, ${uniqueMessages.length} after deduplication`
+      );
+
       setMessages((prev) => ({
         ...prev,
         [userId]: uniqueMessages,
       }));
-      
     } catch (err) {
       console.error("Error fetching chat messages:", err);
       // Initialize with empty array if no messages
@@ -874,7 +909,7 @@ const Friends = () => {
     };
 
     setMessage("");
-    
+
     // Use the dedicated scroll function instead
     scrollToBottom();
 
@@ -1148,6 +1183,13 @@ const Friends = () => {
 
   // Update renderGlobalUsersList to use getUserId for keys
   const renderGlobalUsersList = () => {
+    console.log("Rendering global users list", {
+      loading: loading.online,
+      globalUsers: globalUsers,
+      filteredGlobalUsers: filteredGlobalUsers,
+      searchQuery: searchQuery,
+    });
+
     if (loading.online) {
       return <div className="text-center py-8">Loading available users...</div>;
     }
@@ -1289,7 +1331,7 @@ const Friends = () => {
       });
       return;
     }
-    
+
     try {
       console.log("Joining video call for room:", roomName);
 
@@ -1312,7 +1354,7 @@ const Friends = () => {
         setActiveCall(activeChatUser);
 
         // Add this room to joined meetings (even if API call failed, we're still joining)
-        setJoinedMeetings(prev => {
+        setJoinedMeetings((prev) => {
           const updated = new Set(prev);
           updated.add(roomName);
           return updated;
@@ -1320,28 +1362,30 @@ const Friends = () => {
 
         // Update call status locally
         const userId = getUserId(user);
-        setCallStatuses(prev => {
+        setCallStatuses((prev) => {
           const currentStatus = prev[roomName] || {
             participants: [],
             leftParticipants: [],
-            status: 'active'
+            status: "active",
           };
-          
+
           // Add current user to participants if not already there
-          if (!currentStatus.participants.some(p => {
-            const pId = typeof p === 'object' ? (p._id || p.id) : p;
-            return pId?.toString() === userId?.toString();
-          })) {
+          if (
+            !currentStatus.participants.some((p) => {
+              const pId = typeof p === "object" ? p._id || p.id : p;
+              return pId?.toString() === userId?.toString();
+            })
+          ) {
             return {
               ...prev,
               [roomName]: {
                 ...currentStatus,
                 participants: [...currentStatus.participants, userId],
-                status: 'active'
-              }
+                status: "active",
+              },
             };
           }
-          
+
           return prev;
         });
 
@@ -1450,21 +1494,21 @@ const Friends = () => {
       }
       cleanupVideoCall();
     });
-    
+
     // Handle more error types with explicit handlers
-    room.on("reconnecting", error => {
+    room.on("reconnecting", (error) => {
       console.log("Reconnecting to room due to:", error);
       console.error("Twilio reconnection error details:", error);
-      
+
       toast({
         title: "Connection Issue",
         description: "Trying to reconnect to the call...",
         duration: 3000,
       });
     });
-    
+
     // If reconnection fails after multiple attempts
-    room.on("reconnectionFailed", error => {
+    room.on("reconnectionFailed", (error) => {
       console.error("Twilio reconnection failed:", error);
       toast({
         title: "Connection Failed",
@@ -1472,7 +1516,7 @@ const Friends = () => {
         variant: "destructive",
         duration: 3000,
       });
-      
+
       cleanupVideoCall();
     });
   };
@@ -1505,7 +1549,7 @@ const Friends = () => {
   // Handle a participant disconnecting from the room
   const handleParticipantDisconnected = (participant) => {
     console.log("Participant disconnected:", participant.identity);
-    
+
     // Update participants list
     setCallParticipants((prevParticipants) =>
       prevParticipants.filter((p) => p !== participant)
@@ -1513,16 +1557,21 @@ const Friends = () => {
 
     // Always end the call when the remote participant leaves
     // This ensures we don't get stuck with a white screen
-    if (twilioRoom && participant.identity !== twilioRoom.localParticipant.identity) {
+    if (
+      twilioRoom &&
+      participant.identity !== twilioRoom.localParticipant.identity
+    ) {
       console.log("Remote participant left, ending call automatically");
-      
+
       // Show a toast notification
       toast({
         title: "Call Ended",
-        description: `${activeChatUser?.name || 'The other user'} has left the call`,
+        description: `${
+          activeChatUser?.name || "The other user"
+        } has left the call`,
         duration: 3000,
       });
-      
+
       // End the call and clean up completely
       cleanupVideoCall();
     }
@@ -1531,7 +1580,7 @@ const Friends = () => {
   // Completely updated cleanupVideoCall function with more aggressive camera cleanup
   const cleanupVideoCall = async () => {
     console.log("Starting aggressive video call cleanup");
-    
+
     // 1. Immediately update UI state to ensure responsive interface
     setActiveCall(null);
     setTwilioRoom(null);
@@ -1541,22 +1590,22 @@ const Friends = () => {
     setIsMuted(false);
     setIsVideoOff(false);
     setShowExitConfirmation(false);
-    
+
     // 2. Try to notify the server, but don't block on it
     if (callRoom) {
       try {
         APIService.leaveVideoCall(callRoom)
-          .then(response => {
+          .then((response) => {
             console.log("Successfully recorded call exit:", response);
           })
-          .catch(err => {
+          .catch((err) => {
             console.error("Error recording call exit (non-blocking):", err);
           });
       } catch (err) {
         console.error("Error initiating call exit request:", err);
       }
     }
-    
+
     // 3. Collect all media tracks that need to be stopped in a single array
     const allTracksToStop = [];
 
@@ -1564,27 +1613,27 @@ const Friends = () => {
     if (twilioRoom) {
       try {
         // Get all local tracks before disconnecting
-        twilioRoom.localParticipant.tracks.forEach(publication => {
+        twilioRoom.localParticipant.tracks.forEach((publication) => {
           const track = publication.track;
           if (track) {
             allTracksToStop.push(track);
-            
+
             // Also detach from DOM
-            track.detach().forEach(element => {
+            track.detach().forEach((element) => {
               if (element.parentNode) {
                 element.parentNode.removeChild(element);
               }
             });
           }
         });
-        
+
         // Do the same for all remote participant tracks
-        twilioRoom.participants.forEach(participant => {
-          participant.tracks.forEach(publication => {
+        twilioRoom.participants.forEach((participant) => {
+          participant.tracks.forEach((publication) => {
             if (publication.track) {
               allTracksToStop.push(publication.track);
-              
-              publication.track.detach().forEach(element => {
+
+              publication.track.detach().forEach((element) => {
                 if (element.parentNode) {
                   element.parentNode.removeChild(element);
                 }
@@ -1592,7 +1641,7 @@ const Friends = () => {
             }
           });
         });
-        
+
         // Now disconnect the room
         twilioRoom.disconnect();
         console.log("Disconnected from Twilio room");
@@ -1600,25 +1649,25 @@ const Friends = () => {
         console.error("Error during Twilio room cleanup:", err);
       }
     }
-    
+
     // 5. Collect tracks from video elements
     try {
       // Local video element
       if (localVideoRef.current) {
         const stream = localVideoRef.current.srcObject;
         if (stream) {
-          stream.getTracks().forEach(track => {
+          stream.getTracks().forEach((track) => {
             allTracksToStop.push(track);
           });
         }
         localVideoRef.current.srcObject = null;
       }
-      
+
       // Remote video element
       if (remoteVideoRef.current) {
         const stream = remoteVideoRef.current.srcObject;
         if (stream) {
-          stream.getTracks().forEach(track => {
+          stream.getTracks().forEach((track) => {
             allTracksToStop.push(track);
           });
         }
@@ -1627,10 +1676,10 @@ const Friends = () => {
     } catch (err) {
       console.error("Error collecting tracks from video elements:", err);
     }
-    
+
     // 6. Stop all collected tracks
     console.log(`Stopping ${allTracksToStop.length} media tracks`);
-    allTracksToStop.forEach(track => {
+    allTracksToStop.forEach((track) => {
       try {
         track.stop();
         console.log(`Stopped ${track.kind} track with ID: ${track.id}`);
@@ -1638,26 +1687,31 @@ const Friends = () => {
         console.error(`Error stopping track: ${err.message}`);
       }
     });
-    
+
     // 7. Special forced camera cleanup - force browser to release camera
     try {
       // Try multiple methods to ensure camera release
-      
+
       // Method 1: Request access and then immediately release
       const cleanupWithNewRequest = async () => {
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true,
+          });
           if (stream) {
-            stream.getTracks().forEach(track => {
+            stream.getTracks().forEach((track) => {
               track.stop();
-              console.log(`Force-released ${track.kind} device, ID: ${track.id}`);
+              console.log(
+                `Force-released ${track.kind} device, ID: ${track.id}`
+              );
             });
           }
         } catch (e) {
           console.log("No additional media devices to clean up");
         }
       };
-      
+
       // Method 2: Try to enumerate devices to trigger camera release
       const forceEnumerateDevices = async () => {
         try {
@@ -1667,24 +1721,23 @@ const Friends = () => {
           console.log("Could not enumerate devices");
         }
       };
-      
+
       // Run all methods in sequence
       await cleanupWithNewRequest();
       await forceEnumerateDevices();
-      
+
       // Method 3: Last resort - force garbage collection by null assignment
       localVideoRef.current = null;
       remoteVideoRef.current = null;
-      
     } catch (err) {
       console.log("Error during forced camera cleanup:", err);
     }
-    
+
     // 8. Scroll back to chat messages to improve user experience
     setTimeout(() => {
       scrollToBottom();
     }, 100);
-    
+
     console.log("Video call cleanup complete");
   };
 
@@ -1744,7 +1797,7 @@ const Friends = () => {
     } else {
       // Show the confirmation dialog
       setShowExitConfirmation(true);
-      
+
       // Auto-hide the confirmation after 3 seconds if not acted upon
       setTimeout(() => {
         setShowExitConfirmation(false);
@@ -1757,76 +1810,80 @@ const Friends = () => {
     if (socketRef.current) {
       // Remove any existing listeners to prevent duplicates
       socketRef.current.off("call_event");
-      
+
       // Set up listener for call events
       socketRef.current.on("call_event", (data) => {
         console.log("Received call event:", data);
-        
-        if (data.event === 'user_joined' || data.event === 'user_left') {
+
+        if (data.event === "user_joined" || data.event === "user_left") {
           // Refresh call status
           if (data.roomName) {
             // Update the call status for this room
-            setCallStatuses(prev => {
-              const current = prev[data.roomName] || { 
-                participants: [], 
-                leftParticipants: [] 
+            setCallStatuses((prev) => {
+              const current = prev[data.roomName] || {
+                participants: [],
+                leftParticipants: [],
               };
-              
-              if (data.event === 'user_joined') {
+
+              if (data.event === "user_joined") {
                 // Add user to participants if not already there
                 const participants = current.participants || [];
                 if (!participants.includes(data.userId)) {
                   participants.push(data.userId);
                 }
-                
+
                 return {
                   ...prev,
                   [data.roomName]: {
                     ...current,
                     participants,
-                    status: 'active'
-                  }
+                    status: "active",
+                  },
                 };
-              } else if (data.event === 'user_left') {
+              } else if (data.event === "user_left") {
                 // Add user to left participants
                 const leftParticipants = current.leftParticipants || [];
-                if (!leftParticipants.some(p => p._id === data.userId)) {
-                  leftParticipants.push({ 
-                    _id: data.userId, 
-                    timestamp: new Date() 
+                if (!leftParticipants.some((p) => p._id === data.userId)) {
+                  leftParticipants.push({
+                    _id: data.userId,
+                    timestamp: new Date(),
                   });
                 }
-                
+
                 return {
                   ...prev,
                   [data.roomName]: {
                     ...current,
-                    leftParticipants
-                  }
+                    leftParticipants,
+                  },
                 };
               }
-              
+
               return prev;
             });
-            
+
             // Show a notification
-            const eventUser = data.user?.name || 'Someone';
-            const action = data.event === 'user_joined' ? 'joined' : 'left';
-            
+            const eventUser = data.user?.name || "Someone";
+            const action = data.event === "user_joined" ? "joined" : "left";
+
             toast({
               title: `Call Update`,
               description: `${eventUser} has ${action} the call`,
               duration: 5000,
             });
-            
+
             // If we're in a call and the other person left, end our call
-            if (data.event === 'user_left' && activeCall && callRoom === data.roomName) {
+            if (
+              data.event === "user_left" &&
+              activeCall &&
+              callRoom === data.roomName
+            ) {
               toast({
                 title: "Call Ended",
                 description: `${eventUser} has left the call`,
                 duration: 3000,
               });
-              
+
               // Clean up the call if we're still in it
               if (twilioRoom) {
                 cleanupVideoCall();
@@ -1836,7 +1893,7 @@ const Friends = () => {
         }
       });
     }
-    
+
     return () => {
       if (socketRef.current) {
         socketRef.current.off("call_event");
@@ -1867,15 +1924,15 @@ const Friends = () => {
           variant: "destructive",
           duration: 5000,
         });
-        
+
         // End the call on any error
         cleanupVideoCall();
       };
-      
-      twilioRoom.on('error', handleError);
-      
+
+      twilioRoom.on("error", handleError);
+
       return () => {
-        twilioRoom.off('error', handleError);
+        twilioRoom.off("error", handleError);
       };
     }
   }, [twilioRoom]);
@@ -1885,31 +1942,32 @@ const Friends = () => {
     return () => {
       // This will run when the component unmounts
       console.log("Friends component unmounting, performing global cleanup");
-      
+
       // First clean up any ongoing call
       if (twilioRoom || activeCall) {
         cleanupVideoCall();
       }
-      
+
       // Additional global cleanup to force release all media devices
       try {
         // Try to close any active MediaStreams by forcing a new request
-        navigator.mediaDevices.getUserMedia({ audio: true, video: true })
-          .then(stream => {
-            stream.getTracks().forEach(track => {
+        navigator.mediaDevices
+          .getUserMedia({ audio: true, video: true })
+          .then((stream) => {
+            stream.getTracks().forEach((track) => {
               track.stop();
               console.log(`Unmount cleanup: Released ${track.kind} device`);
             });
-            
+
             // Force reset video elements
             if (localVideoRef.current) localVideoRef.current.srcObject = null;
             if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
-            
+
             // Null out the refs to help garbage collection
             localVideoRef.current = null;
             remoteVideoRef.current = null;
           })
-          .catch(e => console.log("No media devices to clean up on unmount"));
+          .catch((e) => console.log("No media devices to clean up on unmount"));
       } catch (e) {
         console.log("Error during unmount media cleanup:", e);
       }
@@ -1930,12 +1988,14 @@ const Friends = () => {
       if (response) {
         setIsAvailable(!isAvailable);
         toast({
-          title: isAvailable ? "You are now unavailable" : "You are now available",
-          description: isAvailable 
-            ? "Others won't see you in the available list" 
+          title: isAvailable
+            ? "You are now unavailable"
+            : "You are now available",
+          description: isAvailable
+            ? "Others won't see you in the available list"
             : "Others can now see you in the available list",
         });
-        
+
         // Update user in context
         if (user) {
           user.availabe = !isAvailable;
@@ -1950,6 +2010,14 @@ const Friends = () => {
       });
     }
   };
+
+  // Add this to your component, right after the useEffect hooks
+  useEffect(() => {
+    // Force the Global tab to be active for testing
+    setActiveTab("global");
+    // Fetch online users immediately
+    fetchOnlineUsers();
+  }, []);
 
   if (!isAuthenticated()) {
     return (
@@ -1980,7 +2048,10 @@ const Friends = () => {
               <div className="flex justify-between items-center mb-4">
                 <h1 className="text-2xl font-bold text-teal">Friends</h1>
                 <div className="flex items-center space-x-2">
-                  <Label htmlFor="availability" className="text-sm text-muted-foreground">
+                  <Label
+                    htmlFor="availability"
+                    className="text-sm text-muted-foreground"
+                  >
                     {isAvailable ? "Available" : "Unavailable"}
                   </Label>
                   <Switch
@@ -2076,7 +2147,7 @@ const Friends = () => {
                   <div className="absolute inset-0 z-10">
                     {/* Semi-transparent blurred background */}
                     <div className="absolute inset-0 bg-background/80 backdrop-blur-md"></div>
-                    
+
                     <div className="relative h-full flex flex-col p-4 z-20">
                       {/* Move call info bar to the top of the page */}
                       <div className="fixed top-[6rem] left-0 right-0 bg-black/40 text-white px-6 py-3 z-50 flex justify-between items-center shadow-lg">
@@ -2086,15 +2157,19 @@ const Friends = () => {
                               {getInitials(activeChatUser.name)}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="font-medium">Call with {activeChatUser.name}</span>
+                          <span className="font-medium">
+                            Call with {activeChatUser.name}
+                          </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-sm bg-green-500/20 px-3 py-1 rounded-full">
-                            {callParticipants.length > 0 ? "Connected" : "Connecting..."}
+                            {callParticipants.length > 0
+                              ? "Connected"
+                              : "Connecting..."}
                           </span>
                         </div>
                       </div>
-                      
+
                       <div className="flex-1 flex flex-col md:flex-row gap-4 justify-center items-center pt-20">
                         {/* Local video */}
                         <div className="w-full md:w-1/2 h-48 md:h-[55vh] bg-gray-900 rounded-lg overflow-hidden relative shadow-xl">
@@ -2132,7 +2207,9 @@ const Friends = () => {
                           ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center text-white">
                               <div className="w-12 h-12 border-4 border-t-blue-500 border-gray-200 rounded-full animate-spin mb-4"></div>
-                              <p>Waiting for {activeChatUser.name} to join...</p>
+                              <p>
+                                Waiting for {activeChatUser.name} to join...
+                              </p>
                             </div>
                           )}
                         </div>
@@ -2146,7 +2223,11 @@ const Friends = () => {
                           className="rounded-full h-12 w-12 shadow-lg transition-all hover:scale-110 bg-white/90 backdrop-blur-sm"
                           onClick={toggleMute}
                         >
-                          {isMuted ? <MicOff size={20} className="text-red-500" /> : <Mic size={20} className="text-primary" />}
+                          {isMuted ? (
+                            <MicOff size={20} className="text-red-500" />
+                          ) : (
+                            <Mic size={20} className="text-primary" />
+                          )}
                         </Button>
 
                         <Button
@@ -2168,13 +2249,15 @@ const Friends = () => {
                             variant="destructive"
                             size="icon"
                             className={`rounded-full h-12 w-12 shadow-lg transition-all ${
-                              showExitConfirmation ? "scale-110 animate-pulse" : "hover:scale-110"
+                              showExitConfirmation
+                                ? "scale-110 animate-pulse"
+                                : "hover:scale-110"
                             } bg-red-500/90 backdrop-blur-sm`}
                             onClick={endCall}
                           >
                             <X size={20} className="text-white" />
                           </Button>
-                          
+
                           {/* Exit confirmation tooltip */}
                           {showExitConfirmation && (
                             <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/80 text-white px-3 py-1 rounded text-sm whitespace-nowrap">
@@ -2198,9 +2281,7 @@ const Friends = () => {
                         </Avatar>
                         <div>
                           <h3 className="font-medium">{activeChatUser.name}</h3>
-                          <p className="text-xs text-muted">
-                    
-                          </p>
+                          <p className="text-xs text-muted"></p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -2211,7 +2292,9 @@ const Friends = () => {
                             size="sm"
                           >
                             <Video size={16} className="text-primary" />
-                            <span className="font-medium text-black">Video Call</span>
+                            <span className="font-medium text-black">
+                              Video Call
+                            </span>
                           </Button>
                         )}
                         {isMobile && (
@@ -2259,57 +2342,101 @@ const Friends = () => {
                                   }`}
                                 >
                                   {msg.isVideoCall ||
-                                  msg.text.includes("Video call invitation:") ? (
+                                  msg.text.includes(
+                                    "Video call invitation:"
+                                  ) ? (
                                     <div className="space-y-2">
                                       <p className="font-medium flex items-center gap-2">
-                                        <Video size={16} className={msg.sender === "me" ? "text-primary-foreground" : "text-primary"} />
+                                        <Video
+                                          size={16}
+                                          className={
+                                            msg.sender === "me"
+                                              ? "text-primary-foreground"
+                                              : "text-primary"
+                                          }
+                                        />
                                         Video Call Invitation
                                       </p>
                                       {(() => {
-                                        const roomName = msg.roomName || msg.text.split("Video call invitation: ")[1];
-                                        const hasJoined = joinedMeetings.has(roomName);
-                                        const callStatus = callStatuses[roomName];
-                                        
+                                        const roomName =
+                                          msg.roomName ||
+                                          msg.text.split(
+                                            "Video call invitation: "
+                                          )[1];
+                                        const hasJoined =
+                                          joinedMeetings.has(roomName);
+                                        const callStatus =
+                                          callStatuses[roomName];
+
                                         // Check if other user left the call
-                                        const otherUserId = getUserId(activeChatUser);
-                                        const otherUserLeft = callStatus?.leftParticipants?.some(p => {
-                                          // Handle different object formats
-                                          if (typeof p === 'object') {
-                                            const leftId = p._id || p.id;
-                                            return leftId?.toString() === otherUserId?.toString();
-                                          }
-                                          return p?.toString() === otherUserId?.toString();
-                                        });
-                                        
+                                        const otherUserId =
+                                          getUserId(activeChatUser);
+                                        const otherUserLeft =
+                                          callStatus?.leftParticipants?.some(
+                                            (p) => {
+                                              // Handle different object formats
+                                              if (typeof p === "object") {
+                                                const leftId = p._id || p.id;
+                                                return (
+                                                  leftId?.toString() ===
+                                                  otherUserId?.toString()
+                                                );
+                                              }
+                                              return (
+                                                p?.toString() ===
+                                                otherUserId?.toString()
+                                              );
+                                            }
+                                          );
+
                                         // Determine button state and text
-                                        let buttonDisabled = hasJoined || (callStatus?.status === 'ended');
-                                        let buttonIcon = <PhoneCall size={16} />;
+                                        let buttonDisabled =
+                                          hasJoined ||
+                                          callStatus?.status === "ended";
+                                        let buttonIcon = (
+                                          <PhoneCall size={16} />
+                                        );
                                         let buttonText = "Join Video Call";
-                                        
+
                                         if (hasJoined) {
                                           buttonIcon = <UserCheck size={16} />;
-                                          buttonText = "You joined this meeting";
+                                          buttonText =
+                                            "You joined this meeting";
                                         } else if (otherUserLeft) {
                                           buttonIcon = <X size={16} />;
                                           buttonText = `${activeChatUser.name} left the call`;
                                           buttonDisabled = true;
-                                        } else if (callStatus?.status === 'ended') {
+                                        } else if (
+                                          callStatus?.status === "ended"
+                                        ) {
                                           buttonIcon = <X size={16} />;
                                           buttonText = "Call ended";
                                           buttonDisabled = true;
                                         }
-                                        
+
                                         return (
                                           <Button
-                                            variant={msg.sender === "me" ? "secondary" : "default"}
+                                            variant={
+                                              msg.sender === "me"
+                                                ? "secondary"
+                                                : "default"
+                                            }
                                             size="sm"
-                                            onClick={() => joinVideoCall(roomName)}
+                                            onClick={() =>
+                                              joinVideoCall(roomName)
+                                            }
                                             disabled={buttonDisabled}
                                             className={`w-full flex items-center justify-center gap-2 rounded-md hover:shadow-md transition-all mt-2 h-10 
-                                              ${buttonDisabled ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                              ${
+                                                buttonDisabled
+                                                  ? "opacity-70 cursor-not-allowed"
+                                                  : ""
+                                              }`}
                                           >
                                             {buttonIcon}
-                                            <span className="font-medium">{buttonText}</span>
+                                            <span className="font-medium">
+                                              {buttonText}
+                                            </span>
                                           </Button>
                                         );
                                       })()}
@@ -2343,7 +2470,7 @@ const Friends = () => {
                           </div>
                         )}
                       </div>
-                      
+
                       {/* Scroll to bottom button - positioned absolutely */}
                       {showScrollToBottom && (
                         <button
@@ -2437,27 +2564,35 @@ const Friends = () => {
       </Dialog>
 
       {/* Questionnaire Form Dialog */}
-      <Dialog open={showQuestionnaireForm} onOpenChange={(open) => {
-        // Only allow closing if user has filled the questionnaire
-        if (!open && user && !user.questionnaireFilled) {
-          toast({
-            title: "Please complete your profile",
-            description: "You need to fill out your questionnaire to continue.",
-            variant: "destructive",
-          });
-          return;
-        }
-        setShowQuestionnaireForm(open);
-      }}>
+      <Dialog
+        open={showQuestionnaireForm}
+        onOpenChange={(open) => {
+          // Only allow closing if user has filled the questionnaire
+          if (!open && user && !user.questionnaireFilled) {
+            toast({
+              title: "Please complete your profile",
+              description:
+                "You need to fill out your questionnaire to continue.",
+              variant: "destructive",
+            });
+            return;
+          }
+          setShowQuestionnaireForm(open);
+        }}
+      >
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Complete Your Profile</DialogTitle>
             <DialogDescription>
-              Please fill out this questionnaire to help others get to know you better.
+              Please fill out this questionnaire to help others get to know you
+              better.
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmitQuestionnaire)} className="space-y-4">
+            <form
+              onSubmit={form.handleSubmit(onSubmitQuestionnaire)}
+              className="space-y-4"
+            >
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -2478,7 +2613,10 @@ const Friends = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Gender</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select gender" />
@@ -2488,7 +2626,9 @@ const Friends = () => {
                           <SelectItem value="male">Male</SelectItem>
                           <SelectItem value="female">Female</SelectItem>
                           <SelectItem value="other">Other</SelectItem>
-                          <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                          <SelectItem value="prefer-not-to-say">
+                            Prefer not to say
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -2543,7 +2683,10 @@ const Friends = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Year of Study</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select year" />
@@ -2568,8 +2711,8 @@ const Friends = () => {
                   <FormItem>
                     <FormLabel>About Me</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Tell others a bit about yourself..." 
+                      <Textarea
+                        placeholder="Tell others a bit about yourself..."
                         {...field}
                         className="min-h-[100px]"
                       />
@@ -2594,7 +2737,9 @@ const Friends = () => {
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Avatar className="h-8 w-8">
-                    <AvatarFallback>{getInitials(selectedUserDetails.name)}</AvatarFallback>
+                    <AvatarFallback>
+                      {getInitials(selectedUserDetails.name)}
+                    </AvatarFallback>
                   </Avatar>
                   {selectedUserDetails.name}
                 </DialogTitle>
@@ -2602,7 +2747,7 @@ const Friends = () => {
                   Get to know more about this user
                 </DialogDescription>
               </DialogHeader>
-              
+
               {selectedUserDetails.questionnaire ? (
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4 text-sm">
@@ -2611,19 +2756,25 @@ const Friends = () => {
                       <p>{selectedUserDetails.questionnaire.age}</p>
                     </div>
                     <div>
-                      <p className="font-medium text-muted-foreground">Gender</p>
-                      <p className="capitalize">{selectedUserDetails.questionnaire.gender}</p>
+                      <p className="font-medium text-muted-foreground">
+                        Gender
+                      </p>
+                      <p className="capitalize">
+                        {selectedUserDetails.questionnaire.gender}
+                      </p>
                     </div>
                   </div>
-                  
+
                   <div>
                     <p className="font-medium text-muted-foreground">Country</p>
                     <p>{selectedUserDetails.questionnaire.country}</p>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <p className="font-medium text-muted-foreground">University</p>
+                      <p className="font-medium text-muted-foreground">
+                        University
+                      </p>
                       <p>{selectedUserDetails.questionnaire.university}</p>
                     </div>
                     <div>
@@ -2631,20 +2782,23 @@ const Friends = () => {
                       <p>{selectedUserDetails.questionnaire.major}</p>
                     </div>
                   </div>
-                  
+
                   <div>
-                    <p className="font-medium text-muted-foreground">Year of Study</p>
+                    <p className="font-medium text-muted-foreground">
+                      Year of Study
+                    </p>
                     <p>
-                      {selectedUserDetails.questionnaire.year === 'graduate' 
-                        ? 'Graduate'
-                        : `Year ${selectedUserDetails.questionnaire.year}`
-                      }
+                      {selectedUserDetails.questionnaire.year === "graduate"
+                        ? "Graduate"
+                        : `Year ${selectedUserDetails.questionnaire.year}`}
                     </p>
                   </div>
-                  
+
                   <div>
                     <p className="font-medium text-muted-foreground">About</p>
-                    <p className="mt-1 text-sm">{selectedUserDetails.questionnaire.about}</p>
+                    <p className="mt-1 text-sm">
+                      {selectedUserDetails.questionnaire.about}
+                    </p>
                   </div>
                 </div>
               ) : (
@@ -2653,7 +2807,7 @@ const Friends = () => {
                   <p>No profile information available</p>
                 </div>
               )}
-              
+
               <DialogFooter className="flex justify-between">
                 <Button
                   variant="outline"

@@ -170,14 +170,16 @@ class APIService {
       }
     }
 
-    console.log(`Sending message to ${receiverId} via socket with skipSave=${skipSave}`);
+    console.log(
+      `Sending message to ${receiverId} via socket with skipSave=${skipSave}`
+    );
 
     try {
       this.socket.emit("send_message", {
         senderId: this.userId,
         receiverId,
         message,
-        skipSave // Pass the flag to tell server not to save this message again
+        skipSave, // Pass the flag to tell server not to save this message again
       });
       return true;
     } catch (error) {
@@ -295,7 +297,26 @@ class APIService {
         body: JSON.stringify(userData),
       });
 
-      const data = await response.json();
+      // Check if the response has content before trying to parse JSON
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        // Not a JSON response - handle accordingly
+        const text = await response.text();
+        console.error("Server returned non-JSON response:", text);
+        throw new Error(
+          `Server returned non-JSON response: ${response.status} ${response.statusText}`
+        );
+      }
+
+      // Check for empty response
+      const responseText = await response.text();
+      if (!responseText.trim()) {
+        console.error("Server returned empty response");
+        throw new Error("Server returned empty response");
+      }
+
+      // Parse the JSON manually after checking for empty content
+      const data = JSON.parse(responseText);
 
       if (!response.ok) {
         throw new Error(data.message || "Registration failed");
@@ -323,7 +344,26 @@ class APIService {
         body: JSON.stringify(credentials),
       });
 
-      const data = await response.json();
+      // Check if the response has content before trying to parse JSON
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        // Not a JSON response - handle accordingly
+        const text = await response.text();
+        console.error("Server returned non-JSON response:", text);
+        throw new Error(
+          `Server returned non-JSON response: ${response.status} ${response.statusText}`
+        );
+      }
+
+      // Check for empty response
+      const responseText = await response.text();
+      if (!responseText.trim()) {
+        console.error("Server returned empty response");
+        throw new Error("Server returned empty response");
+      }
+
+      // Parse the JSON manually after checking for empty content
+      const data = JSON.parse(responseText);
 
       if (!response.ok) {
         throw new Error(data.message || "Login failed");
@@ -661,7 +701,9 @@ class APIService {
 
       // If the message was saved successfully, emit it via socket for real-time delivery
       if (response.success) {
-        console.log("Message saved successfully, emitting via socket with skipSave");
+        console.log(
+          "Message saved successfully, emitting via socket with skipSave"
+        );
         // Pass true for skipSave to prevent duplicate saving
         this.sendSocketMessage(receiverId, message, true);
       }
@@ -779,7 +821,7 @@ class APIService {
       });
 
       const data = await response.json();
-      console.log("DATA REPONSE",data)
+      console.log("DATA REPONSE", data);
 
       if (!response.ok) {
         throw new Error(data.message || "Email verification failed");
@@ -815,14 +857,33 @@ class APIService {
    */
   static async getAvailableFriends() {
     try {
-      return this.authenticatedRequest("/api/user/friends/available");
-    } catch (error) {
-      console.error("Error getting available friends:", error);
-      // If 404 error (no available users), return empty array
-      if (error.message === "No available users found") {
-        return { available_friends: [] };
+      // Try the primary endpoint
+      console.log(
+        "Requesting from primary endpoint: /api/user/online"
+      );
+      let response;
+
+      try {
+        response = await this.authenticatedRequest(
+          "/api/user/online"
+        );
+      } catch (err) {
+        console.log("Primary endpoint failed, trying alternative");
+
+        // Try alternative endpoint if primary fails
+        response = await this.authenticatedRequest("/api/users/available");
       }
-      throw error;
+
+      console.log("Available friends final response:", response);
+
+      // Normalize the response structure
+      const available_friends =
+        response.available_friends || (Array.isArray(response) ? response : []);
+
+      return { available_friends };
+    } catch (error) {
+      console.error("All available friends endpoints failed:", error);
+      return { available_friends: [] };
     }
   }
 
@@ -833,7 +894,7 @@ class APIService {
   static async toggleAvailability() {
     try {
       return this.authenticatedRequest("/api/user/changeAvailability", {
-        method: "GET"
+        method: "GET",
       });
     } catch (error) {
       console.error("Error toggling availability:", error);

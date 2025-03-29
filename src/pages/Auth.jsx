@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Auth.css";
+import APIService from "../server"; // Import the APIService
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -12,37 +13,94 @@ const Auth = () => {
     name: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [animationLoaded, setAnimationLoaded] = useState(false);
+  const [error, setError] = useState(""); // Add error state
+
+  // Trigger animations after component mounts
+  useEffect(() => {
+    setAnimationLoaded(true);
+
+    // Check if user is already authenticated
+    if (APIService.isAuthenticated()) {
+      navigate("/dashboard");
+    }
+  }, [navigate]);
 
   // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    // Clear error when user types
+    setError("");
   };
 
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-
-      // Redirect to dashboard after successful authentication
+    try {
       if (activeTab === "login") {
+        // Login user
+        const credentials = {
+          email: formData.email,
+          password: formData.password,
+        };
+
+        const response = await APIService.login(credentials);
+        console.log("Login successful:", response);
+
+        // Redirect to dashboard after successful login
         navigate("/dashboard");
       } else {
+        // Register user
+        // Check if passwords match
+        if (formData.password !== formData.confirmPassword) {
+          setError("Passwords do not match");
+          setIsLoading(false);
+          return;
+        }
+
+        const userData = {
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        };
+
+        const response = await APIService.register(userData);
+        console.log("Registration successful:", response);
+
         // Show success message and switch to login
         alert("Account created successfully! Please log in.");
         setActiveTab("login");
+        // Clear form data for login
+        setFormData((prev) => ({
+          ...prev,
+          name: "",
+          confirmPassword: "",
+        }));
       }
-    }, 1500);
+    } catch (error) {
+      console.error(
+        `${activeTab === "login" ? "Login" : "Registration"} error:`,
+        error
+      );
+      setError(
+        error.message ||
+          `${
+            activeTab === "login" ? "Login" : "Registration"
+          } failed. Please try again.`
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="auth-container">
       {/* Left Column - Illustration/Branding */}
-      <div className="auth-branding">
+      <div className={`auth-branding ${animationLoaded ? "animate-in" : ""}`}>
         <div className="branding-content">
           <div className="logo-container">
             <div className="logo-icon">
@@ -80,8 +138,12 @@ const Auth = () => {
       </div>
 
       {/* Right Column - Auth Form */}
-      <div className="auth-form-container">
-        <div className="auth-card">
+      <div
+        className={`auth-form-container ${animationLoaded ? "animate-in" : ""}`}
+      >
+        <div
+          className={`auth-card ${animationLoaded ? "animate-bounce-in" : ""}`}
+        >
           <div className="auth-tabs">
             <button
               className={`tab-button ${activeTab === "login" ? "active" : ""}`}
@@ -109,6 +171,11 @@ const Auth = () => {
                 <p className="form-subtitle">
                   Enter your credentials to access your account
                 </p>
+
+                {/* Display error message if any */}
+                {error && activeTab === "login" && (
+                  <div className="error-message">{error}</div>
+                )}
 
                 <form onSubmit={handleSubmit}>
                   <div className="form-group">
@@ -206,6 +273,11 @@ const Auth = () => {
                 <p className="form-subtitle">
                   Fill in your details to get started with PrepPartner
                 </p>
+
+                {/* Display error message if any */}
+                {error && activeTab === "signup" && (
+                  <div className="error-message">{error}</div>
+                )}
 
                 <form onSubmit={handleSubmit}>
                   <div className="form-group">

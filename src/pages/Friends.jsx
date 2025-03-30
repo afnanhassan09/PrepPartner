@@ -630,20 +630,7 @@ const Friends = () => {
       // First try to get available friends with questionnaires
       try {
         const response = await APIService.getAvailableFriends();
-        console.log("Available friends response:", response); // Add this debug log
-
-        if (
-          response.available_friends &&
-          Array.isArray(response.available_friends)
-        ) {
-          console.log(
-            `Found ${response.available_friends.length} available friends`
-          ); // Add this
-          setGlobalUsers(response.available_friends);
-        } else {
-          console.error("Response format error:", response);
-          setGlobalUsers([]);
-        }
+        setGlobalUsers(response.available_friends || []);
       } catch (err) {
         console.error(
           "Error fetching available users, falling back to online users:",
@@ -652,7 +639,6 @@ const Friends = () => {
 
         // Fallback to regular online users if the available friends endpoint fails
         const onlineResponse = await APIService.getOnlineUsers();
-        console.log("Fallback online users response:", onlineResponse); // Add this debug log
         setGlobalUsers(onlineResponse.online_users || []);
       }
     } catch (err) {
@@ -773,7 +759,7 @@ const Friends = () => {
   // Helper function to get user ID consistently
   const getUserId = (user) => {
     if (!user) return null;
-    return user._id || user.id; // Handle both _id and id formats
+    return user._id || user.id || user.userId; // Add check for userId property
   };
 
   // Update openChat function to handle both id and _id formats
@@ -929,7 +915,8 @@ const Friends = () => {
     }
   };
 
-  const sendFriendRequest = async (user) => {
+  // Alternative approach - modify sendFriendRequest to accept a callback
+  const sendFriendRequest = async (user, onSuccess) => {
     if (!user) {
       console.error("Cannot send friend request: User is null or undefined");
       return;
@@ -953,11 +940,13 @@ const Friends = () => {
         description: `Friend request sent to ${user.name}`,
       });
 
-      // Update UI to reflect the pending request
-      // Refresh friend requests list
-      fetchFriendRequests();
+      // Call the onSuccess callback if provided
+      if (onSuccess && typeof onSuccess === "function") {
+        onSuccess();
+      }
 
-      // Remove user from global list
+      // Update UI to reflect the pending request
+      fetchFriendRequests();
       setGlobalUsers((prev) => prev.filter((u) => getUserId(u) !== userId));
     } catch (err) {
       console.error("Error sending friend request:", err);
@@ -1052,7 +1041,8 @@ const Friends = () => {
       `}
       onClick={() => {
         if (type === "global") {
-          viewUserDetails(friend);
+          // Replace viewUserDetails with openUserModal to use only one modal
+          openUserModal(friend);
         } else {
           openChat(friend);
         }
@@ -1089,20 +1079,6 @@ const Friends = () => {
           >
             <UserPlus size={16} className="mr-1" />
             Add
-          </Button>
-        )}
-        {type === "global" && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              viewUserDetails(friend);
-            }}
-            className="text-xs"
-          >
-            <UserCircle2 size={16} className="mr-1" />
-            View
           </Button>
         )}
       </div>
@@ -1183,13 +1159,6 @@ const Friends = () => {
 
   // Update renderGlobalUsersList to use getUserId for keys
   const renderGlobalUsersList = () => {
-    console.log("Rendering global users list", {
-      loading: loading.online,
-      globalUsers: globalUsers,
-      filteredGlobalUsers: filteredGlobalUsers,
-      searchQuery: searchQuery,
-    });
-
     if (loading.online) {
       return <div className="text-center py-8">Loading available users...</div>;
     }
@@ -1204,7 +1173,9 @@ const Friends = () => {
     }
 
     return filteredGlobalUsers.map((user) => (
-      <FriendCard key={getUserId(user)} friend={user} type="global" />
+      <div key={getUserId(user)} onClick={() => openUserModal(user)}>
+        <FriendCard friend={user} type="global" />
+      </div>
     ));
   };
 
@@ -2011,13 +1982,14 @@ const Friends = () => {
     }
   };
 
-  // Add this to your component, right after the useEffect hooks
-  useEffect(() => {
-    // Force the Global tab to be active for testing
-    setActiveTab("global");
-    // Fetch online users immediately
-    fetchOnlineUsers();
-  }, []);
+  // Add state for modal visibility and selected user
+  const [showUserModal, setShowUserModal] = useState(false);
+
+  // Function to open modal with user data
+  const openUserModal = (user) => {
+    setSelectedUser(user);
+    setShowUserModal(true);
+  };
 
   if (!isAuthenticated()) {
     return (
@@ -2729,105 +2701,78 @@ const Friends = () => {
         </DialogContent>
       </Dialog>
 
-      {/* User Details Dialog */}
-      <Dialog open={showUserDetails} onOpenChange={setShowUserDetails}>
-        <DialogContent className="sm:max-w-[500px]">
-          {selectedUserDetails && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback>
-                      {getInitials(selectedUserDetails.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  {selectedUserDetails.name}
-                </DialogTitle>
-                <DialogDescription>
-                  Get to know more about this user
-                </DialogDescription>
-              </DialogHeader>
+      {/* User Info Modal */}
+      <Dialog open={showUserModal} onOpenChange={setShowUserModal}>
+        <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden">
+          {/* Hero section with large avatar */}
+          <div className="bg-gradient-to-r from-primary/90 to-primary/70 p-6 flex items-center gap-4">
+            <Avatar className="h-20 w-20 border-4 border-white shadow-lg">
+              <AvatarFallback className="bg-white text-primary text-xl font-bold">
+                {getInitials(selectedUser?.name)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="text-white">
+              <h2 className="text-2xl font-bold">{selectedUser?.name}</h2>
+              <p className="opacity-90">
+                {selectedUser?.questionnaire?.university}
+              </p>
+            </div>
+          </div>
 
-              {selectedUserDetails.questionnaire ? (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="font-medium text-muted-foreground">Age</p>
-                      <p>{selectedUserDetails.questionnaire.age}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-muted-foreground">
-                        Gender
-                      </p>
-                      <p className="capitalize">
-                        {selectedUserDetails.questionnaire.gender}
-                      </p>
-                    </div>
-                  </div>
+          {/* User details section */}
+          <div className="p-6 space-y-5">
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground font-medium">
+                  Email
+                </p>
+                <p className="font-medium">{selectedUser?.email}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground font-medium">
+                  Major
+                </p>
+                <p className="font-medium">
+                  {selectedUser?.questionnaire?.major || "Not specified"}
+                </p>
+              </div>
+            </div>
 
-                  <div>
-                    <p className="font-medium text-muted-foreground">Country</p>
-                    <p>{selectedUserDetails.questionnaire.country}</p>
-                  </div>
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground font-medium">About</p>
+              <div className="p-4 rounded-lg bg-secondary/30 border">
+                <p>
+                  {selectedUser?.questionnaire?.about ||
+                    "No information provided"}
+                </p>
+              </div>
+            </div>
 
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="font-medium text-muted-foreground">
-                        University
-                      </p>
-                      <p>{selectedUserDetails.questionnaire.university}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-muted-foreground">Major</p>
-                      <p>{selectedUserDetails.questionnaire.major}</p>
-                    </div>
-                  </div>
+            {selectedUser?.questionnaire?.year && (
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground font-medium">
+                  Year of Study
+                </p>
+                <p className="font-medium">
+                  {selectedUser.questionnaire.year === "graduate"
+                    ? "Graduate"
+                    : `Year ${selectedUser.questionnaire.year}`}
+                </p>
+              </div>
+            )}
+          </div>
 
-                  <div>
-                    <p className="font-medium text-muted-foreground">
-                      Year of Study
-                    </p>
-                    <p>
-                      {selectedUserDetails.questionnaire.year === "graduate"
-                        ? "Graduate"
-                        : `Year ${selectedUserDetails.questionnaire.year}`}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="font-medium text-muted-foreground">About</p>
-                    <p className="mt-1 text-sm">
-                      {selectedUserDetails.questionnaire.about}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="py-4 text-center text-muted-foreground">
-                  <UserCircle2 size={48} className="mx-auto mb-2 opacity-50" />
-                  <p>No profile information available</p>
-                </div>
-              )}
-
-              <DialogFooter className="flex justify-between">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowUserDetails(false)}
-                >
-                  Close
-                </Button>
-                <Button
-                  onClick={() => {
-                    setShowUserDetails(false);
-                    sendFriendRequest(selectedUserDetails);
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <UserPlus size={16} />
-                  Send Friend Request
-                </Button>
-              </DialogFooter>
-            </>
-          )}
+          <DialogFooter className="p-6 pt-2 border-t">
+            <Button
+              onClick={() => {
+                sendFriendRequest(selectedUser, () => setShowUserModal(false));
+              }}
+              className="w-full"
+            >
+              <UserPlus size={16} className="mr-2" />
+              Send Friend Request
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

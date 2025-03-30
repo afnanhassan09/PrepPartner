@@ -857,32 +857,27 @@ class APIService {
    */
   static async getAvailableFriends() {
     try {
-      // Try the primary endpoint
-      console.log(
-        "Requesting from primary endpoint: /api/user/online"
-      );
-      let response;
+      console.log("Requesting available friends");
+      const response = await this.authenticatedRequest("/api/user/online");
+      console.log("Available friends response:", response);
 
-      try {
-        response = await this.authenticatedRequest(
-          "/api/user/online"
-        );
-      } catch (err) {
-        console.log("Primary endpoint failed, trying alternative");
+      // Make sure we have the expected structure
+      if (!response.available_friends) {
+        console.warn("Unexpected response format:", response);
 
-        // Try alternative endpoint if primary fails
-        response = await this.authenticatedRequest("/api/users/available");
+        // If we got just an array, adapt it to the expected format
+        if (Array.isArray(response)) {
+          return { available_friends: response };
+        }
+
+        // Otherwise return empty array
+        return { available_friends: [] };
       }
 
-      console.log("Available friends final response:", response);
-
-      // Normalize the response structure
-      const available_friends =
-        response.available_friends || (Array.isArray(response) ? response : []);
-
-      return { available_friends };
+      return response;
     } catch (error) {
-      console.error("All available friends endpoints failed:", error);
+      console.error("Error getting available friends:", error);
+      // If 404 error or any other error, return empty array
       return { available_friends: [] };
     }
   }

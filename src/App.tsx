@@ -26,6 +26,7 @@ import Friends from "./pages/Friends";
 import Profile from "./pages/Profile";
 import { AuthProvider } from "./contexts/AuthContext";
 import VerifyEmail from './pages/VerifyEmail';
+import HomeIndex from "./pages/Home";
 
 const queryClient = new QueryClient();
 
@@ -46,7 +47,7 @@ const App = () => (
           <Routes>
             {/* Public routes with standard layout */}
             <Route element={<Layout />}>
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={<HomeIndex />} />
               <Route path="/about" element={<About />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/contact" element={<Contact />} />

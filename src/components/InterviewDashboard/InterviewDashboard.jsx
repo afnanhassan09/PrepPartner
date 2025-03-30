@@ -52,6 +52,7 @@ const InterviewDashboard = () => {
   const currentVideoRef = useRef(null);
   const [audioStream, setAudioStream] = useState(null);
   const [isAudioInitialized, setIsAudioInitialized] = useState(false);
+  const [showTimeUpModal, setShowTimeUpModal] = useState(false);
 
   // Add sections data
   const sections = [
@@ -272,13 +273,31 @@ const InterviewDashboard = () => {
   // Add new useEffect for the 5-minute interview timer
   useEffect(() => {
     if (isInterviewTimerActive && interviewTimeLeft > 0) {
+      // Clear any existing interval first to prevent multiple intervals
+      if (interviewTimerRef.current) {
+        clearInterval(interviewTimerRef.current);
+      }
+      
       interviewTimerRef.current = setInterval(() => {
         setInterviewTimeLeft((prev) => prev - 1);
       }, 1000);
+    } else if (!isInterviewTimerActive) {
+      // Clear the interval when timer is not active
+      if (interviewTimerRef.current) {
+        clearInterval(interviewTimerRef.current);
+      }
     } else if (interviewTimeLeft === 0) {
       // Handle timer completion
       clearInterval(interviewTimerRef.current);
-      // Optionally add logic for when time runs out
+      
+      // Pause the video when time runs out
+      if (mainVideoRef.current && isMainVideoPlaying) {
+        mainVideoRef.current.pause();
+        setIsMainVideoPlaying(false);
+      }
+      
+      // Show the time up modal
+      setShowTimeUpModal(true);
     }
 
     return () => {
@@ -286,7 +305,7 @@ const InterviewDashboard = () => {
         clearInterval(interviewTimerRef.current);
       }
     };
-  }, [isInterviewTimerActive, interviewTimeLeft]);
+  }, [isInterviewTimerActive, interviewTimeLeft, isMainVideoPlaying]);
 
   // Add this useEffect to request permissions when component mounts
   useEffect(() => {}, []);
@@ -332,8 +351,17 @@ const InterviewDashboard = () => {
     if (mainVideoRef.current) {
       if (isMainVideoPlaying) {
         mainVideoRef.current.pause();
+        // Pause the interview timer when video is paused
+        if (isInterviewTimerActive) {
+          clearInterval(interviewTimerRef.current);
+          setIsInterviewTimerActive(false);
+        }
       } else {
         mainVideoRef.current.play();
+        // Resume the interview timer when video is played
+        if (!isInterviewTimerActive && interviewTimeLeft > 0) {
+          setIsInterviewTimerActive(true);
+        }
       }
       setIsMainVideoPlaying(!isMainVideoPlaying);
     }
@@ -728,9 +756,33 @@ const InterviewDashboard = () => {
     };
   }, []);
 
+  // Function to refresh the page when "Try Again" is clicked
+  const handleTryAgain = () => {
+    window.location.reload();
+  };
+
   return (
     <div className="h-full bg-background p-6 interview-container relative">
       <canvas ref={canvasRef} style={{ display: "none" }} />
+      
+      {/* Time Up Modal */}
+      {showTimeUpModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70">
+          <div className="bg-white rounded-2xl p-8 max-w-md text-center shadow-2xl animate-fade-up">
+            <h2 className="text-2xl font-bold text-red-600 mb-4">Time's Up!</h2>
+            <p className="text-gray-700 mb-6">Your interview session has ended.</p>
+            <button
+              onClick={handleTryAgain}
+              className="px-6 py-3 bg-teal text-white rounded-xl font-semibold 
+                       hover:bg-teal-600 transition-all duration-200 
+                       transform hover:scale-105 shadow-lg"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      )}
+      
       <div className="animate-fade-up mb-6">
         <PopupMenu
           sections={sections}

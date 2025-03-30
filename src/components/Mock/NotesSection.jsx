@@ -1,9 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import NotesIcon from "./icons/NotesIcon";
 import MinimizeIcon from "./icons/MinimizeIcon";
 import ExpandIcon from "./icons/ExpandIcon";
+import AdditionalMaterialPopup from "./AdditionalMaterialPopup";
 
 const NotesSection = ({ notes, setNotes, isNotesMinimized, setIsNotesMinimized }) => {
+  const [showAdditionalMaterial, setShowAdditionalMaterial] = useState(false);
+  const materialImageUrl = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSDLcKj_lOjmgxbMBNxWFl7XHJVytdPexjAJw&s";
+
   return (
     <div className="animate-fade-up">
       <div className="rounded-2xl bg-background-secondary/50 backdrop-blur-sm border border-border/50 p-4">
@@ -12,12 +16,20 @@ const NotesSection = ({ notes, setNotes, isNotesMinimized, setIsNotesMinimized }
             <NotesIcon />
             <h2 className="text-xl font-semibold text-black">My Notes</h2>
           </div>
-          <button
-            onClick={() => setIsNotesMinimized(!isNotesMinimized)}
-            className="p-2 hover:bg-teal/10 rounded-lg transition-colors"
-          >
-            {isNotesMinimized ? <ExpandIcon /> : <MinimizeIcon />}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowAdditionalMaterial(true)}
+              className="px-3 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-medium transition-colors"
+            >
+              Additional Material
+            </button>
+            <button
+              onClick={() => setIsNotesMinimized(!isNotesMinimized)}
+              className="p-2 hover:bg-teal/10 rounded-lg transition-colors"
+            >
+              {isNotesMinimized ? <ExpandIcon /> : <MinimizeIcon />}
+            </button>
+          </div>
         </div>
 
         {!isNotesMinimized && (
@@ -61,6 +73,13 @@ const NotesSection = ({ notes, setNotes, isNotesMinimized, setIsNotesMinimized }
           </div>
         )}
       </div>
+
+      {/* Additional Material Popup */}
+      <AdditionalMaterialPopup 
+        isOpen={showAdditionalMaterial}
+        onClose={() => setShowAdditionalMaterial(false)}
+        imageUrl={materialImageUrl}
+      />
     </div>
   );
 };

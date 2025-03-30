@@ -2586,13 +2586,17 @@ const Friends = () => {
                             <SelectValue placeholder="Select gender" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        {/* SelectContent for gender dropdown */}
+                        <SelectContent 
+                          position="popper" 
+                          className="z-[9999] bg-white shadow-lg border rounded-md"
+                          sideOffset={5}
+                          portalled={true}
+                        >
                           <SelectItem value="male">Male</SelectItem>
                           <SelectItem value="female">Female</SelectItem>
                           <SelectItem value="other">Other</SelectItem>
-                          <SelectItem value="prefer-not-to-say">
-                            Prefer not to say
-                          </SelectItem>
+                          <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -2656,7 +2660,13 @@ const Friends = () => {
                           <SelectValue placeholder="Select year" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      {/* SelectContent for year dropdown */}
+                      <SelectContent 
+                        position="popper" 
+                        className="z-[9999] bg-white shadow-lg border rounded-md"
+                        sideOffset={5}
+                        portalled={true}
+                      >
                         <SelectItem value="1">First Year</SelectItem>
                         <SelectItem value="2">Second Year</SelectItem>
                         <SelectItem value="3">Third Year</SelectItem>
@@ -2914,5 +2924,58 @@ chatStyles.innerHTML = `
   }
 `;
 document.head.appendChild(chatStyles);
+
+// Add this more specific style to fix the dropdown overlay issue
+const fixedSelectStyles = document.createElement("style");
+fixedSelectStyles.innerHTML = `
+  /* Force select dropdown to appear over everything */
+  [data-radix-popper-content-wrapper] {
+    z-index: 99999 !important; 
+    /* Higher z-index to override any other elements */
+  }
+  
+  /* Ensure dropdown has proper styling with solid background */
+  [role="listbox"] {
+    background-color: white !important;
+    border-radius: 0.375rem !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    overflow: hidden !important;
+    padding: 0.5rem !important;
+    margin-top: 0.25rem !important;
+  }
+  
+  /* Style individual dropdown items */
+  [role="option"] {
+    padding: 0.5rem 0.75rem !important;
+    border-radius: 0.25rem !important;
+    cursor: pointer !important;
+    transition: background-color 0.2s ease !important;
+    font-size: 0.875rem !important;
+  }
+  
+  [role="option"]:hover {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+  }
+  
+  /* Make sure the dialog itself has proper z-index */
+  [role="dialog"] {
+    z-index: 9998 !important;
+  }
+  
+  /* Ensure the whole dialog is properly layered */
+  .fixed.inset-0.z-50 {
+    z-index: 9998 !important;
+  }
+  
+  /* Ensure background overlay is solid */
+  [data-radix-portal] {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    z-index: 99999 !important;
+  }
+`;
+document.head.appendChild(fixedSelectStyles);
 
 export default Friends;

@@ -2,9 +2,11 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Auth.css";
 import APIService from "../server"; // Import the APIService
+import { useToast } from "@/components/ui/use-toast"; // Import the toast hook
 
 const Auth = () => {
   const navigate = useNavigate();
+  const { toast } = useToast(); // Get the toast function
   const [activeTab, setActiveTab] = useState("login");
   const [formData, setFormData] = useState({
     email: "",
@@ -71,8 +73,14 @@ const Auth = () => {
         const response = await APIService.register(userData);
         console.log("Registration successful:", response);
 
-        // Show success message and switch to login
-        alert("Account created successfully! Please log in.");
+        // Show success message using toast instead of alert
+        toast({
+          title: "Account created successfully!",
+          description: "Please log in with your credentials.",
+          variant: "success",
+        });
+
+        // Switch to login tab
         setActiveTab("login");
         // Clear form data for login
         setFormData((prev) => ({

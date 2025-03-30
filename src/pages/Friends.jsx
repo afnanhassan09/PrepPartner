@@ -1093,44 +1093,34 @@ const Friends = () => {
         ? getUserId(request.userId)
         : request.userId;
 
-    const userName = request.name;
-
     return (
-      <div className="p-4 rounded-lg border mb-2">
-        <div className="flex items-center space-x-3">
-          <Avatar className="h-12 w-12 border-2 border-primary">
-            <AvatarFallback className="bg-primary text-primary-foreground">
-              {getInitials(userName)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-medium truncate">{userName}</h3>
-            <p className="text-sm text-muted">
-              {request.type === "received"
-                ? "Wants to connect with you"
-                : "Request sent"}
-            </p>
-          </div>
-          {request.type === "received" && (
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => respondToFriendRequest(userId, "no")}
-                className="text-xs"
-              >
-                Decline
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => respondToFriendRequest(userId, "yes")}
-                className="text-xs"
-              >
-                Accept
-              </Button>
+      <div
+        className="p-4 rounded-lg border bg-white shadow-sm hover:bg-secondary/10 transition-all cursor-pointer"
+        onClick={() => openUserModal(request)}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Avatar className="h-10 w-10">
+              <AvatarFallback className="bg-primary text-primary-foreground">
+                {getInitials(request.name)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <h3 className="font-medium">{request.name}</h3>
             </div>
-          )}
-          {request.type === "sent" && <Badge variant="outline">Pending</Badge>}
+          </div>
+
+          <div>
+            {request.type === "received" ? (
+              <div className="px-4 py-2 rounded-full bg-gradient-to-r from-green-500 to-green-600 text-white font-medium shadow-md hover:shadow-lg transform hover:scale-105 transition-all">
+                Received
+              </div>
+            ) : (
+              <div className="px-4 py-2 rounded-full bg-gradient-to-r from-yellow-400 to-yellow-500 text-white font-medium shadow-md hover:shadow-lg transform hover:scale-105 transition-all">
+                Pending
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -1987,6 +1977,8 @@ const Friends = () => {
 
   // Function to open modal with user data
   const openUserModal = (user) => {
+    // Make sure this function can handle both global users and friend requests
+    // The user object structure should be similar in both cases after our backend changes
     setSelectedUser(user);
     setShowUserModal(true);
   };
@@ -2701,47 +2693,58 @@ const Friends = () => {
         </DialogContent>
       </Dialog>
 
-      {/* User Info Modal */}
+      {/* User Info Modal - With animations and modern design */}
       <Dialog open={showUserModal} onOpenChange={setShowUserModal}>
-        <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden">
-          {/* Hero section with large avatar */}
-          <div className="bg-gradient-to-r from-primary/90 to-primary/70 p-6 flex items-center gap-4">
-            <Avatar className="h-20 w-20 border-4 border-white shadow-lg">
-              <AvatarFallback className="bg-white text-primary text-xl font-bold">
+        <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden rounded-xl border-none shadow-xl animate-in fade-in-0 zoom-in-95 duration-300">
+          {/* Hero section with large avatar and gradient overlay */}
+          <div className="bg-gradient-to-br from-primary to-primary/60 p-8 flex items-center gap-6">
+            <Avatar className="h-24 w-24 border-4 border-white/90 shadow-xl ring-4 ring-primary/20 animate-in slide-in-from-left duration-500">
+              <AvatarFallback className="bg-white text-primary text-2xl font-bold">
                 {getInitials(selectedUser?.name)}
               </AvatarFallback>
             </Avatar>
-            <div className="text-white">
-              <h2 className="text-2xl font-bold">{selectedUser?.name}</h2>
-              <p className="opacity-90">
-                {selectedUser?.questionnaire?.university}
-              </p>
+            <div className="text-white animate-in slide-in-from-right duration-500 delay-150">
+              <h2 className="text-3xl font-bold tracking-tight mb-1">
+                {selectedUser?.name}
+              </h2>
+              {selectedUser?.questionnaire?.university && (
+                <div className="flex items-center gap-2 opacity-90">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="m2 22 10-10M12 12l10 10M12 12l9-9M12 12 3 3" />
+                  </svg>
+                  <p>{selectedUser?.questionnaire?.university}</p>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* User details section */}
-          <div className="p-6 space-y-5">
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground font-medium">
-                  Email
-                </p>
-                <p className="font-medium">{selectedUser?.email}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground font-medium">
-                  Major
-                </p>
-                <p className="font-medium">
-                  {selectedUser?.questionnaire?.major || "Not specified"}
-                </p>
-              </div>
+          {/* User details section - with modern spacing and animations */}
+          <div className="p-8 space-y-6 animate-in fade-in duration-700 delay-300">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">
+                Major
+              </p>
+              <p className="font-medium text-lg">
+                {selectedUser?.questionnaire?.major || "Not specified"}
+              </p>
             </div>
 
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground font-medium">About</p>
-              <div className="p-4 rounded-lg bg-secondary/30 border">
-                <p>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">
+                About
+              </p>
+              <div className="p-5 rounded-lg bg-gradient-to-br from-secondary/40 to-secondary/10 border shadow-sm">
+                <p className="leading-relaxed">
                   {selectedUser?.questionnaire?.about ||
                     "No information provided"}
                 </p>
@@ -2750,10 +2753,10 @@ const Friends = () => {
 
             {selectedUser?.questionnaire?.year && (
               <div className="space-y-1">
-                <p className="text-sm text-muted-foreground font-medium">
+                <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">
                   Year of Study
                 </p>
-                <p className="font-medium">
+                <p className="font-medium text-lg">
                   {selectedUser.questionnaire.year === "graduate"
                     ? "Graduate"
                     : `Year ${selectedUser.questionnaire.year}`}
@@ -2762,16 +2765,51 @@ const Friends = () => {
             )}
           </div>
 
-          <DialogFooter className="p-6 pt-2 border-t">
-            <Button
-              onClick={() => {
-                sendFriendRequest(selectedUser, () => setShowUserModal(false));
-              }}
-              className="w-full"
-            >
-              <UserPlus size={16} className="mr-2" />
-              Send Friend Request
-            </Button>
+          <DialogFooter className="p-6 pt-2 border-t animate-in slide-in-from-bottom duration-500 delay-500">
+            {/* Conditional rendering based on request type */}
+            {selectedUser?.type === "received" ? (
+              <div className="w-full flex gap-4">
+                <Button
+                  variant="default"
+                  className="flex-1 py-6 text-base bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02]"
+                  onClick={() => {
+                    respondToFriendRequest(selectedUser.userId, "yes");
+                    setShowUserModal(false);
+                  }}
+                >
+                  <UserCheck size={18} className="mr-2" />
+                  Accept Request
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 py-6 text-base hover:bg-rose-50 border-2 hover:border-rose-200 text-rose-600 hover:text-rose-700 transition-all transform hover:scale-[1.02]"
+                  onClick={() => {
+                    respondToFriendRequest(selectedUser.userId, "no");
+                    setShowUserModal(false);
+                  }}
+                >
+                  <X size={18} className="mr-2" />
+                  Decline
+                </Button>
+              </div>
+            ) : selectedUser?.type === "sent" ? (
+              <Button disabled className="w-full py-6 text-base">
+                <UserPlus size={18} className="mr-2" />
+                Request Pending
+              </Button>
+            ) : (
+              <Button
+                onClick={() => {
+                  sendFriendRequest(selectedUser, () =>
+                    setShowUserModal(false)
+                  );
+                }}
+                className="w-full py-6 text-base bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02]"
+              >
+                <UserPlus size={18} className="mr-2" />
+                Send Friend Request
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

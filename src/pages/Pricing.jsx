@@ -66,7 +66,7 @@ const Pricing = () => {
       {/* Pricing Cards Section with Animations */}
       <section className="py-20 px-4 relative overflow-hidden">
         <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-teal/5 bg-[length:20px_20px] animate-gradient-xy"></div>
+          <div className="absolute inset-0 bg-[#09363E]/5 bg-[length:20px_20px]"></div>
         </div>
 
         <div className="max-w-7xl mx-auto">
@@ -97,23 +97,23 @@ const Pricing = () => {
                 }}
               >
                 {plan.highlighted && (
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary to-teal rounded-3xl opacity-0 group-hover:opacity-10 blur-xl transition-all duration-500"></div>
+                  <div className="absolute inset-0 bg-[#09363E] rounded-3xl opacity-0 group-hover:opacity-10 blur-xl transition-all duration-500"></div>
                 )}
 
                 <div
                   className={`
                   relative bg-background/80 backdrop-blur-sm p-8 rounded-3xl transition-all duration-500
-                  hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-2
+                  hover:shadow-2xl hover:shadow-[#09363E]/20 hover:-translate-y-2
                   ${
                     plan.highlighted
-                      ? "border-2 border-primary"
-                      : "border border-primary/10"
+                      ? "border-2 border-[#09363E]"
+                      : "border border-[#09363E]"
                   }
                 `}
                 >
                   {plan.highlighted && (
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                      <div className="bg-gradient-to-r from-primary to-teal px-4 py-2 rounded-full text-primary-foreground text-sm font-medium flex items-center gap-2 animate-pulse-glow">
+                      <div className="bg-[#09363E] px-4 py-2 rounded-full text-primary-foreground text-sm font-medium flex items-center gap-2 animate-pulse-glow">
                         <Sparkles className="w-4 h-4" />
                         Most Popular
                       </div>
@@ -121,12 +121,12 @@ const Pricing = () => {
                   )}
 
                   <div className="text-center mb-8">
-                    <h3 className="text-2xl font-bold bg-gradient-to-r from-teal to-primary bg-clip-text text-transparent mb-2">
+                    <h3 className="text-2xl font-bold text-[#09363E] mb-2">
                       {plan.name}
                     </h3>
                     <p className="text-muted mb-4">{plan.description}</p>
                     <div className="flex items-center justify-center gap-2">
-                      <span className="text-4xl font-bold bg-gradient-to-r from-teal to-primary bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300">
+                      <span className="text-4xl font-bold text-[#09363E] group-hover:scale-110 transition-transform duration-300">
                         {plan.price}
                       </span>
                       <span className="text-muted">{plan.period}</span>
@@ -147,8 +147,8 @@ const Pricing = () => {
                           }ms both`,
                         }}
                       >
-                        <div className="mr-2 w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-300">
-                          <Check className="w-3 h-3 text-primary" />
+                        <div className="mr-2 w-5 h-5 rounded-full bg-[#09363E]/10 flex items-center justify-center group-hover:bg-[#09363E]/20 transition-colors duration-300">
+                          <Check className="w-3 h-3 text-[#09363E]" />
                         </div>
                         {feature}
                       </li>
@@ -160,10 +160,10 @@ const Pricing = () => {
                     w-full py-4 px-6 rounded-full flex items-center justify-center gap-2
                     ${
                       plan.highlighted
-                        ? "bg-gradient-to-r from-primary to-teal text-primary-foreground"
-                        : "bg-background border-2 border-primary/10 hover:border-primary text-primary"
+                        ? "bg-[#09363E] text-primary-foreground"
+                        : "bg-background border-2 border-[#09363E]/10 hover:border-[#09363E] text-[#09363E]"
                     }
-                    transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/20
+                    transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#09363E]/20
                   `}
                   >
                     <span>{plan.buttonText}</span>

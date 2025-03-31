@@ -2,7 +2,7 @@ import React from 'react'
 
 function Footer() {
   return (
-    <footer className="bg-teal text-teal-foreground py-12 px-4 sm:px-6 lg:px-8 mt-auto">
+    <footer className="bg-[#09363E] text-teal-foreground py-12 px-4 sm:px-6 lg:px-8 mt-auto">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
         <div className="col-span-1 md:col-span-2">
           <h3 className="text-2xl font-bold mb-4 hover:text-primary transition-colors duration-300">PrepPartner</h3>

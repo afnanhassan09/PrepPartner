@@ -88,7 +88,7 @@ const Navbar = () => {
                 <>
                   <Link
                     to="/auth"
-                    className="bg-primary text-primary-foreground px-6 py-2.5 rounded-full font-medium 
+                    className="bg-[#09363E] text-primary-foreground px-6 py-2.5 rounded-full font-medium 
                       hover:bg-primary/90 transition-all duration-300 
                       hover:shadow-lg hover:shadow-primary/20 
                       active:transform active:scale-95"

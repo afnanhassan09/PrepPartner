@@ -76,22 +76,21 @@ const VideoPlayer = ({
         )}
 
         {/* Interview Timer - Moved from right to left */}
-        {isInterviewTimerActive && (
-          <div
-            className={`absolute top-4 left-4 z-10 px-6 py-3 rounded-xl font-bold text-2xl
+        <div
+            className={`absolute top-4 left-4 z-10 px-5 py-2 rounded-xl font-medium text-xl
                                 ${
-                                  interviewTimeLeft <= 60
+                                  isInterviewTimerActive && interviewTimeLeft <= 60
                                     ? "bg-red-500/70"
                                     : "bg-black/70"
                                 } 
                                 text-white transition-colors duration-300
                                 ${
-                                  interviewTimeLeft <= 30 ? "animate-pulse" : ""
+                                  isInterviewTimerActive && interviewTimeLeft <= 30 ? "animate-pulse" : ""
                                 }`}
           >
             {formatTime(interviewTimeLeft)}
-          </div>
-        )}
+            {!isInterviewTimerActive && <span className="ml-1">⏸️</span>}
+        </div>
 
         <video
           ref={mainVideoRef}

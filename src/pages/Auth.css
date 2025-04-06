@@ -28,6 +28,8 @@
   min-height: 100vh;
   background-color: var(--background-color);
   padding: 1rem;
+  position: relative;
+  z-index: 1;
 }
 
 /* Auth card with very pronounced curvature */
@@ -42,6 +44,8 @@
   text-align: center;
   opacity: 0;
   transform: translateY(40px);
+  position: relative;
+  z-index: 2;
 }
 
 /* Initial page load animation for auth-card */
@@ -237,6 +241,8 @@
   font-size: 14px;
   animation: shake 0.5s ease-in-out;
   text-align: left;
+  position: relative;
+  z-index: 1000;
 }
 
 /* Animations */

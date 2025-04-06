@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 
 const VideoPlayer = ({
   videoContainerRef,
@@ -18,6 +18,9 @@ const VideoPlayer = ({
   isMainVideoPlaying,
   handleVideoEnd,
 }) => {
+  // Add a ref for the bottom video
+  const bottomVideoRef = useRef(null);
+
   // Add timeupdate event listener to check for end timestamp
   useEffect(() => {
     const videoElement = mainVideoRef.current;
@@ -42,6 +45,17 @@ const VideoPlayer = ({
     return () =>
       videoElement?.removeEventListener("timeupdate", handleTimeUpdate);
   }, [currentVideo, handleVideoEnd]);
+
+  // Add an effect to control the bottom video based on main video playing state
+  useEffect(() => {
+    if (bottomVideoRef.current) {
+      if (isMainVideoPlaying) {
+        bottomVideoRef.current.play();
+      } else {
+        bottomVideoRef.current.pause();
+      }
+    }
+  }, [isMainVideoPlaying]);
 
   return (
     <div
@@ -78,22 +92,21 @@ const VideoPlayer = ({
           )}
 
           {/* Interview Timer */}
-          {isInterviewTimerActive && (
-            <div
-              className={`absolute top-4 left-4 z-10 px-6 py-3 rounded-xl font-bold text-2xl
+          <div
+              className={`absolute top-4 left-4 z-10 px-5 py-2 rounded-xl font-medium text-xl
                                 ${
-                                  interviewTimeLeft <= 60
+                                  isInterviewTimerActive && interviewTimeLeft <= 60
                                     ? "bg-red-500/70"
                                     : "bg-black/70"
                                 } 
                                 text-white transition-colors duration-300
                                 ${
-                                  interviewTimeLeft <= 30 ? "animate-pulse" : ""
+                                  isInterviewTimerActive && interviewTimeLeft <= 30 ? "animate-pulse" : ""
                                 }`}
             >
               {formatTime(interviewTimeLeft)}
-            </div>
-          )}
+              {!isInterviewTimerActive && <span className="ml-1">⏸️</span>}
+          </div>
 
           <video
             ref={mainVideoRef}
@@ -118,7 +131,8 @@ const VideoPlayer = ({
         <div className="w-full h-1/2 bg-black">
           {!showStartButton && (
             <video
-              autoPlay
+              ref={bottomVideoRef}
+              autoPlay={isMainVideoPlaying}
               loop
               muted
               playsInline

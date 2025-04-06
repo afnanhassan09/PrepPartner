@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Auth.css";
 import APIService from "../server"; // Import the APIService
 import { useToast } from "@/components/ui/use-toast"; // Import the toast hook
+import { Eye, EyeOff } from "lucide-react";
+import logo from "../assets/logo2.png";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -15,13 +17,71 @@ const Auth = () => {
     name: "",
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [animationLoaded, setAnimationLoaded] = useState(false);
   const [error, setError] = useState(""); // Add error state
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isPageLoaded, setIsPageLoaded] = useState(false);
+
+  const loginFormRef = useRef(null);
+  const signupFormRef = useRef(null);
+  const cardRef = useRef(null);
+  const logoRef = useRef(null);
+  const titleRef = useRef(null);
+  const loginBtnRef = useRef(null);
+  const signupBtnRef = useRef(null);
+  const loginSwitchRef = useRef(null);
+  const signupSwitchRef = useRef(null);
+  const loginFormGroupRefs = useRef([]);
+  const signupFormGroupRefs = useRef([]);
+
+  // Effect for initial page load animation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsPageLoaded(true);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Apply animations when page is loaded
+  useEffect(() => {
+    if (isPageLoaded) {
+      // Card animation
+      if (cardRef.current) {
+        cardRef.current.classList.add("animate-in");
+      }
+
+      // Logo animation
+      if (logoRef.current) {
+        logoRef.current.classList.add("animate-in");
+      }
+
+      // Title animation
+      if (titleRef.current) {
+        titleRef.current.classList.add("animate-in");
+      }
+
+      // Login form groups animation
+      loginFormGroupRefs.current.forEach((ref) => {
+        if (ref) {
+          ref.classList.add("animate-in");
+        }
+      });
+
+      // Login button animation
+      if (loginBtnRef.current) {
+        loginBtnRef.current.classList.add("animate-in");
+      }
+
+      // Login switch text animation
+      if (loginSwitchRef.current) {
+        loginSwitchRef.current.classList.add("animate-in");
+      }
+    }
+  }, [isPageLoaded]);
 
   // Trigger animations after component mounts
   useEffect(() => {
-    setAnimationLoaded(true);
-
     // Check if user is already authenticated
     if (APIService.isAuthenticated()) {
       navigate("/dashboard");
@@ -73,7 +133,7 @@ const Auth = () => {
         const response = await APIService.register(userData);
         console.log("Registration successful:", response);
 
-        // Show success message using toast instead of alert
+        // Show success message using toast
         toast({
           title: "Account created successfully!",
           description: "Please log in with your credentials.",
@@ -81,13 +141,7 @@ const Auth = () => {
         });
 
         // Switch to login tab
-        setActiveTab("login");
-        // Clear form data for login
-        setFormData((prev) => ({
-          ...prev,
-          name: "",
-          confirmPassword: "",
-        }));
+        switchTab("login");
       }
     } catch (error) {
       console.error(
@@ -105,248 +159,306 @@ const Auth = () => {
     }
   };
 
+  // Switch between login and signup tabs with swipe animation
+  const switchTab = (tab) => {
+    if (activeTab === tab) return;
+
+    // Determine animation direction
+    const goingToSignup = tab === "signup";
+
+    // Apply exit animation to current form
+    const currentForm =
+      activeTab === "login" ? loginFormRef.current : signupFormRef.current;
+    const enteringForm =
+      tab === "login" ? loginFormRef.current : signupFormRef.current;
+
+    if (currentForm && enteringForm) {
+      // Add exit animation class
+      currentForm.classList.add(
+        goingToSignup ? "swipe-left-exit" : "swipe-right-exit"
+      );
+
+      // Make entering form visible but with opacity 0
+      enteringForm.style.display = "block";
+      enteringForm.style.opacity = "0";
+
+      // After exit animation completes, update state and start enter animation
+      setTimeout(() => {
+        setActiveTab(tab);
+        setError("");
+
+        // Remove exit animation class and hide exited form
+        currentForm.classList.remove(
+          goingToSignup ? "swipe-left-exit" : "swipe-right-exit"
+        );
+        currentForm.style.display = "none";
+
+        // Add enter animation class to the new form
+        enteringForm.classList.add(
+          goingToSignup ? "swipe-left-enter" : "swipe-right-enter"
+        );
+        enteringForm.style.opacity = "1";
+
+        // Apply animations to the new form elements if switching to signup
+        if (goingToSignup) {
+          // Animate signup form elements with slight delays
+          const titleEl = enteringForm.querySelector(".form-title");
+          if (titleEl) titleEl.classList.add("animate-in");
+
+          // Animate form groups
+          const formGroups = enteringForm.querySelectorAll(".form-group");
+          formGroups.forEach((group, index) => {
+            setTimeout(() => {
+              group.classList.add("animate-in");
+            }, index * 100);
+          });
+
+          // Animate button and switch text
+          const btnEl = enteringForm.querySelector(".submit-button");
+          const switchEl = enteringForm.querySelector(".auth-switch");
+
+          if (btnEl) {
+            setTimeout(() => {
+              btnEl.classList.add("animate-in");
+            }, formGroups.length * 100);
+          }
+
+          if (switchEl) {
+            setTimeout(() => {
+              switchEl.classList.add("animate-in");
+            }, formGroups.length * 100 + 100);
+          }
+        }
+
+        // Remove enter animation class after animation completes
+        setTimeout(() => {
+          enteringForm.classList.remove(
+            goingToSignup ? "swipe-left-enter" : "swipe-right-enter"
+          );
+        }, 500);
+      }, 500);
+    }
+  };
+
+  // Save form group refs
+  const setLoginFormGroupRef = (el, index) => {
+    loginFormGroupRefs.current[index] = el;
+  };
+
+  const setSignupFormGroupRef = (el, index) => {
+    signupFormGroupRefs.current[index] = el;
+  };
+
   return (
     <div className="auth-container">
-      {/* Left Column - Illustration/Branding */}
-      <div className={`auth-branding ${animationLoaded ? "animate-in" : ""}`}>
-        <div className="branding-content">
-          <div className="logo-container">
-            <div className="logo-icon">
-              <span className="logo-letter">P</span>
-            </div>
-            <h1 className="logo-text">PrepPartner</h1>
-          </div>
+      <div ref={cardRef} className="auth-card">
+        <img
+          ref={logoRef}
+          src={logo}
+          alt="PrepPartner Logo"
+          className="auth-logo"
+        />
 
-          <h2 className="branding-tagline">Your Path to Interview Success</h2>
+        <div className="auth-forms-wrapper">
+          <div
+            ref={loginFormRef}
+            className={`auth-form ${activeTab === "login" ? "active" : ""}`}
+            style={{ display: activeTab === "login" ? "block" : "none" }}
+          >
+            <h2 ref={titleRef} className="form-title">
+              Welcome
+            </h2>
 
-          <div className="illustration-container">
-            <div className="illustration-blob"></div>
-            <img
-              src="https://media.datacamp.com/cms/74e82d72d2b6161c1fb1ddc40dc77bad.png"
-              alt="PrepPartner Interview Preparation"
-              className="branding-illustration"
-            />
-          </div>
+            {error && activeTab === "login" && (
+              <div className="error-message">{error}</div>
+            )}
 
-          <div className="feature-badges">
-            <div className="feature-badge">
-              <span className="badge-icon">✓</span>
-              <span className="badge-text">AI-Powered Practice</span>
-            </div>
-            <div className="feature-badge">
-              <span className="badge-icon">✓</span>
-              <span className="badge-text">Realtime Feedback</span>
-            </div>
-            <div className="feature-badge">
-              <span className="badge-icon">✓</span>
-              <span className="badge-text">Expert Guidance</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Right Column - Auth Form */}
-      <div
-        className={`auth-form-container ${animationLoaded ? "animate-in" : ""}`}
-      >
-        <div
-          className={`auth-card ${animationLoaded ? "animate-bounce-in" : ""}`}
-        >
-          <div className="auth-tabs">
-            <button
-              className={`tab-button ${activeTab === "login" ? "active" : ""}`}
-              onClick={() => setActiveTab("login")}
-            >
-              Login
-            </button>
-            <button
-              className={`tab-button ${activeTab === "signup" ? "active" : ""}`}
-              onClick={() => setActiveTab("signup")}
-            >
-              Sign Up
-            </button>
-          </div>
-
-          <div className="auth-forms-wrapper">
-            <div
-              className={`auth-forms-slider ${
-                activeTab === "signup" ? "slide-left" : ""
-              }`}
-            >
-              {/* Login Form */}
-              <div className="auth-form">
-                <h2 className="form-title">Welcome Back</h2>
-                <p className="form-subtitle">
-                  Enter your credentials to access your account
-                </p>
-
-                {/* Display error message if any */}
-                {error && activeTab === "login" && (
-                  <div className="error-message">{error}</div>
-                )}
-
-                <form onSubmit={handleSubmit}>
-                  <div className="form-group">
-                    <label className="floating-label">
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        required
-                        className="form-input"
-                        placeholder=" "
-                      />
-                      <span className="label-text">Email Address</span>
-                    </label>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="floating-label">
-                      <input
-                        type="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        required
-                        className="form-input"
-                        placeholder=" "
-                      />
-                      <span className="label-text">Password</span>
-                    </label>
-                  </div>
-
-                  <div className="form-options">
-                    <div className="remember-me">
-                      <input
-                        type="checkbox"
-                        id="remember"
-                        className="checkbox"
-                      />
-                      <label htmlFor="remember">Remember me</label>
-                    </div>
-                    <a href="#" className="forgot-password">
-                      Forgot password?
-                    </a>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="submit-button"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? <span className="spinner"></span> : "Login"}
-                  </button>
-
-
-                  <p className="auth-switch">
-                    Don't have an account?{" "}
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("signup")}
-                    >
-                      Sign up
-                    </button>
-                  </p>
-                </form>
+            <form onSubmit={handleSubmit}>
+              <div
+                ref={(el) => setLoginFormGroupRef(el, 0)}
+                className="form-group"
+              >
+                <input
+                  type="email"
+                  name="email"
+                  id="email"
+                  className="form-input"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  placeholder=" "
+                />
+                <label htmlFor="email" className="label-text">
+                  Email
+                </label>
               </div>
 
-              {/* Signup Form */}
-              <div className="auth-form">
-                <h2 className="form-title">Create Account</h2>
-                <p className="form-subtitle">
-                  Fill in your details to get started with PrepPartner
-                </p>
-
-                {/* Display error message if any */}
-                {error && activeTab === "signup" && (
-                  <div className="error-message">{error}</div>
-                )}
-
-                <form onSubmit={handleSubmit}>
-                  <div className="form-group">
-                    <label className="floating-label">
-                      <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        required
-                        className="form-input"
-                        placeholder=" "
-                      />
-                      <span className="label-text">Full Name</span>
-                    </label>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="floating-label">
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        required
-                        className="form-input"
-                        placeholder=" "
-                      />
-                      <span className="label-text">Email Address</span>
-                    </label>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="floating-label">
-                      <input
-                        type="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        required
-                        className="form-input"
-                        placeholder=" "
-                      />
-                      <span className="label-text">Password</span>
-                    </label>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="floating-label">
-                      <input
-                        type="password"
-                        name="confirmPassword"
-                        value={formData.confirmPassword}
-                        onChange={handleChange}
-                        required
-                        className="form-input"
-                        placeholder=" "
-                      />
-                      <span className="label-text">Confirm Password</span>
-                    </label>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="submit-button"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <span className="spinner"></span>
-                    ) : (
-                      "Create Account"
-                    )}
-                  </button>
-
-              
-
-                  <p className="auth-switch">
-                    Already have an account?{" "}
-                    <button type="button" onClick={() => setActiveTab("login")}>
-                      Login
-                    </button>
-                  </p>
-                </form>
+              <div
+                ref={(el) => setLoginFormGroupRef(el, 1)}
+                className="form-group"
+              >
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  id="password"
+                  className="form-input"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  placeholder=" "
+                />
+                <label htmlFor="password" className="label-text">
+                  Password
+                </label>
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
-            </div>
+
+              <button
+                ref={loginBtnRef}
+                type="submit"
+                className="submit-button"
+                disabled={isLoading}
+              >
+                {isLoading ? <span className="spinner"></span> : "LOGIN"}
+              </button>
+            </form>
+
+            <p ref={loginSwitchRef} className="auth-switch">
+              Don't have an account?{" "}
+              <button type="button" onClick={() => switchTab("signup")}>
+                Sign Up
+              </button>
+            </p>
+          </div>
+
+          <div
+            ref={signupFormRef}
+            className={`auth-form ${activeTab === "signup" ? "active" : ""}`}
+            style={{ display: activeTab === "signup" ? "none" : "none" }}
+          >
+            <h2 className="form-title">Create Account</h2>
+
+            {error && activeTab === "signup" && (
+              <div className="error-message">{error}</div>
+            )}
+
+            <form onSubmit={handleSubmit}>
+              <div
+                ref={(el) => setSignupFormGroupRef(el, 0)}
+                className="form-group"
+              >
+                <input
+                  type="text"
+                  name="name"
+                  id="name"
+                  className="form-input"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                  placeholder=" "
+                />
+                <label htmlFor="name" className="label-text">
+                  Full Name
+                </label>
+              </div>
+
+              <div
+                ref={(el) => setSignupFormGroupRef(el, 1)}
+                className="form-group"
+              >
+                <input
+                  type="email"
+                  name="email"
+                  id="signup-email"
+                  className="form-input"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  placeholder=" "
+                />
+                <label htmlFor="signup-email" className="label-text">
+                  Email
+                </label>
+              </div>
+
+              <div
+                ref={(el) => setSignupFormGroupRef(el, 2)}
+                className="form-group"
+              >
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  id="signup-password"
+                  className="form-input"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  placeholder=" "
+                />
+                <label htmlFor="signup-password" className="label-text">
+                  Password
+                </label>
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+
+              <div
+                ref={(el) => setSignupFormGroupRef(el, 3)}
+                className="form-group"
+              >
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  name="confirmPassword"
+                  id="confirm-password"
+                  className="form-input"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  required
+                  placeholder=" "
+                />
+                <label htmlFor="confirm-password" className="label-text">
+                  Confirm Password
+                </label>
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff size={18} />
+                  ) : (
+                    <Eye size={18} />
+                  )}
+                </button>
+              </div>
+
+              <button
+                ref={signupBtnRef}
+                type="submit"
+                className="submit-button"
+                disabled={isLoading}
+              >
+                {isLoading ? <span className="spinner"></span> : "SIGN UP"}
+              </button>
+            </form>
+
+            <p ref={signupSwitchRef} className="auth-switch">
+              Already have an account?{" "}
+              <button type="button" onClick={() => switchTab("login")}>
+                Login
+              </button>
+            </p>
           </div>
         </div>
       </div>

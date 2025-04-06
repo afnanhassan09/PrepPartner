@@ -121,14 +121,11 @@ const InterviewDashboard = () => {
 
   // Modify loadNextVideo to handle timestamps array
   const loadNextVideo = async () => {
-  
-
     if (
       currentVideoRef.current?.pauseSegmentActive &&
       currentVideoRef.current?.previousState
     ) {
       const prevState = currentVideoRef.current.previousState;
-     
 
       // Check if we have more timestamps
       if (prevState.nextIndex >= prevState.timestamps.length) {
@@ -146,7 +143,6 @@ const InterviewDashboard = () => {
 
         // Get the next timestamp
         const nextTimestamp = prevState.timestamps[prevState.nextIndex];
-    
 
         // Create new video state
         const newVideoState = {
@@ -164,7 +160,6 @@ const InterviewDashboard = () => {
           },
         };
 
-      
         setCurrentVideo(newVideoState);
         currentVideoRef.current = newVideoState;
 
@@ -185,7 +180,6 @@ const InterviewDashboard = () => {
         const startTimeInSeconds = minutes * 60 + seconds;
 
         if (mainVideoRef.current) {
-      
           mainVideoRef.current.currentTime = startTimeInSeconds;
           mainVideoRef.current.play();
           setIsMainVideoPlaying(true);
@@ -277,7 +271,7 @@ const InterviewDashboard = () => {
       if (interviewTimerRef.current) {
         clearInterval(interviewTimerRef.current);
       }
-      
+
       interviewTimerRef.current = setInterval(() => {
         setInterviewTimeLeft((prev) => prev - 1);
       }, 1000);
@@ -289,13 +283,13 @@ const InterviewDashboard = () => {
     } else if (interviewTimeLeft === 0) {
       // Handle timer completion
       clearInterval(interviewTimerRef.current);
-      
+
       // Pause the video when time runs out
       if (mainVideoRef.current && isMainVideoPlaying) {
         mainVideoRef.current.pause();
         setIsMainVideoPlaying(false);
       }
-      
+
       // Show the time up modal
       setShowTimeUpModal(true);
     }
@@ -572,8 +566,6 @@ const InterviewDashboard = () => {
           pauseSegmentActive: true,
         };
 
-    
-
         setCurrentVideo(pauseSegmentState);
         currentVideoRef.current = pauseSegmentState;
 
@@ -765,13 +757,15 @@ const InterviewDashboard = () => {
   return (
     <div className="h-full bg-background p-6 interview-container relative">
       <canvas ref={canvasRef} style={{ display: "none" }} />
-      
+
       {/* Time Up Modal */}
       {showTimeUpModal && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70">
           <div className="bg-white rounded-2xl p-8 max-w-md text-center shadow-2xl animate-fade-up">
             <h2 className="text-2xl font-bold text-red-600 mb-4">Time's Up!</h2>
-            <p className="text-gray-700 mb-6">Your interview session has ended.</p>
+            <p className="text-gray-700 mb-6">
+              Your interview session has ended.
+            </p>
             <button
               onClick={handleTryAgain}
               className="px-6 py-3 bg-teal text-white rounded-xl font-semibold 
@@ -783,7 +777,7 @@ const InterviewDashboard = () => {
           </div>
         </div>
       )}
-      
+
       <div className="animate-fade-up mb-6">
         <PopupMenu
           sections={sections}
@@ -856,8 +850,8 @@ const InterviewDashboard = () => {
       />
 
       {/* Add Navigation Buttons */}
-      <NavigationButtons 
-        selectedSection={selectedSection} 
+      <NavigationButtons
+        selectedSection={selectedSection}
         handleTryAgain={handleTryAgain}
       />
     </div>

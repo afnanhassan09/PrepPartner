@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Link } from "react-router-dom"
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 
 const InterviewPrep = () => {
   const [progress, setProgress] = useState({
@@ -9,15 +9,15 @@ const InterviewPrep = () => {
     prep: 0,
     practice: 0,
     mock: 0,
-  })
+  });
 
   // Simulating progress fetch from localStorage or an API
   useEffect(() => {
-    const storedProgress = localStorage.getItem("interviewProgress")
+    const storedProgress = localStorage.getItem("interviewProgress");
     if (storedProgress) {
-      setProgress(JSON.parse(storedProgress))
+      setProgress(JSON.parse(storedProgress));
     }
-  }, [])
+  }, []);
 
   const prepSteps = [
     {
@@ -27,7 +27,7 @@ const InterviewPrep = () => {
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="h-12 w-12 mb-4 text-teal"
+          className="h-12 w-12 mb-4 text-[#09363E]"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -48,7 +48,7 @@ const InterviewPrep = () => {
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="h-12 w-12 mb-4 text-teal"
+          className="h-12 w-12 mb-4 text-[#09363E]"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -69,7 +69,7 @@ const InterviewPrep = () => {
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="h-12 w-12 mb-4 text-teal"
+          className="h-12 w-12 mb-4 text-[#09363E]"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -90,7 +90,7 @@ const InterviewPrep = () => {
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="h-12 w-12 mb-4 text-teal"
+          className="h-12 w-12 mb-4 text-[#09363E]"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -104,12 +104,12 @@ const InterviewPrep = () => {
         </svg>
       ),
     },
-  ]
+  ];
 
   return (
     <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-center text-teal mb-12">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-center text-[#09363E] mb-12">
           Interview Preparation
         </h1>
 
@@ -121,20 +121,26 @@ const InterviewPrep = () => {
             >
               <div className="flex flex-col items-center text-center">
                 {step.icon}
-                <h2 className="text-2xl font-semibold mb-2 text-teal">{step.title}</h2>
+                <h2 className="text-2xl font-semibold mb-2 text-[#09363E]">
+                  {step.title}
+                </h2>
                 <p className="text-muted mb-4">{step.description}</p>
                 <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4 dark:bg-gray-700">
                   <div
-                    className="bg-primary h-2.5 rounded-full"
+                    className="bg-[#09363E] h-2.5 rounded-full"
                     style={{ width: `${progress[step.title.toLowerCase()]}%` }}
                   ></div>
                 </div>
-                <p className="text-sm text-muted mb-4">{progress[step.title.toLowerCase()]}% Complete</p>
+                <p className="text-sm text-muted mb-4">
+                  {progress[step.title.toLowerCase()]}% Complete
+                </p>
                 <Link
                   to={step.link}
-                  className="inline-flex items-center px-4 py-2 bg-teal text-teal-foreground rounded-lg hover:bg-teal/90 transition-colors duration-300"
+                  className="inline-flex items-center px-4 py-2 bg-[#09363E] text-white rounded-lg hover:bg-[#09363E]/90 transition-colors duration-300"
                 >
-                  {progress[step.title.toLowerCase()] === 100 ? "Review" : "Continue"}
+                  {progress[step.title.toLowerCase()] === 100
+                    ? "Review"
+                    : "Continue"}
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-5 w-5 ml-2"
@@ -159,7 +165,7 @@ const InterviewPrep = () => {
             <div className="flex items-center mb-4 md:mb-0">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-12 w-12 text-primary mr-4"
+                className="h-12 w-12 text-[#09363E] mr-4"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -172,16 +178,23 @@ const InterviewPrep = () => {
                 />
               </svg>
               <div>
-                <h2 className="text-2xl font-semibold text-teal">PERFORMANCE</h2>
+                <h2 className="text-2xl font-semibold text-[#09363E]">
+                  PERFORMANCE
+                </h2>
                 <p className="text-muted">Analyze your progress and improve</p>
               </div>
             </div>
             <Link
               to="/performance"
-              className="inline-flex items-center px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors duration-300"
+              className="inline-flex items-center px-6 py-3 bg-[#09363E] text-white rounded-lg hover:bg-[#09363E]/90 transition-colors duration-300"
             >
               View Insights
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 ml-2"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
                 <path
                   fillRule="evenodd"
                   d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
@@ -193,8 +206,7 @@ const InterviewPrep = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default InterviewPrep
-
+export default InterviewPrep;

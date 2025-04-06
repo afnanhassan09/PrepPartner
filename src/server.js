@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = "https://preppartner-backend.onrender.com";
 
 import { io } from "socket.io-client";
 
@@ -836,7 +836,7 @@ class APIService {
 
   /**
    * Create friendship questionnaire
-   * @param {Object} questionnaireData - The questionnaire data (age, gender, country, about, etc.)
+   * @param {Object} questionnaireData - The questionnaire data (age, gender, country, about, experienceLevel, prepIntensity)
    * @returns {Promise<Object>} Response from creating questionnaire
    */
   static async createFriendshipQuestionnaire(questionnaireData) {

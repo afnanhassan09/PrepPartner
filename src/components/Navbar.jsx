@@ -20,7 +20,6 @@ const Navbar = () => {
   const publicNavItems = [
     { name: "Home", href: "/" },
     { name: "About", href: "/about" },
-    { name: "Blog", href: "/blog" },
     { name: "Plans & Pricing", href: "/pricing" },
     { name: "Contact Us", href: "/contact" },
   ];
@@ -28,7 +27,7 @@ const Navbar = () => {
   // Protected nav items only visible when logged in
   const protectedNavItems = [
     { name: "Interview Prep", href: "/interview-prep" },
-    { name: "Find a PrepPartner", href: "/friends" },
+    { name: "Find a Prep Buddy", href: "/friends" },
   ];
 
   // Determine which nav items to show - only show protected items when logged in

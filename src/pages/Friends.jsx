@@ -157,9 +157,12 @@ const Friends = () => {
     about: z
       .string()
       .min(10, { message: "Please write at least 10 characters" }),
-    university: z.string().min(1, { message: "University is required" }),
-    major: z.string().min(1, { message: "Major is required" }),
-    year: z.string().min(1, { message: "Year is required" }),
+    experienceLevel: z
+      .string()
+      .min(1, { message: "Experience level is required" }),
+    prepIntensity: z
+      .string()
+      .min(1, { message: "Preparation intensity is required" }),
   });
 
   // Initialize react-hook-form
@@ -170,21 +173,44 @@ const Friends = () => {
       gender: "",
       country: "",
       about: "",
-      university: "",
-      major: "",
-      year: "",
+      experienceLevel: "",
+      prepIntensity: "",
     },
   });
 
   // Add this effect to check if user has filled questionnaire
   useEffect(() => {
-    if (isAuthenticated() && user) {
-      // Check if questionnaire is filled
-      if (user.questionnaireFilled === false) {
-        setShowQuestionnaireForm(true);
+    const checkQuestionnaire = async () => {
+      if (isAuthenticated()) {
+        try {
+          // Always fetch the latest profile to get updated questionnaireFilled status
+          const profileData = await APIService.getUserProfile();
+
+          if (profileData && profileData.user) {
+            // If questionnaireFilled is false, show the form
+            if (profileData.user.questionnaireFilled === false) {
+              setShowQuestionnaireForm(true);
+            }
+          } else if (user && user.questionnaireFilled === false) {
+            // Fallback to context user if API call fails
+            setShowQuestionnaireForm(true);
+          }
+        } catch (error) {
+          console.error("Error checking questionnaire status:", error);
+          // Fallback to context user if API call fails
+          if (user && user.questionnaireFilled === false) {
+            setShowQuestionnaireForm(true);
+          }
+        }
       }
-    }
+    };
+
+    checkQuestionnaire();
   }, [isAuthenticated, user]);
+
+  // Add custom styles for form elements with errors
+  const errorFieldStyle =
+    "border-red-500 focus:border-red-500 focus:ring-red-500";
 
   // Add this function to handle form submission
   const onSubmitQuestionnaire = async (data) => {
@@ -199,32 +225,42 @@ const Friends = () => {
         console.error("Primary endpoint failed, trying alternative:", error);
 
         // If that fails, try with the endpoint from your controller code
-        response = await APIService.authenticatedRequest(
-          "/api/users/fillForm",
-          {
-            method: "POST",
-            body: JSON.stringify(data),
-          }
-        );
+        response = await APIService.authenticatedRequest("/api/user/fillForm", {
+          method: "POST",
+          body: JSON.stringify(data),
+        });
       }
 
       if (response) {
         toast({
           title: "Success",
-          description: "Your questionnaire has been submitted successfully!",
+          description: "Your profile has been completed successfully!",
+          variant: "success",
         });
-        setShowQuestionnaireForm(false);
 
         // Update user in context to reflect questionnaire is filled
         if (user) {
           user.questionnaireFilled = true;
         }
+
+        // Get latest user profile to ensure state is updated
+        try {
+          await APIService.getUserProfile();
+        } catch (err) {
+          console.error("Error refreshing user profile:", err);
+        }
+
+        // Close the form dialog
+        setShowQuestionnaireForm(false);
+
+        // Refresh available users to show new matches
+        fetchOnlineUsers();
       }
     } catch (error) {
       console.error("Error submitting questionnaire:", error);
       toast({
         title: "Error",
-        description: "Failed to submit questionnaire. Please try again.",
+        description: "Failed to submit your profile. Please try again.",
         variant: "destructive",
       });
     }
@@ -1062,8 +1098,12 @@ const Friends = () => {
         <div className="flex-1 min-w-0">
           <h3 className="font-medium truncate">{friend.name}</h3>
           <p className="text-sm text-muted truncate">
-            {/* Conditionally show university if available */}
-            {friend.questionnaire ? friend.questionnaire.university : ""}
+            {/* Show experience level if available */}
+            {friend.questionnaire && friend.questionnaire.experienceLevel
+              ? friend.questionnaire.experienceLevel === "applied-before"
+                ? "Applied Before"
+                : "Novice"
+              : ""}
           </p>
         </div>
         {type === "new" && (
@@ -2532,19 +2572,33 @@ const Friends = () => {
         open={showQuestionnaireForm}
         onOpenChange={(open) => {
           // Only allow closing if user has filled the questionnaire
-          if (!open && user && !user.questionnaireFilled) {
+          if (!open && user && user.questionnaireFilled === false) {
             toast({
-              title: "Please complete your profile",
+              title: "Profile Required",
               description:
-                "You need to fill out your questionnaire to continue.",
+                "You must complete your profile before accessing the friends feature.",
               variant: "destructive",
             });
+            // Force the dialog to stay open
+            setShowQuestionnaireForm(true);
             return;
           }
           setShowQuestionnaireForm(open);
         }}
+        // Prevent ESC key from closing the dialog if questionnaire is not filled
+        onEscapeKeyDown={(event) => {
+          if (user && user.questionnaireFilled === false) {
+            event.preventDefault();
+          }
+        }}
+        // Prevent clicking outside from closing the dialog if questionnaire is not filled
+        onInteractOutside={(event) => {
+          if (user && user.questionnaireFilled === false) {
+            event.preventDefault();
+          }
+        }}
       >
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Complete Your Profile</DialogTitle>
             <DialogDescription>
@@ -2561,20 +2615,24 @@ const Friends = () => {
                 <FormField
                   control={form.control}
                   name="age"
-                  render={({ field }) => (
+                  render={({ field, fieldState }) => (
                     <FormItem>
                       <FormLabel>Age</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter your age" {...field} />
+                        <Input
+                          placeholder="Enter your age"
+                          className={fieldState.error ? errorFieldStyle : ""}
+                          {...field}
+                        />
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-red-500 font-medium" />
                     </FormItem>
                   )}
                 />
                 <FormField
                   control={form.control}
                   name="gender"
-                  render={({ field }) => (
+                  render={({ field, fieldState }) => (
                     <FormItem>
                       <FormLabel>Gender</FormLabel>
                       <Select
@@ -2582,13 +2640,15 @@ const Friends = () => {
                         defaultValue={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger
+                            className={fieldState.error ? errorFieldStyle : ""}
+                          >
                             <SelectValue placeholder="Select gender" />
                           </SelectTrigger>
                         </FormControl>
                         {/* SelectContent for gender dropdown */}
-                        <SelectContent 
-                          position="popper" 
+                        <SelectContent
+                          position="popper"
                           className="z-[9999] bg-white shadow-lg border rounded-md"
                           sideOffset={5}
                           portalled={true}
@@ -2596,10 +2656,12 @@ const Friends = () => {
                           <SelectItem value="male">Male</SelectItem>
                           <SelectItem value="female">Female</SelectItem>
                           <SelectItem value="other">Other</SelectItem>
-                          <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                          <SelectItem value="prefer-not-to-say">
+                            Prefer not to say
+                          </SelectItem>
                         </SelectContent>
                       </Select>
-                      <FormMessage />
+                      <FormMessage className="text-red-500 font-medium" />
                     </FormItem>
                   )}
                 />
@@ -2607,96 +2669,114 @@ const Friends = () => {
               <FormField
                 control={form.control}
                 name="country"
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <FormItem>
                     <FormLabel>Country</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your country" {...field} />
+                      <Input
+                        placeholder="Enter your country"
+                        className={fieldState.error ? errorFieldStyle : ""}
+                        {...field}
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-red-500 font-medium" />
                   </FormItem>
                 )}
               />
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="university"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>University</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter your university" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="major"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Major</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter your major" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
               <FormField
                 control={form.control}
-                name="year"
-                render={({ field }) => (
+                name="experienceLevel"
+                render={({ field, fieldState }) => (
                   <FormItem>
-                    <FormLabel>Year of Study</FormLabel>
+                    <FormLabel>Experience Level</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select year" />
+                        <SelectTrigger
+                          className={fieldState.error ? errorFieldStyle : ""}
+                        >
+                          <SelectValue placeholder="Select your experience level" />
                         </SelectTrigger>
                       </FormControl>
-                      {/* SelectContent for year dropdown */}
-                      <SelectContent 
-                        position="popper" 
+                      <SelectContent
+                        position="popper"
                         className="z-[9999] bg-white shadow-lg border rounded-md"
                         sideOffset={5}
                         portalled={true}
                       >
-                        <SelectItem value="1">First Year</SelectItem>
-                        <SelectItem value="2">Second Year</SelectItem>
-                        <SelectItem value="3">Third Year</SelectItem>
-                        <SelectItem value="4">Fourth Year</SelectItem>
-                        <SelectItem value="graduate">Graduate</SelectItem>
+                        <SelectItem value="applied-before">
+                          I have applied before
+                        </SelectItem>
+                        <SelectItem value="novice">Novice</SelectItem>
                       </SelectContent>
                     </Select>
-                    <FormMessage />
+                    <FormMessage className="text-red-500 font-medium" />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="prepIntensity"
+                render={({ field, fieldState }) => (
+                  <FormItem>
+                    <FormLabel>Preparation Intensity</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger
+                          className={fieldState.error ? errorFieldStyle : ""}
+                        >
+                          <SelectValue placeholder="Select your preferred intensity" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent
+                        position="popper"
+                        className="z-[9999] bg-white shadow-lg border rounded-md"
+                        sideOffset={5}
+                        portalled={true}
+                      >
+                        <SelectItem value="intense">
+                          Looking for intense prep
+                        </SelectItem>
+                        <SelectItem value="middle">
+                          Somewhere in the middle
+                        </SelectItem>
+                        <SelectItem value="informal">
+                          Something informal
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage className="text-red-500 font-medium" />
                   </FormItem>
                 )}
               />
               <FormField
                 control={form.control}
                 name="about"
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <FormItem>
                     <FormLabel>About Me</FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Tell others a bit about yourself..."
+                        className={`min-h-[100px] ${
+                          fieldState.error ? errorFieldStyle : ""
+                        }`}
                         {...field}
-                        className="min-h-[100px]"
                       />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-red-500 font-medium" />
                   </FormItem>
                 )}
               />
               <DialogFooter>
-                <Button type="submit">Submit</Button>
+                <Button type="submit" style={{ backgroundColor: "#09363E" }}>
+                  Submit
+                </Button>
               </DialogFooter>
             </form>
           </Form>
@@ -2717,7 +2797,7 @@ const Friends = () => {
               <h2 className="text-3xl font-bold tracking-tight mb-1">
                 {selectedUser?.name}
               </h2>
-              {selectedUser?.questionnaire?.university && (
+              {selectedUser?.questionnaire?.experienceLevel && (
                 <div className="flex items-center gap-2 opacity-90">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -2732,7 +2812,12 @@ const Friends = () => {
                   >
                     <path d="m2 22 10-10M12 12l10 10M12 12l9-9M12 12 3 3" />
                   </svg>
-                  <p>{selectedUser?.questionnaire?.university}</p>
+                  <p>
+                    {selectedUser?.questionnaire?.experienceLevel ===
+                    "applied-before"
+                      ? "Applied Before"
+                      : "Novice"}
+                  </p>
                 </div>
               )}
             </div>
@@ -2742,10 +2827,16 @@ const Friends = () => {
           <div className="p-8 space-y-6 animate-in fade-in duration-700 delay-300">
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">
-                Major
+                Preparation Intensity
               </p>
               <p className="font-medium text-lg">
-                {selectedUser?.questionnaire?.major || "Not specified"}
+                {selectedUser?.questionnaire?.prepIntensity === "intense"
+                  ? "Looking for intense prep"
+                  : selectedUser?.questionnaire?.prepIntensity === "middle"
+                  ? "Somewhere in the middle"
+                  : selectedUser?.questionnaire?.prepIntensity === "informal"
+                  ? "Something informal"
+                  : "Not specified"}
               </p>
             </div>
 
@@ -2760,19 +2851,6 @@ const Friends = () => {
                 </p>
               </div>
             </div>
-
-            {selectedUser?.questionnaire?.year && (
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">
-                  Year of Study
-                </p>
-                <p className="font-medium text-lg">
-                  {selectedUser.questionnaire.year === "graduate"
-                    ? "Graduate"
-                    : `Year ${selectedUser.questionnaire.year}`}
-                </p>
-              </div>
-            )}
           </div>
 
           <DialogFooter className="p-6 pt-2 border-t animate-in slide-in-from-bottom duration-500 delay-500">

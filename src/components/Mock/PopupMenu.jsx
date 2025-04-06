@@ -20,11 +20,11 @@ const PopupMenu = ({
   formatTime,
   isMenuOpen,
 }) => (
-  <div className="absolute -left-2 top-1/2 -translate-y-1/2 h-32 flex items-center z-50">
+  <div className="absolute left-1/2 -translate-x-1/2 top-4 flex flex-col items-center z-50">
     {/* Toggle Button */}
     <button
       onClick={() => setIsMenuOpen(!isMenuOpen)}
-      className="bg-teal text-white p-1 rounded-lg hover:bg-teal-600 transition-all duration-300 h-32 flex items-center shadow-lg hover:shadow-xl hover:-translate-x-0.5"
+      className="bg-teal text-white p-2 rounded-lg hover:bg-teal-600 transition-all duration-300 flex items-center shadow-lg hover:shadow-xl mb-2"
     >
       {isMenuOpen ? (
         <svg
@@ -36,7 +36,7 @@ const PopupMenu = ({
           strokeWidth="2"
           className="transition-transform duration-300"
         >
-          <path d="M15 18l-6-6 6-6" />
+          <path d="M19 9l-7 7-7-7" />
         </svg>
       ) : (
         <svg
@@ -48,7 +48,7 @@ const PopupMenu = ({
           strokeWidth="2"
           className="transition-transform duration-300"
         >
-          <path d="M9 18l6-6-6-6" />
+          <path d="M5 15l7-7-7-7" />
         </svg>
       )}
     </button>
@@ -57,11 +57,11 @@ const PopupMenu = ({
     <div
       className={`overflow-hidden transition-all duration-300 transform ${
         isMenuOpen
-          ? "w-32 opacity-100 translate-x-0"
-          : "w-0 opacity-0 -translate-x-2"
+          ? "h-auto opacity-100 translate-y-0"
+          : "h-0 opacity-0 -translate-y-2"
       }`}
     >
-      <div className="bg-white/90 backdrop-blur-sm shadow-xl rounded-r-xl border border-teal/10">
+      <div className="bg-white/90 backdrop-blur-sm shadow-xl rounded-xl border border-teal/10 flex">
         {sections.map((section, index) => (
           <div
             key={section}
@@ -108,12 +108,12 @@ const PopupMenu = ({
                     ? "bg-teal text-white"
                     : "hover:bg-teal/10 text-gray-700"
                 }
-                ${index === 0 ? "rounded-tr-xl" : ""}
-                ${index === sections.length - 1 ? "rounded-br-xl" : ""}
-                border-b border-teal/5 last:border-0
+                ${index === 0 ? "rounded-l-xl" : ""}
+                ${index === sections.length - 1 ? "rounded-r-xl" : ""}
+                border-r border-teal/5 last:border-0
               `}
             style={{
-              transform: isMenuOpen ? "translateX(0)" : "translateX(-1rem)",
+              transform: isMenuOpen ? "translateY(0)" : "translateY(-1rem)",
               opacity: isMenuOpen ? 1 : 0,
               transitionDelay: `${index * 50}ms`,
             }}

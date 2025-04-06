@@ -141,7 +141,7 @@ const Plan = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header with Status */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-8">
-          <h1 className="text-5xl md:text-6xl font-bold text-teal leading-tight mb-4 md:mb-0">
+          <h1 className="text-5xl md:text-6xl font-bold text-[#09363E] leading-tight mb-4 md:mb-0">
             Interview Preparation Plan
           </h1>
           <div className="flex items-center space-x-2">
@@ -194,13 +194,13 @@ const Plan = () => {
               Quick Stats
             </h2>
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-teal rounded-lg p-3 text-center">
-                <span className="block text-3xl font-bold text-teal text-white">
+              <div className="bg-[#09363E] rounded-lg p-3 text-center">
+                <span className="block text-3xl font-bold text-white">
                   {Object.keys(selectedTopics).length}
                 </span>
                 <span className="text-sm ">Days Planned</span>
               </div>
-              <div className="bg-teal rounded-lg p-3 text-center">
+              <div className="bg-[#09363E] rounded-lg p-3 text-center">
                 <span className="block text-3xl font-bold ">
                   {Object.values(casesCompleted).filter(Boolean).length}
                 </span>

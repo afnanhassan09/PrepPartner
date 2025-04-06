@@ -149,7 +149,7 @@ const Contact = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-[#DBCFFC] text-white p-4 rounded-lg hover:bg-[#DBCFFC]/90 transition-all duration-300 flex items-center justify-center space-x-2 group"
+                  className="w-full bg-[#09363E] text-white p-4 rounded-lg hover:bg-[#09363A]/90 transition-all duration-300 flex items-center justify-center space-x-2 group"
                 >
                   {isSubmitting ? (
                     <Loader2 className="w-5 h-5 animate-spin" />

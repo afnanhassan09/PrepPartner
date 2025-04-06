@@ -67,29 +67,35 @@ const VideoPlayer = ({
 
         {/* Countdown Timer */}
         {isCountdownActive && timeLeft > 0 && (
-          <div
-            className="absolute top-4 left-4 z-10 bg-black/70 text-white 
-                              px-6 py-3 rounded-xl font-bold text-2xl animate-pulse"
-          >
-            {timeLeft}
+          <div className="absolute inset-0 flex items-center justify-center z-10">
+            <div
+              className="bg-black/70 text-white 
+                             px-10 py-6 rounded-xl font-bold text-4xl animate-pulse"
+            >
+              {timeLeft}
+            </div>
           </div>
         )}
 
         {/* Interview Timer - Moved from right to left */}
         <div
-            className={`absolute top-4 left-4 z-10 px-5 py-2 rounded-xl font-medium text-xl
+          className={`absolute top-4 left-4 z-10 px-5 py-2 rounded-xl font-medium text-xl
                                 ${
-                                  isInterviewTimerActive && interviewTimeLeft <= 60
+                                  isInterviewTimerActive &&
+                                  interviewTimeLeft <= 60
                                     ? "bg-red-500/70"
                                     : "bg-black/70"
                                 } 
                                 text-white transition-colors duration-300
                                 ${
-                                  isInterviewTimerActive && interviewTimeLeft <= 30 ? "animate-pulse" : ""
+                                  isInterviewTimerActive &&
+                                  interviewTimeLeft <= 30
+                                    ? "animate-pulse"
+                                    : ""
                                 }`}
-          >
-            {formatTime(interviewTimeLeft)}
-            {!isInterviewTimerActive && <span className="ml-1">⏸️</span>}
+        >
+          {formatTime(interviewTimeLeft)}
+          {!isInterviewTimerActive && <span className="ml-1">⏸️</span>}
         </div>
 
         <video

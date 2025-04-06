@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 const PopupMenu = ({
   sections,
@@ -19,89 +19,107 @@ const PopupMenu = ({
   setIsMenuOpen,
   formatTime,
   isMenuOpen,
-}) => (
-  <div className="absolute -left-2 top-1/2 -translate-y-1/2 h-32 flex items-center z-50">
-    {/* Toggle Button */}
-    <button
-      onClick={() => setIsMenuOpen(!isMenuOpen)}
-      className="bg-teal text-white p-1 rounded-lg hover:bg-teal-600 transition-all duration-300 h-32 flex items-center shadow-lg hover:shadow-xl hover:-translate-x-0.5"
-    >
-      {isMenuOpen ? (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          className="transition-transform duration-300"
-        >
-          <path d="M15 18l-6-6 6-6" />
-        </svg>
-      ) : (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          className="transition-transform duration-300"
-        >
-          <path d="M9 18l6-6-6-6" />
-        </svg>
-      )}
-    </button>
+}) => {
+  // Add state to control initial positioning
+  const [isPositioned, setIsPositioned] = useState(false);
 
-    {/* Menu Items with animation */}
+  // Effect to ensure consistent positioning after initial render
+  useEffect(() => {
+    // Set a small timeout to ensure DOM is fully rendered
+    const timer = setTimeout(() => {
+      setIsPositioned(true);
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
     <div
-      className={`overflow-hidden transition-all duration-300 transform ${
-        isMenuOpen
-          ? "w-32 opacity-100 translate-x-0"
-          : "w-0 opacity-0 -translate-x-2"
+      className={`fixed left-0 top-1/2 -translate-y-1/2 h-32 flex items-center z-50 transition-all duration-300 ${
+        isPositioned ? "translate-x-0" : "translate-x-0"
       }`}
     >
-      <div className="bg-white/90 backdrop-blur-sm shadow-xl rounded-r-xl border border-teal/10">
-        {sections.map((section, index) => (
-          <div
-            key={section}
-            onClick={async () => {
-              setSelectedSection(section);
-              setCurrentStation(section);
-              setCurrentIndex(0);
+      {/* Toggle Button */}
+      <button
+        onClick={() => setIsMenuOpen(!isMenuOpen)}
+        className="bg-teal text-white p-1 rounded-lg hover:bg-teal-600 transition-all duration-300 h-32 flex items-center shadow-lg hover:shadow-xl hover:-translate-x-0.5"
+      >
+        {isMenuOpen ? (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className="transition-transform duration-300"
+          >
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+        ) : (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className="transition-transform duration-300"
+          >
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        )}
+      </button>
 
-              // Load video but ensure it's paused
-              try {
-                const video = await APIService.getMotivationVideo(section, 0);
-                setCurrentVideo(video);
-                if (mainVideoRef.current) {
-                  mainVideoRef.current.pause();
-                  setIsMainVideoPlaying(false);
+      {/* Menu Items with animation */}
+      <div
+        className={`overflow-hidden transition-all duration-300 transform ${
+          isMenuOpen
+            ? "w-32 opacity-100 translate-x-0"
+            : "w-0 opacity-0 -translate-x-2"
+        }`}
+      >
+        <div className="bg-white/90 backdrop-blur-sm shadow-xl rounded-r-xl border border-teal/10">
+          {sections.map((section, index) => (
+            <div
+              key={section}
+              onClick={async () => {
+                setSelectedSection(section);
+                setCurrentStation(section);
+                setCurrentIndex(0);
+
+                // Load video but ensure it's paused
+                try {
+                  const video = await APIService.getMotivationVideo(section, 0);
+                  setCurrentVideo(video);
+                  if (mainVideoRef.current) {
+                    mainVideoRef.current.pause();
+                    setIsMainVideoPlaying(false);
+                  }
+
+                  // Reset all necessary states
+                  setShowStartButton(true);
+                  setIsCountdownActive(false);
+                  setIsInterviewTimerActive(false);
+                  setTimeLeft(5);
+                  setInterviewTimeLeft(5 * 60);
+
+                  if (video.question) {
+                    setMessages((prev) => [
+                      ...prev,
+                      {
+                        id: Date.now(),
+                        sender: "AI",
+                        message: video.question,
+                        timestamp: new Date().toLocaleTimeString(),
+                      },
+                    ]);
+                  }
+                } catch (error) {
+                  console.error("Error loading video:", error);
                 }
-
-                // Reset all necessary states
-                setShowStartButton(true);
-                setIsCountdownActive(false);
-                setIsInterviewTimerActive(false);
-                setTimeLeft(5);
-                setInterviewTimeLeft(5 * 60);
-
-                if (video.question) {
-                  setMessages((prev) => [
-                    ...prev,
-                    {
-                      id: Date.now(),
-                      sender: "AI",
-                      message: video.question,
-                      timestamp: new Date().toLocaleTimeString(),
-                    },
-                  ]);
-                }
-              } catch (error) {
-                console.error("Error loading video:", error);
-              }
-            }}
-            className={`p-3 cursor-pointer transition-all duration-200 text-sm font-medium
+              }}
+              className={`p-3 cursor-pointer transition-all duration-200 text-sm font-medium
                 ${
                   selectedSection === section ||
                   (index === 0 && !selectedSection)
@@ -112,18 +130,19 @@ const PopupMenu = ({
                 ${index === sections.length - 1 ? "rounded-br-xl" : ""}
                 border-b border-teal/5 last:border-0
               `}
-            style={{
-              transform: isMenuOpen ? "translateX(0)" : "translateX(-1rem)",
-              opacity: isMenuOpen ? 1 : 0,
-              transitionDelay: `${index * 50}ms`,
-            }}
-          >
-            {section}
-          </div>
-        ))}
+              style={{
+                transform: isMenuOpen ? "translateX(0)" : "translateX(-1rem)",
+                opacity: isMenuOpen ? 1 : 0,
+                transitionDelay: `${index * 50}ms`,
+              }}
+            >
+              {section}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default PopupMenu;

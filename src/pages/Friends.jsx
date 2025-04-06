@@ -1065,65 +1065,96 @@ const Friends = () => {
       .join("");
   };
 
+  // Add this function before FriendCard to inspect questionnaire data
+  const debugQuestionnaire = (questionnaire) => {
+    if (questionnaire) {
+      console.log("Questionnaire fields:", Object.keys(questionnaire));
+      console.log("Questionnaire data:", questionnaire);
+    }
+    return questionnaire;
+  };
+
   // Update FriendCard component to use getUserId
-  const FriendCard = ({ friend, type }) => (
-    <div
-      className={`p-4 rounded-lg transition-all duration-300 cursor-pointer
+  const FriendCard = ({ friend, type }) => {
+    // Add debug logging for the questionnaire data
+    const questionnaire = friend.questionnaire
+      ? debugQuestionnaire(friend.questionnaire)
+      : null;
+
+    return (
+      <div
+        className={`p-4 rounded-lg transition-all duration-300 cursor-pointer
         ${
           activeChatUser && getUserId(activeChatUser) === getUserId(friend)
             ? "bg-primary/10"
             : "hover:bg-secondary/50"
         }
       `}
-      onClick={() => {
-        if (type === "global") {
-          // Replace viewUserDetails with openUserModal to use only one modal
-          openUserModal(friend);
-        } else {
-          openChat(friend);
-        }
-      }}
-    >
-      <div className="flex items-center space-x-3">
-        <div className="relative">
-          <Avatar className="h-12 w-12 border-2 border-primary">
-            <AvatarFallback className="bg-primary text-primary-foreground">
-              {getInitials(friend.name)}
-            </AvatarFallback>
-          </Avatar>
-          {friend.online && (
-            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-white"></span>
+        onClick={() => {
+          if (type === "global") {
+            // Replace viewUserDetails with openUserModal to use only one modal
+            openUserModal(friend);
+          } else {
+            openChat(friend);
+          }
+        }}
+      >
+        <div className="flex items-center space-x-3">
+          <div className="relative">
+            <Avatar className="h-12 w-12 border-2 border-primary">
+              <AvatarFallback className="bg-primary text-primary-foreground">
+                {getInitials(friend.name)}
+              </AvatarFallback>
+            </Avatar>
+            {friend.online && (
+              <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-white"></span>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-medium truncate">{friend.name}</h3>
+            {questionnaire && (
+              <p className="text-sm text-muted truncate">
+                {questionnaire.experienceLevel && (
+                  <span>
+                    {questionnaire.experienceLevel === "applied-before"
+                      ? "Applied Before"
+                      : "Novice"}
+                  </span>
+                )}
+                {(questionnaire.intensity || questionnaire.prepIntensity) && (
+                  <span className="ml-1 opacity-75">
+                    {" • "}
+                    {questionnaire.intensity === "intense" ||
+                    questionnaire.prepIntensity === "intense"
+                      ? "Intense"
+                      : questionnaire.intensity === "middle" ||
+                        questionnaire.prepIntensity === "middle"
+                      ? "Medium"
+                      : "Informal"}
+                  </span>
+                )}
+              </p>
+            )}
+          </div>
+          {type === "new" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedUser(friend);
+                setRequestDialogOpen(true);
+              }}
+              className="text-xs"
+            >
+              <UserPlus size={16} className="mr-1" />
+              Add
+            </Button>
           )}
         </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="font-medium truncate">{friend.name}</h3>
-          <p className="text-sm text-muted truncate">
-            {/* Show experience level if available */}
-            {friend.questionnaire && friend.questionnaire.experienceLevel
-              ? friend.questionnaire.experienceLevel === "applied-before"
-                ? "Applied Before"
-                : "Novice"
-              : ""}
-          </p>
-        </div>
-        {type === "new" && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              setSelectedUser(friend);
-              setRequestDialogOpen(true);
-            }}
-            className="text-xs"
-          >
-            <UserPlus size={16} className="mr-1" />
-            Add
-          </Button>
-        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   // Update RequestCard to use getUserId
   const RequestCard = ({ request }) => {
@@ -1132,6 +1163,11 @@ const Friends = () => {
       typeof request.userId === "object"
         ? getUserId(request.userId)
         : request.userId;
+
+    // Debug the questionnaire data
+    const questionnaire = request.questionnaire
+      ? debugQuestionnaire(request.questionnaire)
+      : null;
 
     return (
       <div
@@ -1147,6 +1183,29 @@ const Friends = () => {
             </Avatar>
             <div className="flex-1">
               <h3 className="font-medium">{request.name}</h3>
+              {questionnaire && (
+                <p className="text-xs text-muted-foreground">
+                  {questionnaire.experienceLevel && (
+                    <span>
+                      {questionnaire.experienceLevel === "applied-before"
+                        ? "Applied Before"
+                        : "Novice"}
+                    </span>
+                  )}
+                  {(questionnaire.intensity || questionnaire.prepIntensity) && (
+                    <span className="ml-1 opacity-75">
+                      {" • "}
+                      {questionnaire.intensity === "intense" ||
+                      questionnaire.prepIntensity === "intense"
+                        ? "Intense"
+                        : questionnaire.intensity === "middle" ||
+                          questionnaire.prepIntensity === "middle"
+                        ? "Medium"
+                        : "Informal"}
+                    </span>
+                  )}
+                </p>
+              )}
             </div>
           </div>
 
@@ -2017,11 +2076,21 @@ const Friends = () => {
 
   // Function to open modal with user data
   const openUserModal = (user) => {
-    // Make sure this function can handle both global users and friend requests
-    // The user object structure should be similar in both cases after our backend changes
+    // Debug the questionnaire data
+    if (user && user.questionnaire) {
+      console.log("Modal user questionnaire:", user.questionnaire);
+    }
     setSelectedUser(user);
     setShowUserModal(true);
   };
+
+  // Add effect to log selected user data for debugging
+  useEffect(() => {
+    if (selectedUser && selectedUser.questionnaire) {
+      console.log("Selected user questionnaire:", selectedUser.questionnaire);
+      console.log("Available fields:", Object.keys(selectedUser.questionnaire));
+    }
+  }, [selectedUser]);
 
   if (!isAuthenticated()) {
     return (
@@ -2830,11 +2899,14 @@ const Friends = () => {
                 Preparation Intensity
               </p>
               <p className="font-medium text-lg">
-                {selectedUser?.questionnaire?.prepIntensity === "intense"
+                {selectedUser?.questionnaire?.intensity === "intense" ||
+                selectedUser?.questionnaire?.prepIntensity === "intense"
                   ? "Looking for intense prep"
-                  : selectedUser?.questionnaire?.prepIntensity === "middle"
+                  : selectedUser?.questionnaire?.intensity === "middle" ||
+                    selectedUser?.questionnaire?.prepIntensity === "middle"
                   ? "Somewhere in the middle"
-                  : selectedUser?.questionnaire?.prepIntensity === "informal"
+                  : selectedUser?.questionnaire?.intensity === "informal" ||
+                    selectedUser?.questionnaire?.prepIntensity === "informal"
                   ? "Something informal"
                   : "Not specified"}
               </p>

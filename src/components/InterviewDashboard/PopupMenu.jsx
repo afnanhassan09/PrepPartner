@@ -22,6 +22,8 @@ const PopupMenu = ({
   setProfessionalJudgementData,
   setCurrentQuestionId,
   currentVideoRef,
+  setShowAdditionalMaterial,
+  currentScenarioRef,
 }) => {
   // Add state to control initial positioning
   const [isPositioned, setIsPositioned] = useState(false);
@@ -39,64 +41,68 @@ const PopupMenu = ({
   const handleSectionClick = async (section) => {
     setSelectedSection(section);
     setCurrentStation(section);
+    
+    // Store the current scenario in ref for persistence
+    currentScenarioRef.current = section;
 
-    // For Professional Judgement, reload the initial scenario
-    if (section === "Professional Judgement") {
-      try {
-        console.log("Loading Professional Judgement scenario...");
-        const response = await APIService.getProfessionalJudgement({
-          scenario: "Social Media",
-          id: "start",
-          start: true
-        });
+    // For any scenario, reload the initial scenario
+    try {
+      console.log(`Loading ${section} scenario...`);
+      const response = await APIService.getProfessionalJudgement({
+        scenario: section,
+        id: "start",
+        start: true
+      });
 
-        console.log("Professional Judgement Response:", response);
-        
-        setProfessionalJudgementData(response);
-        setCurrentQuestionId(response.question.id);
+      console.log(`${section} Response:`, response);
+      
+      setProfessionalJudgementData(response);
+      setCurrentQuestionId(response.question.id);
 
-        // Set up the video
-        const videoData = {
-          url: response.url,
-          start: response.question.startTimestamp,
-          end: response.question.endTimestamp,
-          question: response.question.text,
-          currentTimestamp: response.question,
-          isPauseSegment: false,
-          pauseSegment: response.pause
-        };
+      // Automatically show Additional Material popup with the loaded data
+      setShowAdditionalMaterial(true);
 
-        setCurrentVideo(videoData);
-        currentVideoRef.current = videoData;
+      // Set up the video
+      const videoData = {
+        url: response.url,
+        start: response.question.startTimestamp,
+        end: response.question.endTimestamp,
+        question: response.question.text,
+        currentTimestamp: response.question,
+        isPauseSegment: false,
+        pauseSegment: response.pause
+      };
 
-        // Ensure video is paused initially
-        if (mainVideoRef.current) {
-          mainVideoRef.current.pause();
-          setIsMainVideoPlaying(false);
-        }
+      setCurrentVideo(videoData);
+      currentVideoRef.current = videoData;
 
-        // Reset all necessary states
-        setShowStartButton(true);
-        setIsCountdownActive(false);
-        setIsInterviewTimerActive(false);
-        setTimeLeft(5);
-        setInterviewTimeLeft(5 * 60);
-
-        // Add the first message
-        if (response.question.text) {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: Date.now(),
-              sender: "AI",
-              message: response.question.text,
-              timestamp: new Date().toLocaleTimeString(),
-            },
-          ]);
-        }
-      } catch (error) {
-        console.error("Error loading Professional Judgement scenario:", error);
+      // Ensure video is paused initially
+      if (mainVideoRef.current) {
+        mainVideoRef.current.pause();
+        setIsMainVideoPlaying(false);
       }
+
+      // Reset all necessary states
+      setShowStartButton(true);
+      setIsCountdownActive(false);
+      setIsInterviewTimerActive(false);
+      setTimeLeft(5);
+      setInterviewTimeLeft(5 * 60);
+
+      // Add the first message
+      if (response.question.text) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            sender: "AI",
+            message: response.question.text,
+            timestamp: new Date().toLocaleTimeString(),
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error(`Error loading ${section} scenario:`, error);
     }
   };
 

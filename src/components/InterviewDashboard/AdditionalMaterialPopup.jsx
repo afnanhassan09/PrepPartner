@@ -35,22 +35,8 @@ const AdditionalMaterialPopup = ({ isOpen, onClose, imageUrl, candidatePrompt, b
             </div>
           )}
 
-          {/* Image Section (if provided) */}
-          {imageUrl && (
-            <div className="flex flex-col items-center space-y-4">
-              <img 
-                src={imageUrl} 
-                alt="Additional Material" 
-                className="max-w-full h-auto rounded-lg shadow-md"
-              />
-              <p className="text-gray-600 text-center">
-                Review this additional material related to your case study.
-              </p>
-            </div>
-          )}
-
           {/* Default message if no specific content */}
-          {!candidatePrompt && !background && !imageUrl && (
+          {!candidatePrompt && !background && (
             <p className="text-gray-600 text-center">
               Additional materials and instructions will appear here.
             </p>

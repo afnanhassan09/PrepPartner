@@ -38,7 +38,7 @@ const InterviewDashboard = () => {
   const [interviewTimeLeft, setInterviewTimeLeft] = useState(5 * 60); // 5 minutes in seconds
   const [isInterviewTimerActive, setIsInterviewTimerActive] = useState(false);
   const interviewTimerRef = useRef(null);
-  const [currentStation, setCurrentStation] = useState("Professional Judgement");
+  const [currentStation, setCurrentStation] = useState("Social Media");
   const [isMicListening, setIsMicListening] = useState(false);
   const [audioContext, setAudioContext] = useState(null);
   const [silenceTimer, setSilenceTimer] = useState(null);
@@ -51,6 +51,7 @@ const InterviewDashboard = () => {
   const [audioStream, setAudioStream] = useState(null);
   const [isAudioInitialized, setIsAudioInitialized] = useState(false);
   const [showTimeUpModal, setShowTimeUpModal] = useState(false);
+  const [showAdditionalMaterial, setShowAdditionalMaterial] = useState(false);
 
   // New state for Professional Judgement
   const [professionalJudgementData, setProfessionalJudgementData] = useState(null);
@@ -64,10 +65,20 @@ const InterviewDashboard = () => {
   const recordedAudioRef = useRef(null); // Add ref for immediate access to recorded audio
   const videoUrlRef = useRef(null); // Store video URL to persist across state resets
   const pauseSegmentRef = useRef(null); // Store pause segment to persist across state resets
+  const currentScenarioRef = useRef(null); // Store current scenario to persist across state resets
 
   // Add sections data for Professional Judgement
   const sections = [
-    "Professional Judgement",
+    "Professionalism - Social Media",
+    "Social Media",
+    "Alcohol Use", 
+    "Medical Error",
+    "Mistake to Patient",
+    "Conflict of Interest",
+    "Refusal of Treatment", 
+    "Religious Belief",
+    "End of Life care",
+    "Complain"
   ];
 
   // Initialize Professional Judgement on load
@@ -89,8 +100,12 @@ const InterviewDashboard = () => {
         const token = APIService.getToken();
         console.log("Using token:", token ? `${token.substring(0, 20)}...` : "No token");
 
+        // Use selected scenario or default to "Social Media" for initial load only
+        const initialScenario = selectedSection || "Social Media";
+        console.log("Using initial scenario:", initialScenario);
+
         const response = await APIService.getProfessionalJudgement({
-          scenario: "Social Media",
+          scenario: initialScenario,
           id: "start",
           start: true
         });
@@ -103,6 +118,10 @@ const InterviewDashboard = () => {
         // Store critical data in refs to persist across state resets
         videoUrlRef.current = response.url;
         pauseSegmentRef.current = response.pause;
+        currentScenarioRef.current = initialScenario;
+
+        // Automatically show Additional Material popup with the loaded data
+        setShowAdditionalMaterial(true);
 
         // Set up the video
         const videoData = {
@@ -166,7 +185,6 @@ const InterviewDashboard = () => {
     if (!professionalJudgementData && !videoUrlRef.current) {
       console.log("🎯 Starting Professional Judgement initialization");
       initializeProfessionalJudgement();
-      setSelectedSection("Professional Judgement");
     } else {
       console.log("🔄 Professional Judgement already initialized, skipping");
     }
@@ -309,9 +327,12 @@ const InterviewDashboard = () => {
 
       console.log("📡 Calling API with question ID:", currentQuestionId);
       console.log("📡 Audio blob size:", audioBlob.size, "bytes");
+      console.log("📡 Selected scenario:", selectedSection);
+      console.log("📡 Scenario from ref:", currentScenarioRef.current);
+      console.log("📡 Using scenario:", currentScenarioRef.current || selectedSection || "Social Media");
       
       const response = await APIService.getProfessionalJudgement({
-        scenario: "Social Media",
+        scenario: currentScenarioRef.current || selectedSection || "Social Media",
         id: currentQuestionId,
         start: false,
         audio: audioBlob
@@ -999,6 +1020,8 @@ const InterviewDashboard = () => {
           setProfessionalJudgementData={setProfessionalJudgementData}
           setCurrentQuestionId={setCurrentQuestionId}
           currentVideoRef={currentVideoRef}
+          setShowAdditionalMaterial={setShowAdditionalMaterial}
+          currentScenarioRef={currentScenarioRef}
         />
         
         {/* Main Video Container */}
@@ -1046,6 +1069,8 @@ const InterviewDashboard = () => {
         setIsNotesMinimized={setIsNotesMinimized}
         candidatePrompt={professionalJudgementData?.candidatePrompt}
         background={professionalJudgementData?.background}
+        showAdditionalMaterial={showAdditionalMaterial}
+        setShowAdditionalMaterial={setShowAdditionalMaterial}
       />
 
       {/* Examiner Notes Section */}

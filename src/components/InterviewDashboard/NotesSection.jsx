@@ -10,9 +10,10 @@ const NotesSection = ({
   isNotesMinimized, 
   setIsNotesMinimized,
   candidatePrompt,
-  background 
+  background,
+  showAdditionalMaterial,
+  setShowAdditionalMaterial
 }) => {
-  const [showAdditionalMaterial, setShowAdditionalMaterial] = useState(false);
   const materialImageUrl = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSDLcKj_lOjmgxbMBNxWFl7XHJVytdPexjAJw&s";
 
   return (

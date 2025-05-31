@@ -1,0 +1,1215 @@
+{
+	"info": {
+		"_postman_id": "1b187362-b582-4e49-807e-6811fd987091",
+		"name": "PrepPartner",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "41485553",
+		"_collection_link": "https://planetary-station-979613.postman.co/workspace/New-Team-Workspace~8da4ebf9-c02d-4ac5-ab1e-3be9796cde2c/collection/39896188-1b187362-b582-4e49-807e-6811fd987091?action=share&source=collection_link&creator=41485553"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"hassanafnan09@gmail.com\",\r\n    \"password\": \"1234\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/auth/login",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "New Request",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"email\": \"hassanafnan09@gmail.com\",\r\n    \"password\": \"1234\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3000/api/auth/login",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"api",
+										"auth",
+										"login"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "195"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"c3-EZp3xxDGag/96curg1ndqKz+Dvo\""
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 08 Mar 2025 01:21:23 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Logged in successfully\",\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3Y2I5YjVhNDU5NDM2MDFlNWUzYmIwZCIsImlhdCI6MTc0MTM5Njg4M30.uikvKA23ZVxwwkrX6lV3M-tisykDRgw17kH9yBmDH0U\"\n}"
+						}
+					]
+				},
+				{
+					"name": "register",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"hassanafnan09@gmail.com\",\r\n    \"name\": \"Afnan Hassan\",\r\n    \"password\": \"1234\"    \r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/auth/register",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "New Request",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"email\": \"hassanafnan09@gmail.com\",\r\n    \"name\": \"Afnan Hassan\",\r\n    \"password\": \"1234\"    \r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3000/api/auth/register",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"api",
+										"auth",
+										"register"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "291"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"123-IsxvhErkv9llEovFZHcpbevxeoY\""
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 08 Mar 2025 01:20:26 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"User registered successfully\",\n    \"user\": {\n        \"name\": \"Afnan Hassan\",\n        \"email\": \"hassanafnan09@gmail.com\",\n        \"password\": \"$2b$10$wClPAAbSyxFWWHVq6NYtQOTTxq5NuZEUmwFlwevOBYkMZoEJ/1KBy\",\n        \"resetPasswordToken\": null,\n        \"resetPasswordExpires\": null,\n        \"online\": false,\n        \"_id\": \"67cb9b5a45943601e5e3bb0d\",\n        \"__v\": 0\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "request pass reset",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"hassanafnan09@gmail.com\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/auth/requestResetPassword",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"auth",
+								"requestResetPassword"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "New Request",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"email\": \"hassanafnan09@gmail.com\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3000/api/auth/requestResetPassword",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"api",
+										"auth",
+										"requestResetPassword"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "114"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"72-MA7R1Sai1dBYnfTBsSYKfvTo8ME\""
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 08 Mar 2025 01:22:55 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Password reset email sent\",\n    \"token\": \"338b5dd0f8435cec51e280bc77bb907c1200651534e413c6c08edbff04ebf6b1\"\n}"
+						}
+					]
+				},
+				{
+					"name": "reset pass",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"token\": \"338b5dd0f8435cec51e280bc77bb907c1200651534e413c6c08edbff04ebf6b1\",\r\n    \"newPassword\": \"1234\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/auth/resetPassword",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"auth",
+								"resetPassword"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Bot Video",
+			"item": [
+				{
+					"name": "get Station",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"station\": \"Motivation\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/video/station",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"video",
+								"station"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "New Request",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"station\": \"Motivation\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3000/api/video/station",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"api",
+										"video",
+										"station"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "6096"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"17d0-i2U/hBQ5xB6BeUQz6VES+6l17K0\""
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 08 Mar 2025 01:27:30 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "[\n    {\n        \"_id\": \"67b1185ff7b95046643f04da\",\n        \"station\": \"Motivation\",\n        \"URL\": \"https://studyninja.s3.ap-south-1.amazonaws.com/videos/C%3A/Users/nobody/Downloads/0216%281%29.mp4\",\n        \"timestamps\": [\n            {\n                \"question\": \"What experiences have you undertaken to prepare you for a career in medicine?\",\n                \"start\": \"0:00\",\n                \"end\": \"0:05\",\n                \"mainTask\": \"This station explores your non-academic achievements and any work experience you have had.\",\n                \"scoringDomain\": \"CIS\",\n                \"subdomainFocus\": \"Communication and interpersonal skills\",\n                \"instructions\": \"Probe for specific examples of work experience and the transferable skills developed.\"\n            },\n            {\n                \"question\": \"What have you learned from this/these experiences?\",\n                \"start\": \"0:07\",\n                \"end\": \"0:11\",\n                \"mainTask\": \"This station explores your non-academic achievements and any work experience you have had.\",\n                \"scoringDomain\": \"IPS\",\n                \"subdomainFocus\": \"Initiative and problem solving\",\n                \"instructions\": \"Ask for specific skills or insights gained through experiences.\"\n            },\n            {\n                \"question\": \"What have you learned about yourself with these experiences?\",\n                \"start\": \"0:14\",\n                \"end\": \"0:18\",\n                \"mainTask\": \"This station explores your non-academic achievements and any work experience you have had.\",\n                \"scoringDomain\": \"CIS\",\n                \"subdomainFocus\": \"Insight into personal attributes\",\n                \"instructions\": \"Evaluate the candidate's ability to self-reflect and understand their personal growth.\"\n            },\n            {\n                \"question\": \"What personal skills do doctors need, and do you have evidence of having these skills?\",\n                \"start\": \"0:21\",\n                \"end\": \"0:27\",\n                \"mainTask\": \"This station explores your non-academic achievements and any work experience you have had.\",\n                \"scoringDomain\": \"PIMR\",\n                \"subdomainFocus\": \"Personal integrity and moral reasoning\",\n                \"instructions\": \"Assess if the candidate identifies key skills (e.g., empathy, teamwork) and provides examples.\"\n            },\n            {\n                \"question\": \"If you are unsuccessful, what would you do to try to improve your chances during the next admissions cycle?\",\n                \"start\": \"0:30\",\n                \"end\": \"0:38\",\n                \"mainTask\": \"This station explores your non-academic achievements and any work experience you have had.\",\n                \"scoringDomain\": \"IPS\",\n                \"subdomainFocus\": \"Initiative and problem solving\",\n                \"instructions\": \"Explore the candidate's resilience and proactive planning.\"\n            },\n            {\n                \"question\": \"Why have you applied to this School of Medicine?\",\n                \"start\": \"0:40\",\n                \"end\": \"0:44\",\n                \"mainTask\": \"This station explores your non-academic achievements and any work experience you have had.\",\n                \"scoringDomain\": \"CIS\",\n                \"subdomainFocus\": \"Knowledge of this course and university\",\n                \"instructions\": \"Evaluate if the candidate has specific reasons for choosing this school and demonstrates enthusiasm.\"\n            },\n            {\n                \"question\": \"Can you tell me what it is about the course that attracted you to apply?\",\n                \"start\": \"0:46\",\n                \"end\": \"0:51\",\n                \"mainTask\": \"This station explores your non-academic achievements and any work experience you have had.\",\n                \"scoringDomain\": \"IPS\",\n                \"subdomainFocus\": \"Awareness of course structure\",\n                \"instructions\": \"Ask for details about the unique aspects of the course that align with their learning preferences.\"\n            },\n            {\n                \"question\": \"How is the course at this university different from other courses you have looked at?\",\n                \"start\": \"0:53\",\n                \"end\": \"0:58\",\n                \"mainTask\": \"This station explores your non-academic achievements and any work experience you have had.\",\n                \"scoringDomain\": \"IPS\",\n                \"subdomainFocus\": \"Awareness of differences in medical courses\",\n                \"instructions\": \"Probe if the candidate has researched other courses and can explain the differences.\"\n            },\n            {\n                \"question\": \"Can you describe any teamwork or achievements that have prepared you for a career in medicine?\",\n                \"start\": \"1:01\",\n                \"end\": \"1:07\",\n                \"mainTask\": \"This station explores your non-academic achievements and any work experience you have had.\",\n                \"scoringDomain\": \"CIS\",\n                \"subdomainFocus\": \"Teamwork and leadership\",\n                \"instructions\": \"Evaluate examples of teamwork and leadership relevant to medicine.\"\n            },\n            {\n                \"question\": \"What have you learned about the challenges a doctor faces?\",\n                \"start\": \"1:09\",\n                \"end\": \"1:14\",\n                \"mainTask\": \"This station explores your non-academic achievements and any work experience you have had.\",\n                \"scoringDomain\": \"IPS\",\n                \"subdomainFocus\": \"Awareness of medical career challenges\",\n                \"instructions\": \"Explore whether the candidate has realistic expectations of a career in medicine.\"\n            },\n            {\n                \"question\": \"What evidence do you have of your self-drive in preparing for a medical career?\",\n                \"start\": \"1:16\",\n                \"end\": \"1:21\",\n                \"mainTask\": \"This station explores your non-academic achievements and any work experience you have had.\",\n                \"scoringDomain\": \"IPS\",\n                \"subdomainFocus\": \"Self-drive and preparation\",\n                \"instructions\": \"Probe for independent initiatives, such as shadowing, volunteering, or research.\"\n            },\n            {\n                \"question\": \"Can you describe how doctors embody NHS values in their practice?\",\n                \"start\": \"1:23\",\n                \"end\": \"1:28\",\n                \"mainTask\": \"This station explores your non-academic achievements and any work experience you have had.\",\n                \"scoringDomain\": \"PIMR\",\n                \"subdomainFocus\": \"Awareness of NHS values\",\n                \"instructions\": \"Assess the candidate's understanding of NHS values and their relevance to medical practice.\"\n            },\n            {\n                \"question\": \"What motivates you to study medicine?\",\n                \"start\": \"1:31\",\n                \"end\": \"1:34\",\n                \"mainTask\": \"This station explores your non-academic achievements and any work experience you have had.\",\n                \"scoringDomain\": \"CIS\",\n                \"subdomainFocus\": \"Enthusiasm for medicine\",\n                \"instructions\": \"Evaluate the candidate’s passion and sincerity for pursuing medicine.\"\n            },\n            {\n                \"question\": \"What aspects of this medical course match your learning preferences?\",\n                \"start\": \"1:37\",\n                \"end\": \"1:42\",\n                \"mainTask\": \"This station explores your non-academic achievements and any work experience you have had.\",\n                \"scoringDomain\": \"IPS\",\n                \"subdomainFocus\": \"Course and learning preferences\",\n                \"instructions\": \"Ask about specific features of the course (e.g., problem-based learning, clinical exposure) that suit them.\"\n            },\n            {\n                \"question\": \"Can you provide an example of a time when you had to be self-critical?\",\n                \"start\": \"1:44\",\n                \"end\": \"1:49\",\n                \"mainTask\": \"This station explores your non-academic achievements and any work experience you have had.\",\n                \"scoringDomain\": \"PIMR\",\n                \"subdomainFocus\": \"Self-criticism and improvement\",\n                \"instructions\": \"Explore examples of self-awareness and learning from mistakes.\"\n            }\n        ],\n        \"pause\": {\n            \"start\": \"1:53\",\n            \"end\": \"3:43\"\n        }\n    }\n]"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "User",
+			"item": [
+				{
+					"name": "get Profile",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3Y2I5YjVhNDU5NDM2MDFlNWUzYmIwZCIsImlhdCI6MTc0MTQwNzk3MH0.kwBN67_lFRUQFLLTI0eXPtMys0decirHVvoFOqPiMwc",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/api/user/profile",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"user",
+								"profile"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "New Request",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:3000/api/user/profile",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"api",
+										"user",
+										"profile"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "273"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"111-aQAczPJSmOfNVe8y198uK9GsvdM\""
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 08 Mar 2025 04:26:43 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"User found\",\n    \"user\": {\n        \"resetPasswordToken\": null,\n        \"resetPasswordExpires\": null,\n        \"_id\": \"67cb9b5a45943601e5e3bb0d\",\n        \"name\": \"Afnan Hassan\",\n        \"email\": \"hassanafnan09@gmail.com\",\n        \"password\": \"$2b$10$WryuzKyspkjx66m475JPdeQBKekP8MJvzB0OG3n7ZVERGaOvOLIwq\",\n        \"online\": false,\n        \"__v\": 0\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "get All Contacts",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3Y2I5YjVhNDU5NDM2MDFlNWUzYmIwZCIsImlhdCI6MTc0MTQwNzk3MH0.kwBN67_lFRUQFLLTI0eXPtMys0decirHVvoFOqPiMwc",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/api/user/contacts",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"user",
+								"contacts"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "New Request",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:3000/api/user/contacts",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"api",
+										"user",
+										"contacts"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "2"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"2-l9Fw4VUO7kr8CvBlt4zaMCqXZ0w\""
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 08 Mar 2025 04:28:12 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "[]"
+						}
+					]
+				},
+				{
+					"name": "get All Messages with a User",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3Y2I5YjVhNDU5NDM2MDFlNWUzYmIwZCIsImlhdCI6MTc0MTQwNzk3MH0.kwBN67_lFRUQFLLTI0eXPtMys0decirHVvoFOqPiMwc",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/api/user/chats/:otherUserId",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"user",
+								"chats",
+								":otherUserId"
+							],
+							"variable": [
+								{
+									"key": "otherUserId",
+									"value": "67cb9b5a45943601e5e3bb0d"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get All online people",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3Y2I5YjVhNDU5NDM2MDFlNWUzYmIwZCIsImlhdCI6MTc0MTUyMzY2MH0.0VjcBu1j3jWmU7NtmT_YaJCbyh9kZ_P1MlZc_Ww1Q-k",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/api/user/online",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"user",
+								"online"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "New Request",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:3000/api/user/online",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"api",
+										"user",
+										"online"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "373"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"175-Akx64I7JtNein/oqfQET7Ub57Ww\""
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 09 Mar 2025 12:38:31 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"online_users\": [\n        {\n            \"_id\": \"67cd5a125569793ea41708a8\",\n            \"name\": \"WeatherChat\",\n            \"email\": \"ghausmalik69@gmail.com\",\n            \"password\": \"$2b$10$soz3dVKKF0qmKhLbLUvlu.66ipS1TQK6pYrOpaqbQq2ogA0CqGti.\",\n            \"resetPasswordToken\": null,\n            \"resetPasswordExpires\": null,\n            \"online\": true,\n            \"friend_list\": [],\n            \"friend_requests\": [],\n            \"createdAt\": \"2025-03-09T09:06:26.749Z\",\n            \"updatedAt\": \"2025-03-09T11:54:23.812Z\",\n            \"__v\": 1\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Sent Friend Req",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3Y2I5YjVhNDU5NDM2MDFlNWUzYmIwZCIsImlhdCI6MTc0MTUyMzY2MH0.0VjcBu1j3jWmU7NtmT_YaJCbyh9kZ_P1MlZc_Ww1Q-k",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"friendId\": \"67cd5a125569793ea41708a8\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/user/friend/request",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"user",
+								"friend",
+								"request"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "New Request",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"friendId\": \"67cd5a125569793ea41708a8\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3000/api/user/friend/request",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"api",
+										"user",
+										"friend",
+										"request"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "46"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"2e-9jOCOXFUh0OsZpMTWFmRcDzTuiw\""
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 09 Mar 2025 12:40:20 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Friend request sent successfully\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get All requests",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3Y2I5YjVhNDU5NDM2MDFlNWUzYmIwZCIsImlhdCI6MTc0MTUyMzY2MH0.0VjcBu1j3jWmU7NtmT_YaJCbyh9kZ_P1MlZc_Ww1Q-k",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/api/user/friend/requests",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"user",
+								"friend",
+								"requests"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "accept Request",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3Y2I5YjVhNDU5NDM2MDFlNWUzYmIwZCIsImlhdCI6MTc0MTUyMzY2MH0.0VjcBu1j3jWmU7NtmT_YaJCbyh9kZ_P1MlZc_Ww1Q-k",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"friendId\": \"67cd5a125569793ea41708a8\",\r\n    \"response\": \"yes\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/user/friend/accept",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"user",
+								"friend",
+								"accept"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get All Friends",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3Y2I5YjVhNDU5NDM2MDFlNWUzYmIwZCIsImlhdCI6MTc0MTUyMzY2MH0.0VjcBu1j3jWmU7NtmT_YaJCbyh9kZ_P1MlZc_Ww1Q-k",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/api/user/friends",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"user",
+								"friends"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Social Medai",
+			"item": [
+				{
+					"name": "Get Question",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZjI5MzIxZWVjNGE2ZThlMmE2Yjk4YyIsImlhdCI6MTc0ODUwMjA4MX0.kNEvDK8ucqnV2KvXb0s9HxHUafnMc_9HGUqVGaJwdtU",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "scenario",
+									"value": "Social Media",
+									"type": "text"
+								},
+								{
+									"key": "id",
+									"value": "B2",
+									"type": "text"
+								},
+								{
+									"key": "start",
+									"value": "false",
+									"type": "text"
+								},
+								{
+									"key": "audio",
+									"type": "file",
+									"src": "/C:/Users/nobody/Downloads/Record (online-voice-recorder.com) (1).mp3"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/professional-judgement",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"professional-judgement"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "New Request",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "scenario",
+											"value": "Social Media",
+											"type": "text"
+										},
+										{
+											"key": "id",
+											"value": "B2",
+											"type": "text"
+										},
+										{
+											"key": "start",
+											"value": "true",
+											"type": "text"
+										},
+										{
+											"key": "audio",
+											"type": "file",
+											"src": "/C:/Users/nobody/Downloads/Record (online-voice-recorder.com) (1).mp3"
+										}
+									],
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3000/api/professional-judgement",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"api",
+										"professional-judgement"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "1057"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"421-+SSQmuWniunj599TizJueLqcK+Y\""
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 29 May 2025 11:36:46 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"stationName\": \"Professional Judgement\",\n    \"scenario\": \"Social Media\",\n    \"url\": \"https://studyninja.s3.ap-south-1.amazonaws.com/videos/C%3A/Users/nobody/Desktop/0528.mp4\",\n    \"candidatePrompt\": \"You are an FY1 doctor. A medical student (the bot) approaches you, distressed after seeing a fellow student post a photo on Instagram from the hospital ward. The post includes identifiable patient information in the background. The student is unsure if they should report it.\",\n    \"background\": \"Ravi has seen a fellow medical student post a selfie on Instagram. The post includes a patient on a stretcher and a nameboard in the background. He took a screenshot but hasn't shown it to anyone else. He's torn between doing the right thing and not wanting to 'snitch' or harm a peer's career. He's approaching the candidate to seek advice.\",\n    \"question\": {\n        \"id\": \"start\",\n        \"branchKey\": null,\n        \"text\": \"Hey, do you have a minute? Something happened, and I don't know if I'm overreacting...\",\n        \"startTimestamp\": \"0:00\",\n        \"endTimestamp\": \"0:04\"\n    },\n    \"pause\": {\n        \"startTimestamp\": \"1:32\",\n        \"endTimestamp\": \"3:15\"\n    }\n}"
+						},
+						{
+							"name": "New Request",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "scenario",
+											"value": "Social Media",
+											"type": "text"
+										},
+										{
+											"key": "id",
+											"value": "start",
+											"type": "text"
+										},
+										{
+											"key": "start",
+											"value": "false",
+											"type": "text"
+										},
+										{
+											"key": "audio",
+											"type": "file",
+											"src": "/C:/Users/nobody/Downloads/Record (online-voice-recorder.com) (1).mp3"
+										}
+									],
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3000/api/professional-judgement",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"api",
+										"professional-judgement"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "249"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"f9-MCuCFnsOli20OtdHbnZ2zPvHE78\""
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 29 May 2025 11:41:21 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"selectedBranch\": \"B\",\n    \"branchReason\": \"Candidate is unsure\",\n    \"vulgarWordCount\": 1,\n    \"vulgarWords\": [\n        \"fuck\"\n    ],\n    \"question\": {\n        \"id\": \"B1\",\n        \"branchKey\": \"B\",\n        \"text\": \"What if she gets into trouble? I don't want to ruin things for her.\",\n        \"reason\": \"Candidate is unsure\"\n    }\n}"
+						}
+					]
+				}
+			]
+		}
+	]
+}

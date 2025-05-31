@@ -5,7 +5,6 @@ const PopupMenu = ({
   selectedSection,
   setSelectedSection,
   setCurrentStation,
-  setCurrentIndex,
   APIService,
   setCurrentVideo,
   mainVideoRef,
@@ -19,6 +18,10 @@ const PopupMenu = ({
   setIsMenuOpen,
   formatTime,
   isMenuOpen,
+  professionalJudgementData,
+  setProfessionalJudgementData,
+  setCurrentQuestionId,
+  currentVideoRef,
 }) => {
   // Add state to control initial positioning
   const [isPositioned, setIsPositioned] = useState(false);
@@ -32,6 +35,70 @@ const PopupMenu = ({
 
     return () => clearTimeout(timer);
   }, []);
+
+  const handleSectionClick = async (section) => {
+    setSelectedSection(section);
+    setCurrentStation(section);
+
+    // For Professional Judgement, reload the initial scenario
+    if (section === "Professional Judgement") {
+      try {
+        console.log("Loading Professional Judgement scenario...");
+        const response = await APIService.getProfessionalJudgement({
+          scenario: "Social Media",
+          id: "start",
+          start: true
+        });
+
+        console.log("Professional Judgement Response:", response);
+        
+        setProfessionalJudgementData(response);
+        setCurrentQuestionId(response.question.id);
+
+        // Set up the video
+        const videoData = {
+          url: response.url,
+          start: response.question.startTimestamp,
+          end: response.question.endTimestamp,
+          question: response.question.text,
+          currentTimestamp: response.question,
+          isPauseSegment: false,
+          pauseSegment: response.pause
+        };
+
+        setCurrentVideo(videoData);
+        currentVideoRef.current = videoData;
+
+        // Ensure video is paused initially
+        if (mainVideoRef.current) {
+          mainVideoRef.current.pause();
+          setIsMainVideoPlaying(false);
+        }
+
+        // Reset all necessary states
+        setShowStartButton(true);
+        setIsCountdownActive(false);
+        setIsInterviewTimerActive(false);
+        setTimeLeft(5);
+        setInterviewTimeLeft(5 * 60);
+
+        // Add the first message
+        if (response.question.text) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: Date.now(),
+              sender: "AI",
+              message: response.question.text,
+              timestamp: new Date().toLocaleTimeString(),
+            },
+          ]);
+        }
+      } catch (error) {
+        console.error("Error loading Professional Judgement scenario:", error);
+      }
+    }
+  };
 
   return (
     <div
@@ -75,7 +142,7 @@ const PopupMenu = ({
       <div
         className={`overflow-hidden transition-all duration-300 transform ${
           isMenuOpen
-            ? "w-32 opacity-100 translate-x-0"
+            ? "w-40 opacity-100 translate-x-0"
             : "w-0 opacity-0 -translate-x-2"
         }`}
       >
@@ -83,42 +150,7 @@ const PopupMenu = ({
           {sections.map((section, index) => (
             <div
               key={section}
-              onClick={async () => {
-                setSelectedSection(section);
-                setCurrentStation(section);
-                setCurrentIndex(0);
-
-                // Load video but ensure it's paused
-                try {
-                  const video = await APIService.getMotivationVideo(section, 0);
-                  setCurrentVideo(video);
-                  if (mainVideoRef.current) {
-                    mainVideoRef.current.pause();
-                    setIsMainVideoPlaying(false);
-                  }
-
-                  // Reset all necessary states
-                  setShowStartButton(true);
-                  setIsCountdownActive(false);
-                  setIsInterviewTimerActive(false);
-                  setTimeLeft(5);
-                  setInterviewTimeLeft(5 * 60);
-
-                  if (video.question) {
-                    setMessages((prev) => [
-                      ...prev,
-                      {
-                        id: Date.now(),
-                        sender: "AI",
-                        message: video.question,
-                        timestamp: new Date().toLocaleTimeString(),
-                      },
-                    ]);
-                  }
-                } catch (error) {
-                  console.error("Error loading video:", error);
-                }
-              }}
+              onClick={() => handleSectionClick(section)}
               className={`p-3 cursor-pointer transition-all duration-200 text-sm font-medium
                 ${
                   selectedSection === section ||

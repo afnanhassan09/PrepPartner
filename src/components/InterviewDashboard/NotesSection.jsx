@@ -4,7 +4,14 @@ import MinimizeIcon from "./icons/MinimizeIcon";
 import ExpandIcon from "./icons/ExpandIcon";
 import AdditionalMaterialPopup from "./AdditionalMaterialPopup";
 
-const NotesSection = ({ notes, setNotes, isNotesMinimized, setIsNotesMinimized }) => {
+const NotesSection = ({ 
+  notes, 
+  setNotes, 
+  isNotesMinimized, 
+  setIsNotesMinimized,
+  candidatePrompt,
+  background 
+}) => {
   const [showAdditionalMaterial, setShowAdditionalMaterial] = useState(false);
   const materialImageUrl = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSDLcKj_lOjmgxbMBNxWFl7XHJVytdPexjAJw&s";
 
@@ -79,6 +86,8 @@ const NotesSection = ({ notes, setNotes, isNotesMinimized, setIsNotesMinimized }
         isOpen={showAdditionalMaterial}
         onClose={() => setShowAdditionalMaterial(false)}
         imageUrl={materialImageUrl}
+        candidatePrompt={candidatePrompt}
+        background={background}
       />
     </div>
   );

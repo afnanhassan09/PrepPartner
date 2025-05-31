@@ -38,9 +38,7 @@ const InterviewDashboard = () => {
   const [interviewTimeLeft, setInterviewTimeLeft] = useState(5 * 60); // 5 minutes in seconds
   const [isInterviewTimerActive, setIsInterviewTimerActive] = useState(false);
   const interviewTimerRef = useRef(null);
-  const [currentStation, setCurrentStation] = useState("Motivation");
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [nextVideoIndex, setNextVideoIndex] = useState(1);
+  const [currentStation, setCurrentStation] = useState("Professional Judgement");
   const [isMicListening, setIsMicListening] = useState(false);
   const [audioContext, setAudioContext] = useState(null);
   const [silenceTimer, setSilenceTimer] = useState(null);
@@ -54,176 +52,83 @@ const InterviewDashboard = () => {
   const [isAudioInitialized, setIsAudioInitialized] = useState(false);
   const [showTimeUpModal, setShowTimeUpModal] = useState(false);
 
-  // Add sections data
+  // New state for Professional Judgement
+  const [professionalJudgementData, setProfessionalJudgementData] = useState(null);
+  const [currentQuestionId, setCurrentQuestionId] = useState("start");
+  const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
+  const [audioRecorder, setAudioRecorder] = useState(null);
+  const [recordedAudio, setRecordedAudio] = useState(null);
+  const isRecordingAudio = useRef(false);
+  const audioChunks = useRef([]);
+  const audioRecorderRef = useRef(null); // Add ref for immediate access
+  const recordedAudioRef = useRef(null); // Add ref for immediate access to recorded audio
+  const videoUrlRef = useRef(null); // Store video URL to persist across state resets
+  const pauseSegmentRef = useRef(null); // Store pause segment to persist across state resets
+
+  // Add sections data for Professional Judgement
   const sections = [
-    "Motivation",
-    "Plastic Surgery - Skin Cancer",
-    "Core Surgical Training",
+    "Professional Judgement",
   ];
 
-  // Add keyboard event listener
+  // Initialize Professional Judgement on load
   useEffect(() => {
-    const handleKeyPress = async (event) => {
-      if (event.key.toUpperCase() === "L") {
-        if (nextVideoIndex === -1) {
-          // If we're at the end of the station, just play pause video
-          if (pauseVideo) {
-            setCurrentVideo(pauseVideo);
-            if (mainVideoRef.current) {
-              mainVideoRef.current.play();
-              setIsMainVideoPlaying(true);
-            }
-          }
+    console.log("🔧 Professional Judgement useEffect triggered");
+    
+    const initializeProfessionalJudgement = async () => {
+      try {
+        console.log("Initializing Professional Judgement...");
+        
+        // Check if user is authenticated first
+        if (!APIService.isAuthenticated()) {
+          console.error("User not authenticated, redirecting to login");
+          // You might want to redirect to login page here
+          // window.location.href = "/login";
           return;
         }
 
-        // Load next video
-        try {
-          setIsVideoTransitioning(true);
-          const videoResponse = await APIService.getMotivationVideo(
-            currentStation,
-            nextVideoIndex
-          );
+        const token = APIService.getToken();
+        console.log("Using token:", token ? `${token.substring(0, 20)}...` : "No token");
 
-          setCurrentVideo(videoResponse);
-          setNextVideoIndex(videoResponse.nextIndex);
+        const response = await APIService.getProfessionalJudgement({
+          scenario: "Social Media",
+          id: "start",
+          start: true
+        });
 
-          if (videoResponse.question) {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: Date.now(),
-                sender: "AI",
-                message: videoResponse.question,
-                timestamp: new Date().toLocaleTimeString(),
-              },
-            ]);
-          }
+        console.log("Professional Judgement Response:", response);
+        
+        setProfessionalJudgementData(response);
+        setCurrentQuestionId(response.question.id);
 
-          // Auto-play the video
-          setTimeout(() => {
-            if (mainVideoRef.current) {
-              mainVideoRef.current.play();
-              setIsMainVideoPlaying(true);
-            }
-          }, 100);
-        } catch (error) {
-          console.error("Error loading next video:", error);
-        } finally {
-          setIsVideoTransitioning(false);
-        }
-      }
-    };
+        // Store critical data in refs to persist across state resets
+        videoUrlRef.current = response.url;
+        pauseSegmentRef.current = response.pause;
 
-    window.addEventListener("keydown", handleKeyPress);
-    return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [currentStation, nextVideoIndex, pauseVideo]);
-
-  // Modify loadNextVideo to handle timestamps array
-  const loadNextVideo = async () => {
-  
-
-    if (
-      currentVideoRef.current?.pauseSegmentActive &&
-      currentVideoRef.current?.previousState
-    ) {
-      const prevState = currentVideoRef.current.previousState;
-     
-
-      // Check if we have more timestamps
-      if (prevState.nextIndex >= prevState.timestamps.length) {
-        console.log("End of station reached");
-        if (mainVideoRef.current) {
-          mainVideoRef.current.pause();
-          setIsMainVideoPlaying(false);
-        }
-        setShowStartButton(true);
-        return;
-      }
-
-      try {
-        setIsVideoTransitioning(true);
-
-        // Get the next timestamp
-        const nextTimestamp = prevState.timestamps[prevState.nextIndex];
-    
-
-        // Create new video state
-        const newVideoState = {
-          ...prevState,
-          currentTimestamp: nextTimestamp,
-          start: nextTimestamp.start,
-          end: nextTimestamp.end,
-          question: nextTimestamp.question,
-          nextIndex: prevState.nextIndex + 1,
+        // Set up the video
+        const videoData = {
+          url: response.url,
+          start: response.question.startTimestamp,
+          end: response.question.endTimestamp,
+          question: response.question.text,
+          currentTimestamp: response.question,
           isPauseSegment: false,
-          pauseSegmentActive: false, // Reset pause segment flag
-          pauseSegment: {
-            start: "1:53",
-            end: "2:00",
-          },
+          pauseSegment: response.pause
         };
 
-      
-        setCurrentVideo(newVideoState);
-        currentVideoRef.current = newVideoState;
+        setCurrentVideo(videoData);
+        currentVideoRef.current = videoData;
 
-        if (nextTimestamp.question) {
+        // Set pause video
+        setPauseVideo({ url: pauseVideoUrl });
+
+        // Add the first message
+        if (response.question.text) {
           setMessages((prev) => [
             ...prev,
             {
               id: Date.now(),
               sender: "AI",
-              message: nextTimestamp.question,
-              timestamp: new Date().toLocaleTimeString(),
-            },
-          ]);
-        }
-
-        // Set video to new timestamp
-        const [minutes, seconds] = nextTimestamp.start.split(":").map(Number);
-        const startTimeInSeconds = minutes * 60 + seconds;
-
-        if (mainVideoRef.current) {
-      
-          mainVideoRef.current.currentTime = startTimeInSeconds;
-          mainVideoRef.current.play();
-          setIsMainVideoPlaying(true);
-        }
-      } catch (error) {
-        console.error("Error loading next timestamp:", error);
-      } finally {
-        setIsVideoTransitioning(false);
-      }
-    } else {
-      console.log("Not in pause segment or no previous state available", {
-        pauseSegmentActive: currentVideoRef.current?.pauseSegmentActive,
-        previousState: currentVideoRef.current?.previousState,
-      });
-    }
-  };
-
-  // Update initial video loading
-  useEffect(() => {
-    const initializeVideos = async () => {
-      try {
-        const [videoResponse, pauseVideoResponse] = await Promise.all([
-          APIService.getMotivationVideo(currentStation),
-          { url: pauseVideoUrl },
-        ]);
-
-        setCurrentVideo(videoResponse);
-        setPauseVideo(pauseVideoResponse);
-        setNextVideoIndex(1); // Start with index 1 (second timestamp)
-        setIsVideoTransitioning(false);
-
-        if (videoResponse.question) {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: Date.now(),
-              sender: "AI",
-              message: videoResponse.question,
+              message: response.question.text,
               timestamp: new Date().toLocaleTimeString(),
             },
           ]);
@@ -234,14 +139,385 @@ const InterviewDashboard = () => {
           mainVideoRef.current.pause();
           setIsMainVideoPlaying(false);
         }
+
+        setIsVideoTransitioning(false);
       } catch (error) {
-        console.error("Error loading initial videos:", error);
+        console.error("Error initializing Professional Judgement:", error);
+        
+        // If authentication failed, show a user-friendly message
+        if (error.message.includes("Authentication failed") || error.message.includes("No authentication token")) {
+          console.log("Authentication issue detected. User may need to log in again.");
+          // Optionally, you could set a state to show a login prompt
+          // setShowLoginPrompt(true);
+        }
+        
+        // For now, let's just continue with a placeholder to prevent the app from crashing
+        setCurrentVideo({
+          url: pauseVideoUrl,
+          start: "0:00",
+          end: "0:05",
+          question: "Please log in to continue with the interview.",
+          isPauseSegment: false
+        });
       }
     };
 
-    initializeVideos();
-    setSelectedSection("Motivation");
-  }, []);
+    // Only initialize if we don't have data yet
+    if (!professionalJudgementData && !videoUrlRef.current) {
+      console.log("🎯 Starting Professional Judgement initialization");
+      initializeProfessionalJudgement();
+      setSelectedSection("Professional Judgement");
+    } else {
+      console.log("🔄 Professional Judgement already initialized, skipping");
+    }
+  }, []); // Empty dependency array to run only once
+
+  // Initialize audio recording and voice detection together
+  useEffect(() => {
+    const initializeAudio = async () => {
+      try {
+        if (isAudioInitialized) {
+          console.log("Audio already initialized, skipping");
+          return;
+        }
+
+        console.log("Initializing audio for both recording and voice detection...");
+        
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        });
+
+        console.log("Got audio stream:", stream);
+
+        // Set up MediaRecorder for audio recording
+        const recorder = new MediaRecorder(stream, {
+          mimeType: 'audio/webm;codecs=opus'
+        });
+        
+        console.log("📹 Created MediaRecorder:", recorder);
+        console.log("📹 Initial MediaRecorder state:", recorder.state);
+        
+        recorder.ondataavailable = (event) => {
+          console.log("📼 Audio data available, size:", event.data.size);
+          if (event.data.size > 0) {
+            audioChunks.current.push(event.data);
+          }
+        };
+
+        recorder.onstop = () => {
+          console.log("📼 MediaRecorder stopped, processing audio chunks:", audioChunks.current.length);
+          const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
+          setRecordedAudio(audioBlob);
+          recordedAudioRef.current = audioBlob; // Store in ref for immediate access
+          audioChunks.current = [];
+          console.log("📼 Audio recording processed, blob size:", audioBlob.size);
+        };
+
+        recorder.onstart = () => {
+          console.log("📼 MediaRecorder started successfully");
+        };
+
+        recorder.onerror = (event) => {
+          console.error("📼 MediaRecorder error:", event.error);
+        };
+
+        // Set up AudioContext for voice detection
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 2048;
+        analyser.smoothingTimeConstant = 0.8;
+
+        const microphone = audioCtx.createMediaStreamSource(stream);
+        microphone.connect(analyser);
+
+        // Store everything
+        console.log("📹 Setting audioRecorder state...");
+        setAudioRecorder(recorder);
+        audioRecorderRef.current = recorder; // Store in ref for immediate access
+        
+        analyserRef.current = analyser;
+        setAudioContext(audioCtx);
+        mediaStreamRef.current = stream;
+        setIsMicListening(true);
+        setIsAudioInitialized(true);
+
+        console.log("✅ Audio initialization completed successfully");
+        console.log("📹 MediaRecorder state after setup:", recorder.state);
+        console.log("🎤 Voice detection active");
+
+        // Small delay to ensure state is set before starting audio monitoring
+        setTimeout(() => {
+          console.log("🎤 Starting audio monitoring...");
+          checkAudio();
+        }, 100);
+
+      } catch (error) {
+        console.error("❌ Error initializing audio:", error);
+        setIsMicListening(false);
+        setIsAudioInitialized(false);
+      }
+    };
+
+    // Only initialize once and prevent cleanup during normal operation
+    if (!isAudioInitialized) {
+      initializeAudio();
+    }
+
+    // Only cleanup on component unmount, not on re-renders
+    return () => {
+      if (window.location.pathname === "/interview" && document.readyState === "complete") {
+        console.log("Cleaning up audio...");
+        if (audioContext) {
+          audioContext.close();
+        }
+        if (mediaStreamRef.current) {
+          const tracks = mediaStreamRef.current.getTracks();
+          tracks.forEach(track => track.stop());
+        }
+      }
+    };
+  }, []); // Empty dependency array - only run once
+
+  // Load next question with audio
+  const loadNextQuestion = async () => {
+    console.log("🔄 loadNextQuestion called");
+    
+    // Use ref first (immediate access), then fall back to state
+    const audioBlob = recordedAudioRef.current || recordedAudio;
+    
+    console.log("🎧 Audio available:", audioBlob ? `${audioBlob.size} bytes` : "null");
+    console.log("🎧 isWaitingForResponse:", isWaitingForResponse);
+    
+    if (!audioBlob) {
+      console.log("❌ No recorded audio available");
+      return;
+    }
+
+    if (isWaitingForResponse) {
+      console.log("❌ Already waiting for response");
+      return;
+    }
+
+    try {
+      console.log("🚀 Starting API call for next question...");
+      setIsWaitingForResponse(true);
+      setIsVideoTransitioning(true);
+
+      console.log("📡 Calling API with question ID:", currentQuestionId);
+      console.log("📡 Audio blob size:", audioBlob.size, "bytes");
+      
+      const response = await APIService.getProfessionalJudgement({
+        scenario: "Social Media",
+        id: currentQuestionId,
+        start: false,
+        audio: audioBlob
+      });
+
+      console.log("✅ Next question response:", response);
+
+      // Check if interview has ended
+      if (response.message === "interview end") {
+        console.log("🏁 Interview has ended");
+        
+        // Stop voice detection immediately
+        hasSpoken.current = false;
+        silenceCount.current = 0;
+        
+        // Stop any ongoing audio recording
+        if (isRecordingAudio.current) {
+          stopAudioRecording();
+        }
+        
+        // Pause video and stop timers
+        if (mainVideoRef.current) {
+          mainVideoRef.current.pause();
+          setIsMainVideoPlaying(false);
+        }
+        
+        // Stop interview timer if running
+        if (interviewTimerRef.current) {
+          clearInterval(interviewTimerRef.current);
+          setIsInterviewTimerActive(false);
+        }
+        
+        // Show completion modal
+        setShowTimeUpModal(true);
+        return;
+      }
+
+      // Update with new question
+      if (response.question) {
+        console.log("📝 Updating with new question:", response.question.text);
+        console.log("📝 Question details:", response.question);
+        setCurrentQuestionId(response.question.id);
+
+        // Use refs for critical data that should persist across state resets
+        const videoUrl = videoUrlRef.current;
+        const pauseSegment = pauseSegmentRef.current;
+
+        console.log("🔍 videoUrlRef.current:", videoUrl);
+        console.log("🔍 pauseSegmentRef.current:", pauseSegment);
+        console.log("🔍 professionalJudgementData:", professionalJudgementData);
+
+        if (!videoUrl) {
+          console.error("❌ No video URL available from refs");
+          console.error("❌ This suggests initial data was never loaded properly");
+          return;
+        }
+
+        console.log("📹 Using video URL from ref:", videoUrl);
+
+        const newVideoData = {
+          url: videoUrl,
+          start: response.question.startTimestamp,
+          end: response.question.endTimestamp,
+          question: response.question.text,
+          currentTimestamp: response.question,
+          isPauseSegment: false,
+          pauseSegment: pauseSegment
+        };
+
+        console.log("📹 Created new video data:", newVideoData);
+
+        setCurrentVideo(newVideoData);
+        currentVideoRef.current = newVideoData;
+
+        console.log("📹 Updated currentVideoRef.current:", currentVideoRef.current);
+
+        // Add message to chat
+        if (response.question.text) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: Date.now(),
+              sender: "AI",
+              message: response.question.text,
+              timestamp: new Date().toLocaleTimeString(),
+            },
+          ]);
+        }
+
+        // Set video to new timestamp
+        if (mainVideoRef.current) {
+          const [minutes, seconds] = response.question.startTimestamp.split(":").map(Number);
+          const startTimeInSeconds = minutes * 60 + seconds;
+          
+          console.log("📹 Setting video to timestamp:", response.question.startTimestamp);
+          
+          // Optimize video transition to reduce lag
+          mainVideoRef.current.pause(); // Pause first to reduce buffering
+          
+          // Immediate timestamp change for faster transitions
+          mainVideoRef.current.currentTime = startTimeInSeconds;
+          
+          setTimeout(() => {
+            if (mainVideoRef.current) {
+              const playPromise = mainVideoRef.current.play();
+              
+              if (playPromise !== undefined) {
+                playPromise
+                  .then(() => {
+                    console.log("✅ Video playing new question successfully");
+                    setIsMainVideoPlaying(true);
+                  })
+                  .catch((error) => {
+                    console.error("❌ Video play error:", error);
+                  });
+              } else {
+                setIsMainVideoPlaying(true);
+              }
+            }
+          }, 50); // Reduced delay for faster transitions
+        }
+      }
+
+      // Clear recorded audio
+      console.log("🧹 Clearing recorded audio");
+      setRecordedAudio(null);
+      recordedAudioRef.current = null;
+
+    } catch (error) {
+      console.error("❌ Error loading next question:", error);
+      
+      // Reset voice detection state on API error to prevent infinite loops
+      console.log("🔄 Resetting voice detection state due to API error");
+      hasSpoken.current = false;
+      silenceCount.current = 0;
+      
+      // Reset video state to prevent staying stuck in pause segment
+      if (currentVideo && !currentVideo.isPauseSegment) {
+        console.log("🔄 Resetting video state due to API error");
+        setCurrentVideo({
+          ...currentVideo,
+          isPauseSegment: false
+        });
+        currentVideoRef.current = {
+          ...currentVideo,
+          isPauseSegment: false
+        };
+      }
+      
+      // Show error message to user
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          sender: "System",
+          message: "There was an error processing your response. Please try again.",
+          timestamp: new Date().toLocaleTimeString(),
+        },
+      ]);
+      
+    } finally {
+      setIsWaitingForResponse(false);
+      setIsVideoTransitioning(false);
+      console.log("✅ loadNextQuestion completed");
+    }
+  };
+
+  // Start recording audio when user starts speaking
+  const startAudioRecording = () => {
+    // Use ref first (immediate access), then fall back to state
+    const recorder = audioRecorderRef.current || audioRecorder;
+    
+    if (!recorder || recorder.state !== 'inactive' || isRecordingAudio.current) {
+      console.log("❌ Cannot start recording - recorder unavailable or busy");
+      return;
+    }
+    
+    try {
+      console.log("✅ Starting audio recording...");
+      isRecordingAudio.current = true;
+      audioChunks.current = [];
+      recorder.start();
+    } catch (error) {
+      console.error("❌ Error starting audio recording:", error);
+      isRecordingAudio.current = false;
+    }
+  };
+
+  // Stop recording audio
+  const stopAudioRecording = () => {
+    // Use ref first (immediate access), then fall back to state
+    const recorder = audioRecorderRef.current || audioRecorder;
+    
+    if (!recorder || recorder.state !== 'recording' || !isRecordingAudio.current) {
+      console.log("❌ Cannot stop recording - recorder unavailable or not recording");
+      return;
+    }
+    
+    try {
+      console.log("✅ Stopping audio recording...");
+      isRecordingAudio.current = false;
+      recorder.stop();
+    } catch (error) {
+      console.error("❌ Error stopping audio recording:", error);
+    }
+  };
 
   // Modify countdown timer useEffect
   useEffect(() => {
@@ -306,9 +582,6 @@ const InterviewDashboard = () => {
       }
     };
   }, [isInterviewTimerActive, interviewTimeLeft, isMainVideoPlaying]);
-
-  // Add this useEffect to request permissions when component mounts
-  useEffect(() => {}, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -512,82 +785,53 @@ const InterviewDashboard = () => {
 
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () =>
-      // Corrected return statement
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
-  // Update useEffect for currentVideo changes
-  useEffect(() => {
-    // Update the ref when currentVideo changes
-    currentVideoRef.current = currentVideo;
-
-    // Only start audio detection if we're on a pause segment
-    if (currentVideo?.isPauseSegment) {
-      hasSpoken.current = false;
-      silenceCount.current = 0;
-
-      // Restart the audio check if we have an analyzer
-      if (analyserRef.current) {
-        console.log("Restarting audio check...");
-        // Cancel any existing animation frame
-        if (window.requestAnimationFrame) {
-          window.cancelAnimationFrame(checkAudio);
-        }
-        // Start a new check
-        checkAudio();
-      } else {
-        startVoiceDetection();
-      }
-    }
-  }, [currentVideo]);
-
   // Update handleVideoEnd to properly handle state transitions
   const handleVideoEnd = () => {
+    console.log("🎬 Video ended - switching to pause segment");
+    
     const currentVideoState = currentVideoRef.current;
 
     if (currentVideoState?.pauseSegment && !currentVideoState.isPauseSegment) {
-      console.log("Switching to pause segment");
+      console.log("🔄 Switching to pause segment");
 
       try {
-        // Create a clean copy of the current state
-        const stateCopy = {
-          ...currentVideoState,
-          timestamps: [...currentVideoState.timestamps],
-          nextIndex: currentVideoState.nextIndex,
-          currentTimestamp: { ...currentVideoState.currentTimestamp },
-          pauseSegment: { ...currentVideoState.pauseSegment },
-        };
-
         // Create pause segment state
         const pauseSegmentState = {
-          ...stateCopy,
-          previousState: stateCopy, // Store the complete state
           url: currentVideoState.url,
-          start: currentVideoState.pauseSegment.start,
-          end: currentVideoState.pauseSegment.end,
+          start: currentVideoState.pauseSegment.startTimestamp,
+          end: currentVideoState.pauseSegment.endTimestamp,
           isPauseSegment: true,
-          currentTimestamp: currentVideoState.pauseSegment,
-          // Add a flag to track if this is a pause segment
-          pauseSegmentActive: true,
+          pauseSegment: currentVideoState.pauseSegment,
+          question: currentVideoState.question, // Preserve question for debugging
         };
-
-    
 
         setCurrentVideo(pauseSegmentState);
         currentVideoRef.current = pauseSegmentState;
 
         if (mainVideoRef.current) {
-          const [minutes, seconds] = currentVideoState.pauseSegment.start
+          const [minutes, seconds] = currentVideoState.pauseSegment.startTimestamp
             .split(":")
             .map(Number);
           const startTimeInSeconds = minutes * 60 + seconds;
-          console.log("Setting video time to:", startTimeInSeconds);
+          console.log("🔄 Setting video time to:", startTimeInSeconds);
           mainVideoRef.current.currentTime = startTimeInSeconds;
           mainVideoRef.current.play();
           setIsMainVideoPlaying(true);
+          console.log("✅ Pause segment should be playing, voice detection active");
+          
+          // Ensure checkAudio is running for the new pause segment
+          setTimeout(() => {
+            console.log("🔄 Ensuring voice detection continues after pause segment switch...");
+            if (currentVideoRef.current?.isPauseSegment) {
+              checkAudio();
+            }
+          }, 500);
         }
       } catch (error) {
-        console.error("Error in handleVideoEnd:", error);
+        console.error("❌ Error in handleVideoEnd:", error);
       }
     }
   };
@@ -603,158 +847,107 @@ const InterviewDashboard = () => {
     }, 5000);
   };
 
+  // Voice detection logic
   const checkAudio = () => {
-    const videoState = currentVideoRef.current;
-
-    if (!videoState || !analyserRef.current) {
-      requestAnimationFrame(checkAudio);
-      return;
-    }
-
     try {
+      // Don't run voice detection if interview ended
+      if (showTimeUpModal) {
+        console.log("🛑 Interview ended - stopping voice detection");
+        return;
+      }
+      
+      // Don't run voice detection during API calls
+      if (isWaitingForResponse) {
+        console.log("⏸️ API call in progress - pausing voice detection");
+        setTimeout(() => {
+          requestAnimationFrame(checkAudio);
+        }, 500); // Check again in 500ms
+        return;
+      }
+      
+      const videoState = currentVideoRef.current;
+      
+      if (!videoState) {
+        requestAnimationFrame(checkAudio);
+        return;
+      }
+
+      if (!analyserRef.current) {
+        console.log("🚨 Analyser missing - voice detection broken, need to restart audio");
+        // Try to restart audio initialization
+        setIsAudioInitialized(false);
+        requestAnimationFrame(checkAudio);
+        return;
+      }
+
       const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
       analyserRef.current.getByteFrequencyData(dataArray);
       const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
 
       if (!videoState.isPauseSegment) {
-        hasSpoken.current = false;
-        silenceCount.current = 0;
+        // Reset state when not in pause segment
+        if (hasSpoken.current || silenceCount.current > 0) {
+          console.log("🔄 Resetting voice detection state (not in pause segment)");
+          hasSpoken.current = false;
+          silenceCount.current = 0;
+        }
         requestAnimationFrame(checkAudio);
         return;
       }
 
+      // We're in pause segment - key debugging
+      if (Math.floor(Date.now() / 2000) !== Math.floor((Date.now() - 16) / 2000)) {
+        console.log("🎙️ Voice check - pause segment active:", {
+          audioLevel: Math.round(average),
+          hasSpoken: hasSpoken.current,
+          silenceCount: silenceCount.current,
+          questionId: videoState.currentTimestamp?.id
+        });
+      }
+
       // Adjust threshold for voice detection
       if (average > 10) {
-        hasSpoken.current = true;
+        if (!hasSpoken.current) {
+          console.log("🎤 User started speaking! Starting audio recording...");
+          hasSpoken.current = true;
+          startAudioRecording();
+        }
         silenceCount.current = 0;
       } else if (hasSpoken.current) {
         silenceCount.current++;
         const silenceSeconds = Math.floor(silenceCount.current / 60);
 
+        // Only log every second, not every frame
         if (silenceSeconds > 0 && silenceCount.current % 60 === 0) {
-          console.log(`${silenceSeconds} seconds of silence...`);
+          console.log(`🔇 ${silenceSeconds} seconds of silence...`);
         }
 
-        if (silenceCount.current >= 300) {
-          console.log("5 seconds of silence completed, loading next video");
+        if (silenceCount.current >= 300) { // 5 seconds
+          console.log("✅ 5 seconds of silence completed, stopping recording and loading next video");
+          
+          stopAudioRecording();
           hasSpoken.current = false;
           silenceCount.current = 0;
-
-          if (!videoState.pauseSegmentActive) {
-            videoState.pauseSegmentActive = true;
-            videoState.previousState = { ...videoState };
-          }
-
-          loadNextVideo();
-          return;
+          
+          // Wait for audio to be processed then load next question
+          setTimeout(() => {
+            console.log("🔄 Calling loadNextQuestion after audio processing delay...");
+            loadNextQuestion();
+          }, 1000);
+          return; // Exit here - will restart when new pause segment is ready
         }
       }
 
+      // Continue the animation frame loop
       requestAnimationFrame(checkAudio);
     } catch (error) {
-      console.error("Error in checkAudio:", error);
-      requestAnimationFrame(checkAudio);
+      console.error("❌ Error in checkAudio:", error);
+      console.log("🔄 Restarting checkAudio after error...");
+      setTimeout(() => {
+        requestAnimationFrame(checkAudio);
+      }, 100);
     }
   };
-
-  // Update startVoiceDetection to maintain state better
-  const startVoiceDetection = async () => {
-    try {
-      // Don't start if already initialized
-      if (isAudioInitialized) {
-        console.log("Audio already initialized, skipping");
-        return;
-      }
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
-
-      console.log("Got audio stream:", stream);
-      mediaStreamRef.current = stream;
-      setAudioStream(stream);
-
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 2048;
-      analyser.smoothingTimeConstant = 0.8;
-
-      const microphone = audioCtx.createMediaStreamSource(stream);
-      microphone.connect(analyser);
-
-      analyserRef.current = analyser;
-      setAudioContext(audioCtx);
-      setIsMicListening(true);
-      setIsAudioInitialized(true);
-
-      checkAudio();
-    } catch (error) {
-      console.error("Error in startVoiceDetection:", error);
-      setIsMicListening(false);
-      setIsAudioInitialized(false);
-    }
-  };
-
-  // Add effect to monitor state changes
-  useEffect(() => {
-    console.log("Mic listening state changed:", isMicListening);
-  }, [isMicListening]);
-
-  // Start voice detection on component mount
-  useEffect(() => {
-    let isActive = true;
-
-    const initVoiceDetection = async () => {
-      if (!isActive) return;
-      console.log("Initializing voice detection...");
-      await startVoiceDetection();
-    };
-
-    initVoiceDetection();
-
-    return () => {
-      isActive = false;
-      console.log("Cleaning up voice detection");
-      stopVoiceDetection();
-    };
-  }, []);
-
-  const stopVoiceDetection = () => {
-    console.log("Stopping voice detection...");
-
-    if (audioContext) {
-      audioContext.close();
-    }
-
-    analyserRef.current = null;
-
-    if (mediaStreamRef.current) {
-      const tracks = mediaStreamRef.current.getTracks();
-      tracks.forEach((track) => track.stop());
-      mediaStreamRef.current = null;
-    }
-
-    if (silenceTimer) {
-      clearTimeout(silenceTimer);
-    }
-
-    setIsMicListening(false);
-    setIsAudioInitialized(false);
-    console.log("Voice detection stopped");
-  };
-
-  useEffect(() => {
-    return () => {
-      // Cancel any existing animation frame
-      if (window.requestAnimationFrame) {
-        window.cancelAnimationFrame(checkAudio);
-      }
-    };
-  }, []);
 
   // Function to refresh the page when "Try Again" is clicked
   const handleTryAgain = () => {
@@ -769,7 +962,7 @@ const InterviewDashboard = () => {
       {showTimeUpModal && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70">
           <div className="bg-white rounded-2xl p-8 max-w-md text-center shadow-2xl animate-fade-up">
-            <h2 className="text-2xl font-bold text-red-600 mb-4">Time's Up!</h2>
+            <h2 className="text-2xl font-bold text-red-600 mb-4">Interview Complete!</h2>
             <p className="text-gray-700 mb-6">Your interview session has ended.</p>
             <button
               onClick={handleTryAgain}
@@ -789,7 +982,6 @@ const InterviewDashboard = () => {
           selectedSection={selectedSection}
           setSelectedSection={setSelectedSection}
           setCurrentStation={setCurrentStation}
-          setCurrentIndex={setCurrentIndex}
           APIService={APIService}
           setCurrentVideo={setCurrentVideo}
           mainVideoRef={mainVideoRef}
@@ -803,7 +995,12 @@ const InterviewDashboard = () => {
           setIsMenuOpen={setIsMenuOpen}
           isMenuOpen={isMenuOpen}
           formatTime={formatTime}
+          professionalJudgementData={professionalJudgementData}
+          setProfessionalJudgementData={setProfessionalJudgementData}
+          setCurrentQuestionId={setCurrentQuestionId}
+          currentVideoRef={currentVideoRef}
         />
+        
         {/* Main Video Container */}
         <div className="rounded-2xl overflow-hidden bg-teal/5 backdrop-blur-sm border border-border/50 p-4">
           <VideoPlayer
@@ -824,6 +1021,7 @@ const InterviewDashboard = () => {
             isMainVideoPlaying={isMainVideoPlaying}
             handleVideoEnd={handleVideoEnd}
             videoRef={videoRef}
+            isWaitingForResponse={isWaitingForResponse}
           />
           <ControlsBar
             toggleCamera={toggleCamera}
@@ -846,6 +1044,8 @@ const InterviewDashboard = () => {
         setNotes={setNotes}
         isNotesMinimized={isNotesMinimized}
         setIsNotesMinimized={setIsNotesMinimized}
+        candidatePrompt={professionalJudgementData?.candidatePrompt}
+        background={professionalJudgementData?.background}
       />
 
       {/* Examiner Notes Section */}

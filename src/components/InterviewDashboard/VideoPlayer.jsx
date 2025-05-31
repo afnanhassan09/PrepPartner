@@ -17,6 +17,7 @@ const VideoPlayer = ({
   isInterviewTimerActive,
   isMainVideoPlaying,
   handleVideoEnd,
+  isWaitingForResponse,
 }) => {
   // Add timeupdate event listener to check for end timestamp
   useEffect(() => {
@@ -73,6 +74,16 @@ const VideoPlayer = ({
                              px-10 py-6 rounded-xl font-bold text-4xl animate-pulse"
             >
               {timeLeft}
+            </div>
+          </div>
+        )}
+
+        {/* API Processing Indicator */}
+        {isWaitingForResponse && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
+            <div className="bg-black/70 text-white px-6 py-4 rounded-xl flex items-center gap-3">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+              <span className="font-medium">Processing your response...</span>
             </div>
           </div>
         )}

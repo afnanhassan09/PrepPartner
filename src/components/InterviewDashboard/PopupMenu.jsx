@@ -24,6 +24,9 @@ const PopupMenu = ({
   currentVideoRef,
   setShowAdditionalMaterial,
   currentScenarioRef,
+  setVideoUrlRef,
+  setPauseSegmentRef,
+  resetVoiceDetectionState,
 }) => {
   // Add state to control initial positioning
   const [isPositioned, setIsPositioned] = useState(false);
@@ -42,6 +45,11 @@ const PopupMenu = ({
     setSelectedSection(section);
     setCurrentStation(section);
     
+    // Reset voice detection state when switching stations
+    if (typeof resetVoiceDetectionState === 'function') {
+      resetVoiceDetectionState();
+    }
+    
     // Store the current scenario in ref for persistence
     currentScenarioRef.current = section;
 
@@ -58,6 +66,15 @@ const PopupMenu = ({
       
       setProfessionalJudgementData(response);
       setCurrentQuestionId(response.question.id);
+
+      // IMPORTANT: Update the refs with new station's data
+      // This ensures loadNextQuestion uses the correct video data
+      if (typeof setVideoUrlRef === 'function') {
+        setVideoUrlRef(response.url);
+      }
+      if (typeof setPauseSegmentRef === 'function') {
+        setPauseSegmentRef(response.pause);
+      }
 
       // Automatically show Additional Material popup with the loaded data
       setShowAdditionalMaterial(true);

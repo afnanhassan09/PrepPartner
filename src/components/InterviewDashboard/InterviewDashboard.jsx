@@ -53,6 +53,11 @@ const InterviewDashboard = () => {
   const [showTimeUpModal, setShowTimeUpModal] = useState(false);
   const [showAdditionalMaterial, setShowAdditionalMaterial] = useState(false);
 
+  // State for vulgar words warning
+  const [showVulgarWordsWarning, setShowVulgarWordsWarning] = useState(false);
+  const [detectedVulgarWords, setDetectedVulgarWords] = useState([]);
+  const [vulgarWordCount, setVulgarWordCount] = useState(0);
+
   // New state for Professional Judgement
   const [professionalJudgementData, setProfessionalJudgementData] = useState(null);
   const [currentQuestionId, setCurrentQuestionId] = useState("start");
@@ -69,7 +74,6 @@ const InterviewDashboard = () => {
 
   // Add sections data for Professional Judgement
   const sections = [
-    "Professionalism - Social Media",
     "Social Media",
     "Alcohol Use", 
     "Medical Error",
@@ -80,6 +84,31 @@ const InterviewDashboard = () => {
     "End of Life care",
     "Complain"
   ];
+
+  // Add functions to update refs from PopupMenu
+  const setVideoUrlRef = (url) => {
+    videoUrlRef.current = url;
+  };
+
+  const setPauseSegmentRef = (pauseSegment) => {
+    pauseSegmentRef.current = pauseSegment;
+  };
+
+  // Add function to reset voice detection state when switching stations
+  const resetVoiceDetectionState = () => {
+    console.log("🔄 Resetting voice detection state for station switch");
+    hasSpoken.current = false;
+    silenceCount.current = 0;
+    
+    // Stop any ongoing audio recording
+    if (isRecordingAudio.current) {
+      stopAudioRecording();
+    }
+    
+    // Clear recorded audio
+    setRecordedAudio(null);
+    recordedAudioRef.current = null;
+  };
 
   // Initialize Professional Judgement on load
   useEffect(() => {
@@ -325,20 +354,34 @@ const InterviewDashboard = () => {
       setIsWaitingForResponse(true);
       setIsVideoTransitioning(true);
 
+      // Get the current scenario - prioritize the ref which is updated when station changes
+      const currentScenario = currentScenarioRef.current || selectedSection || "Social Media";
+      
       console.log("📡 Calling API with question ID:", currentQuestionId);
       console.log("📡 Audio blob size:", audioBlob.size, "bytes");
-      console.log("📡 Selected scenario:", selectedSection);
-      console.log("📡 Scenario from ref:", currentScenarioRef.current);
-      console.log("📡 Using scenario:", currentScenarioRef.current || selectedSection || "Social Media");
+      console.log("📡 Using scenario:", currentScenario);
       
       const response = await APIService.getProfessionalJudgement({
-        scenario: currentScenarioRef.current || selectedSection || "Social Media",
+        scenario: currentScenario,
         id: currentQuestionId,
         start: false,
         audio: audioBlob
       });
 
       console.log("✅ Next question response:", response);
+
+      // Check for vulgar words in the response
+      if (response.vulgarWordCount && response.vulgarWordCount > 0 && response.vulgarWords) {
+        console.log("🚨 Vulgar words detected:", response.vulgarWords);
+        setVulgarWordCount(response.vulgarWordCount);
+        setDetectedVulgarWords(response.vulgarWords);
+        setShowVulgarWordsWarning(true);
+        
+        // Auto-hide the warning after 5 seconds
+        setTimeout(() => {
+          setShowVulgarWordsWarning(false);
+        }, 5000);
+      }
 
       // Check if interview has ended
       if (response.message === "interview end") {
@@ -376,21 +419,29 @@ const InterviewDashboard = () => {
         console.log("📝 Question details:", response.question);
         setCurrentQuestionId(response.question.id);
 
-        // Use refs for critical data that should persist across state resets
-        const videoUrl = videoUrlRef.current;
-        const pauseSegment = pauseSegmentRef.current;
+        // IMPORTANT: Use video data from the API response for the current station
+        // If the response includes new video data, use it; otherwise use existing refs
+        const videoUrl = response.url || videoUrlRef.current;
+        const pauseSegment = response.pause || pauseSegmentRef.current;
 
-        console.log("🔍 videoUrlRef.current:", videoUrl);
-        console.log("🔍 pauseSegmentRef.current:", pauseSegment);
-        console.log("🔍 professionalJudgementData:", professionalJudgementData);
+        // Update refs if new data is provided
+        if (response.url) {
+          videoUrlRef.current = response.url;
+        }
+        if (response.pause) {
+          pauseSegmentRef.current = response.pause;
+        }
+
+        console.log("🔍 Using video URL:", videoUrl);
+        console.log("🔍 Using pause segment:", pauseSegment);
 
         if (!videoUrl) {
-          console.error("❌ No video URL available from refs");
-          console.error("❌ This suggests initial data was never loaded properly");
+          console.error("❌ No video URL available");
+          console.error("❌ This suggests video data was not loaded properly for current station");
           return;
         }
 
-        console.log("📹 Using video URL from ref:", videoUrl);
+        console.log("📹 Using video URL for current station:", videoUrl);
 
         const newVideoData = {
           url: videoUrl,
@@ -916,13 +967,16 @@ const InterviewDashboard = () => {
         return;
       }
 
-      // We're in pause segment - key debugging
+      // We're in pause segment - enhanced debugging
       if (Math.floor(Date.now() / 2000) !== Math.floor((Date.now() - 16) / 2000)) {
         console.log("🎙️ Voice check - pause segment active:", {
           audioLevel: Math.round(average),
           hasSpoken: hasSpoken.current,
           silenceCount: silenceCount.current,
-          questionId: videoState.currentTimestamp?.id
+          questionId: videoState.currentTimestamp?.id,
+          currentScenario: currentScenarioRef.current,
+          videoUrl: videoState.url,
+          isPauseSegment: videoState.isPauseSegment
         });
       }
 
@@ -930,6 +984,8 @@ const InterviewDashboard = () => {
       if (average > 10) {
         if (!hasSpoken.current) {
           console.log("🎤 User started speaking! Starting audio recording...");
+          console.log("🎤 Current scenario:", currentScenarioRef.current);
+          console.log("🎤 Video state:", videoState);
           hasSpoken.current = true;
           startAudioRecording();
         }
@@ -945,6 +1001,7 @@ const InterviewDashboard = () => {
 
         if (silenceCount.current >= 300) { // 5 seconds
           console.log("✅ 5 seconds of silence completed, stopping recording and loading next video");
+          console.log("✅ Current scenario before loading next:", currentScenarioRef.current);
           
           stopAudioRecording();
           hasSpoken.current = false;
@@ -953,6 +1010,7 @@ const InterviewDashboard = () => {
           // Wait for audio to be processed then load next question
           setTimeout(() => {
             console.log("🔄 Calling loadNextQuestion after audio processing delay...");
+            console.log("🔄 Scenario at loadNextQuestion call:", currentScenarioRef.current);
             loadNextQuestion();
           }, 1000);
           return; // Exit here - will restart when new pause segment is ready
@@ -996,6 +1054,49 @@ const InterviewDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Vulgar Words Warning Modal */}
+      {showVulgarWordsWarning && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
+          <div className="bg-white rounded-2xl p-8 max-w-md text-center shadow-2xl animate-fade-up border-2 border-red-500">
+            <div className="mb-4">
+              <svg
+                className="mx-auto h-16 w-16 text-red-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"
+                />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-red-600 mb-4">Warning!</h2>
+            <p className="text-gray-700 mb-4">
+              Please avoid using inappropriate language during your interview.
+            </p>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+              <p className="text-red-800 font-semibold">
+                Detected {vulgarWordCount} inappropriate word{vulgarWordCount > 1 ? 's' : ''}:
+              </p>
+              <p className="text-red-600 mt-1">
+                {detectedVulgarWords.map(word => word.toUpperCase()).join(', ')}
+              </p>
+            </div>
+            <button
+              onClick={() => setShowVulgarWordsWarning(false)}
+              className="px-6 py-3 bg-red-500 text-white rounded-xl font-semibold 
+                       hover:bg-red-600 transition-all duration-200 
+                       transform hover:scale-105 shadow-lg"
+            >
+              I Understand
+            </button>
+          </div>
+        </div>
+      )}
       
       <div className="animate-fade-up mb-6">
         <PopupMenu
@@ -1022,6 +1123,9 @@ const InterviewDashboard = () => {
           currentVideoRef={currentVideoRef}
           setShowAdditionalMaterial={setShowAdditionalMaterial}
           currentScenarioRef={currentScenarioRef}
+          setVideoUrlRef={setVideoUrlRef}
+          setPauseSegmentRef={setPauseSegmentRef}
+          resetVoiceDetectionState={resetVoiceDetectionState}
         />
         
         {/* Main Video Container */}

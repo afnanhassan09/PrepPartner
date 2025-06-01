@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = "http://ec2-18-171-54-88.eu-west-2.compute.amazonaws.com:3000";
 
 import { io } from "socket.io-client";
 

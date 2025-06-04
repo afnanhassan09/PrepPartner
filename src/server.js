@@ -1,4 +1,4 @@
-const BASE_URL = "http://ec2-18-171-54-88.eu-west-2.compute.amazonaws.com:3000";
+const BASE_URL = "https://preppartner-backend.onrender.com";
 
 import { io } from "socket.io-client";
 

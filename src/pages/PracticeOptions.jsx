@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
 
 const PracticeOptions = () => {
   return (
@@ -8,13 +8,26 @@ const PracticeOptions = () => {
           Choose Your Practice Area
         </h1>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-          <Link to="/interview" className="bg-white p-6 rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl text-center">
-            <h2 className="text-2xl font-semibold mb-2 text-teal">Clinical</h2>
+          <Link
+            to="/interview"
+            className="bg-white p-6 rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl text-center"
+          >
+            <h2 className="text-2xl font-semibold mb-2 text-teal">
+              Professional Judgement
+            </h2>
           </Link>
-          <Link to="/interview" className="bg-white p-6 rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl text-center">
-            <h2 className="text-2xl font-semibold mb-2 text-teal">Management</h2>
+          <Link
+            to="/calculation-interview"
+            className="bg-white p-6 rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl text-center"
+          >
+            <h2 className="text-2xl font-semibold mb-2 text-teal">
+              Calculation and Data
+            </h2>
           </Link>
-          <Link to="/interview" className="bg-white p-6 rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl text-center">
+          <Link
+            to="/interview"
+            className="bg-white p-6 rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl text-center"
+          >
             <h2 className="text-2xl font-semibold mb-2 text-teal">Portfolio</h2>
           </Link>
         </div>
@@ -23,4 +36,4 @@ const PracticeOptions = () => {
   );
 };
 
-export default PracticeOptions; 
+export default PracticeOptions;

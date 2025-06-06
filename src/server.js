@@ -1,4 +1,4 @@
-const BASE_URL = "https://preppartner-backend.onrender.com";
+const BASE_URL = "http://localhost:3000";
 
 import { io } from "socket.io-client";
 
@@ -270,18 +270,20 @@ class APIService {
       }
 
       const formData = new FormData();
-      
+
       // Add required fields
-      formData.append('scenario', data.scenario || 'Social Media');
-      formData.append('id', data.id);
-      formData.append('start', data.start.toString());
-      
+      formData.append("scenario", data.scenario || "Social Media");
+      formData.append("id", data.id);
+      formData.append("start", data.start.toString());
+
       // Add audio file if provided
       if (data.audio) {
-        formData.append('audio', data.audio);
+        formData.append("audio", data.audio);
       }
 
-      console.log(`Making POST request to ${BASE_URL}/api/professional-judgement`);
+      console.log(
+        `Making POST request to ${BASE_URL}/api/professional-judgement`
+      );
 
       const response = await fetch(`${BASE_URL}/api/professional-judgement`, {
         method: "POST",
@@ -317,6 +319,70 @@ class APIService {
       return responseData;
     } catch (error) {
       console.error("Error getting professional judgement:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gets calculation and data scenario information
+   * @param {Object} data - Request data containing scenario, start flag, and optional audio
+   * @returns {Promise<Object>} Calculation data response
+   */
+  static async getCalculationData(data) {
+    try {
+      const token = this.getToken();
+
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      const formData = new FormData();
+
+      // Add required fields
+      formData.append("scenario", data.scenario || "Concentration 1");
+      formData.append("start", data.start.toString());
+
+      // Add audio file if provided
+      if (data.audio) {
+        formData.append("audio", data.audio);
+      }
+
+      console.log(`Making POST request to ${BASE_URL}/api/calculation`);
+
+      const response = await fetch(`${BASE_URL}/api/calculation`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          // Don't set Content-Type header, let browser set it for FormData
+        },
+        body: formData,
+      });
+
+      // Handle non-JSON responses
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await response.text();
+        console.error("Non-JSON response:", text);
+        throw new Error(
+          `Server returned non-JSON response: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        // Handle authentication errors
+        if (response.status === 401) {
+          console.error("Authentication failed. Token may be expired.");
+          throw new Error("Authentication failed");
+        }
+
+        throw new Error(responseData.message || "Request failed");
+      }
+
+      return responseData;
+    } catch (error) {
+      console.error("Error getting calculation data:", error);
       throw error;
     }
   }

@@ -12,6 +12,7 @@ import Contact from "./pages/Contact";
 import Blog from "./pages/Blog";
 import Auth from "./pages/Auth";
 import InterviewPage from "./pages/interview";
+import CalculationInterviewPage from "./pages/calculationInterview";
 import InterviewMockPage from "./pages/MockPage";
 import DashboardLayout from "./components/DashboardLayout";
 import InterviewPrep from "./pages/InterviewPrep";
@@ -61,6 +62,7 @@ const App = () => (
               <Route path="/notes" element={<NotesPage />} />
               <Route path="/performance" element={<Performance />} />
               <Route path="/interview" element={<InterviewPage />} />
+              <Route path="/calculation-interview" element={<CalculationInterviewPage />} />
               <Route path="/practice-options" element={<PracticeOptions />} />
               <Route path="/mock-options" element={<MockOptions />} />
               <Route path="/mock" element={<InterviewMockPage />} />

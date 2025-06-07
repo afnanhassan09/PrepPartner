@@ -148,12 +148,23 @@ const Auth = () => {
         `${activeTab === "login" ? "Login" : "Registration"} error:`,
         error
       );
-      setError(
-        error.message ||
-          `${
-            activeTab === "login" ? "Login" : "Registration"
-          } failed. Please try again.`
-      );
+
+      // Special handling for email verification error
+      if (
+        error.type === "EMAIL_NOT_VERIFIED" ||
+        (error.message && error.message.includes("verify your email"))
+      ) {
+        setError(
+          "Please verify your email first, then login. Check your inbox (including spam folder) for the verification email."
+        );
+      } else {
+        setError(
+          error.message ||
+            `${
+              activeTab === "login" ? "Login" : "Registration"
+            } failed. Please try again.`
+        );
+      }
     } finally {
       setIsLoading(false);
     }

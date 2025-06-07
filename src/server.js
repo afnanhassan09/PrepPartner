@@ -1,4 +1,4 @@
-const BASE_URL = "https://preppartner-backend.onrender.com";
+const BASE_URL = "http://localhost:3000";
 
 import { io } from "socket.io-client";
 
@@ -420,6 +420,12 @@ class APIService {
    */
   static async register(userData) {
     try {
+      console.log(
+        "Making register request to:",
+        `${BASE_URL}/api/auth/register`
+      );
+      console.log("User data:", { ...userData, password: "[HIDDEN]" });
+
       const response = await fetch(`${BASE_URL}/api/auth/register`, {
         method: "POST",
         headers: {
@@ -428,26 +434,52 @@ class APIService {
         body: JSON.stringify(userData),
       });
 
-      // Check if the response has content before trying to parse JSON
+      console.log("Response status:", response.status);
+      console.log("Response status text:", response.statusText);
+      console.log(
+        "Response headers:",
+        Object.fromEntries(response.headers.entries())
+      );
+
+      // Get response text once and reuse it
+      const responseText = await response.text();
+      console.log("Response text length:", responseText.length);
+      console.log(
+        "Response text (first 200 chars):",
+        responseText.substring(0, 200)
+      );
+
+      // Check if response is empty
+      if (!responseText.trim()) {
+        console.error("Server returned empty response");
+        console.error("Full response details:", {
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries()),
+          url: response.url,
+        });
+        throw new Error("Server returned empty response");
+      }
+
+      // Check if the response is JSON
       const contentType = response.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
-        // Not a JSON response - handle accordingly
-        const text = await response.text();
-        console.error("Server returned non-JSON response:", text);
+        console.error("Server returned non-JSON response:", responseText);
         throw new Error(
           `Server returned non-JSON response: ${response.status} ${response.statusText}`
         );
       }
 
-      // Check for empty response
-      const responseText = await response.text();
-      if (!responseText.trim()) {
-        console.error("Server returned empty response");
-        throw new Error("Server returned empty response");
-      }
-
       // Parse the JSON manually after checking for empty content
-      const data = JSON.parse(responseText);
+      let data;
+      try {
+        data = JSON.parse(responseText);
+        console.log("Parsed response data:", data);
+      } catch (parseError) {
+        console.error("JSON parse error:", parseError);
+        console.error("Response text that failed to parse:", responseText);
+        throw new Error("Invalid JSON response from server");
+      }
 
       if (!response.ok) {
         throw new Error(data.message || "Registration failed");
@@ -467,6 +499,12 @@ class APIService {
    */
   static async login(credentials) {
     try {
+      console.log("Making login request to:", `${BASE_URL}/api/auth/login`);
+      console.log("Credentials:", {
+        email: credentials.email,
+        password: "[HIDDEN]",
+      });
+
       const response = await fetch(`${BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: {
@@ -475,28 +513,64 @@ class APIService {
         body: JSON.stringify(credentials),
       });
 
-      // Check if the response has content before trying to parse JSON
+      console.log("Response status:", response.status);
+      console.log("Response status text:", response.statusText);
+      console.log(
+        "Response headers:",
+        Object.fromEntries(response.headers.entries())
+      );
+
+      // Get response text once and reuse it
+      const responseText = await response.text();
+      console.log("Response text length:", responseText.length);
+      console.log(
+        "Response text (first 200 chars):",
+        responseText.substring(0, 200)
+      );
+
+      // Check if response is empty
+      if (!responseText.trim()) {
+        console.error("Server returned empty response");
+        console.error("Full response details:", {
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries()),
+          url: response.url,
+        });
+        throw new Error("Server returned empty response");
+      }
+
+      // Check if the response is JSON
       const contentType = response.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
-        // Not a JSON response - handle accordingly
-        const text = await response.text();
-        console.error("Server returned non-JSON response:", text);
+        console.error("Server returned non-JSON response:", responseText);
         throw new Error(
           `Server returned non-JSON response: ${response.status} ${response.statusText}`
         );
       }
 
-      // Check for empty response
-      const responseText = await response.text();
-      if (!responseText.trim()) {
-        console.error("Server returned empty response");
-        throw new Error("Server returned empty response");
+      // Parse the JSON manually after checking for empty content
+      let data;
+      try {
+        data = JSON.parse(responseText);
+        console.log("Parsed response data:", data);
+      } catch (parseError) {
+        console.error("JSON parse error:", parseError);
+        console.error("Response text that failed to parse:", responseText);
+        throw new Error("Invalid JSON response from server");
       }
 
-      // Parse the JSON manually after checking for empty content
-      const data = JSON.parse(responseText);
-
       if (!response.ok) {
+        // Special handling for email verification error
+        if (data.message && data.message.includes("verify your email")) {
+          const verificationError = new Error(
+            data.message || "Please verify your email before logging in"
+          );
+          verificationError.status = response.status;
+          verificationError.type = "EMAIL_NOT_VERIFIED";
+          throw verificationError;
+        }
+
         throw new Error(data.message || "Login failed");
       }
 
